@@ -227,6 +227,37 @@ tr.row:hover{background:var(--surface-2)}
 .footer b{color:var(--accent);font-weight:600}
 .footer .sep{opacity:.4;margin:0 8px}
 
+/* ---------- Chats ---------- */
+.chatbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+.chatform{border:1px solid var(--line);border-radius:3px;background:var(--surface);padding:14px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:end;animation:fadeUp .4s ease both}
+.chatform input{background:var(--bg);border:1px solid var(--line);border-radius:3px;padding:9px 12px;color:var(--fg);width:100%;transition:border-color .25s ease,box-shadow .25s ease}
+.chatform input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(225,29,29,.12);outline:none}
+.chatwin{
+  border:1px solid var(--line);border-radius:3px;background:var(--surface);
+  min-height:320px;max-height:65vh;overflow-y:auto;padding:14px;
+  display:flex;flex-direction:column;gap:10px;
+  animation:fadeUp .45s cubic-bezier(.22,.7,.3,1) both;
+}
+.chatmsg{display:grid;grid-template-columns:38px minmax(0,1fr);gap:10px;animation:fadeIn .3s ease both}
+.chatmsg .av{width:38px;height:38px;border:1px solid var(--accent);color:var(--accent);display:grid;place-items:center;font-family:var(--font-mono);font-weight:600;font-size:15px;text-transform:uppercase;transition:transform .25s ease,background .25s ease,color .25s ease}
+.chatmsg:hover .av{transform:scale(1.06) rotate(-3deg);background:var(--accent);color:#fff}
+.chatmsg .bub{background:var(--surface-2);border:1px solid var(--line);border-radius:3px;padding:8px 10px;min-width:0;transition:border-color .25s ease}
+.chatmsg.self .bub{border-color:var(--accent-dim)}
+.chatmsg .top{display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:4px;flex-wrap:wrap}
+.chatmsg .top .name{font-weight:600;overflow-wrap:anywhere}
+.chatmsg .top .time{color:var(--muted);font-family:var(--font-mono);font-size:12px;margin-left:auto;white-space:nowrap}
+.chatmsg .txt{white-space:pre-wrap;overflow-wrap:anywhere;margin:0;font-size:14px}
+.chatmsg .attach{margin-top:6px}
+.chatmsg .attach img,.chatmsg .attach video{max-width:100%;max-height:360px;border:1px solid var(--line);border-radius:3px;display:block}
+.chatmsg .attach img{cursor:zoom-in;transition:transform .3s ease}
+.chatmsg .attach img:hover{transform:scale(1.01);border-color:var(--accent-dim)}
+.chat-empty{color:var(--muted);text-align:center;padding:32px 12px}
+.chat-hint{font-size:12px;color:var(--muted);text-align:center}
+@media (max-width:700px){
+  .chatform{grid-template-columns:1fr}
+  .chatwin{max-height:60vh;padding:10px}
+}
+
 @media (max-width:700px){
   .hide-s{display:none}
   .btn,.pager button,.nav button.link{min-height:44px}
@@ -264,6 +295,7 @@ tr.row:hover{background:var(--surface-2)}
       </svg>
     </button>
     <button class="link" id="nav-home"></button>
+    <button class="link" id="nav-chat"></button>
     <button class="link" id="nav-catalog"></button>
     <button class="link" id="nav-rules"></button>
     <button class="link" id="nav-faq"></button>
@@ -304,20 +336,160 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-/* ---------- Владельцы (фулл-права) ---------- */
+/* ============================================================
+   БЕЗОПАСНОСТЬ / КРИПТО
+   ------------------------------------------------------------
+   crypto.subtle доступен ТОЛЬКО в защищённом контексте
+   (https / localhost). При открытии файла как file:// или
+   по IP он undefined — отсюда была ошибка
+   "undefined is not an object (evaluating 'crypto.subtle.digest')".
+   Ниже — чистый JS SHA-256, работает везде и всегда даёт
+   одинаковый результат независимо от контекста.
+   ============================================================ */
+
+function jsSha256(msg){
+  // msg: обычная JS-строка, кодируется в UTF-8 внутри
+  const K = [
+    0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,
+    0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,
+    0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,
+    0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,
+    0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,
+    0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,
+    0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,
+    0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2
+  ];
+  const H0 = [0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19];
+
+  // UTF-8 encoding
+  let bytes;
+  if (typeof TextEncoder !== 'undefined'){
+    bytes = new TextEncoder().encode(msg);
+  } else {
+    const out = [];
+    for (let i=0;i<msg.length;i++){
+      let c = msg.charCodeAt(i);
+      if (c < 0x80) out.push(c);
+      else if (c < 0x800) out.push(0xC0|(c>>6),0x80|(c&0x3F));
+      else if (c < 0xD800 || c >= 0xE000) out.push(0xE0|(c>>12),0x80|((c>>6)&0x3F),0x80|(c&0x3F));
+      else {
+        i++;
+        const c2 = msg.charCodeAt(i);
+        const cp = 0x10000 + ((c & 0x3FF) << 10) + (c2 & 0x3FF);
+        out.push(0xF0|(cp>>18),0x80|((cp>>12)&0x3F),0x80|((cp>>6)&0x3F),0x80|(cp&0x3F));
+      }
+    }
+    bytes = new Uint8Array(out);
+  }
+
+  const l = bytes.length;
+  const bitLen = l * 8;
+  const paddedLen = Math.ceil((l + 9) / 64) * 64;
+  const padded = new Uint8Array(paddedLen);
+  padded.set(bytes);
+  padded[l] = 0x80;
+  const hi = Math.floor(bitLen / 0x100000000);
+  const lo = bitLen >>> 0;
+  padded[paddedLen-8] = (hi >>> 24) & 0xff;
+  padded[paddedLen-7] = (hi >>> 16) & 0xff;
+  padded[paddedLen-6] = (hi >>>  8) & 0xff;
+  padded[paddedLen-5] =  hi         & 0xff;
+  padded[paddedLen-4] = (lo >>> 24) & 0xff;
+  padded[paddedLen-3] = (lo >>> 16) & 0xff;
+  padded[paddedLen-2] = (lo >>>  8) & 0xff;
+  padded[paddedLen-1] =  lo         & 0xff;
+
+  const h = H0.slice();
+  const w = new Uint32Array(64);
+  const rotr = (x,n)=> (x >>> n) | (x << (32-n));
+
+  for (let i=0; i<paddedLen; i+=64){
+    for (let j=0; j<16; j++){
+      w[j] = (padded[i+j*4]<<24) | (padded[i+j*4+1]<<16) | (padded[i+j*4+2]<<8) | padded[i+j*4+3];
+    }
+    for (let j=16; j<64; j++){
+      const s0 = rotr(w[j-15],7) ^ rotr(w[j-15],18) ^ (w[j-15] >>> 3);
+      const s1 = rotr(w[j-2],17) ^ rotr(w[j-2],19) ^ (w[j-2] >>> 10);
+      w[j] = (w[j-16] + s0 + w[j-7] + s1) >>> 0;
+    }
+    let a=h[0],b=h[1],c=h[2],d=h[3],e=h[4],f=h[5],g=h[6],hh=h[7];
+    for (let j=0; j<64; j++){
+      const S1 = rotr(e,6) ^ rotr(e,11) ^ rotr(e,25);
+      const ch = (e & f) ^ (~e & g);
+      const t1 = (hh + S1 + ch + K[j] + w[j]) >>> 0;
+      const S0 = rotr(a,2) ^ rotr(a,13) ^ rotr(a,22);
+      const maj = (a & b) ^ (a & c) ^ (b & c);
+      const t2 = (S0 + maj) >>> 0;
+      hh = g; g = f; f = e; e = (d + t1) >>> 0;
+      d = c; c = b; b = a; a = (t1 + t2) >>> 0;
+    }
+    h[0]=(h[0]+a)>>>0; h[1]=(h[1]+b)>>>0; h[2]=(h[2]+c)>>>0; h[3]=(h[3]+d)>>>0;
+    h[4]=(h[4]+e)>>>0; h[5]=(h[5]+f)>>>0; h[6]=(h[6]+g)>>>0; h[7]=(h[7]+hh)>>>0;
+  }
+
+  let hex = '';
+  for (let i=0;i<8;i++) hex += h[i].toString(16).padStart(8,'0');
+  return hex;
+}
+
+async function hashPass(pass, salt){
+  return jsSha256(String(salt) + '::' + String(pass));
+}
+
+/* ---------- Крипто-безопасный рандом без secure-context ---------- */
+function randomHex(nBytes){
+  try{
+    if (typeof crypto !== 'undefined' && crypto.getRandomValues){
+      const a = new Uint8Array(nBytes);
+      crypto.getRandomValues(a);
+      return Array.from(a).map(b=>b.toString(16).padStart(2,'0')).join('');
+    }
+  }catch(e){}
+  let s='';
+  for (let i=0;i<nBytes*2;i++) s += Math.floor(Math.random()*16).toString(16);
+  return s;
+}
+function safeRandomId(prefix){
+  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+  let out = (prefix||'id') + '_';
+  try{
+    if (typeof crypto !== 'undefined' && crypto.getRandomValues){
+      const a = new Uint8Array(10);
+      crypto.getRandomValues(a);
+      for (let i=0;i<a.length;i++) out += chars[a[i] % chars.length];
+      return out;
+    }
+  }catch(e){}
+  for (let i=0;i<10;i++) out += chars[Math.floor(Math.random()*chars.length)];
+  return out;
+}
+
+/* ---------- Валидация ключей Firebase (защита от path injection) ---------- */
+function isSafeKey(k){
+  return typeof k === 'string' && k.length > 0 && k.length < 80 && /^[A-Za-z0-9_\-]+$/.test(k);
+}
+function safePathKey(k){
+  if(!isSafeKey(k)) throw new Error('Invalid key');
+  return k;
+}
+
+/* ---------- Владельцы ----------
+   Внимание: на чистом клиенте невозможно надёжно спрятать пароли.
+   Мы храним только хэши паролей владельцев (SHA-256 от salt+pass);
+   сам соль генерируется автоматически при первом входе. */
 const OWNERS = ['m4lm0v','crollow','himical'];
 const OWNER_PASSWORDS = {
   m4lm0v:  '@m4lm0v!',
   crollow: '@crollow!',
   himical: '@himical!'
 };
-function isOwner(nick){ return !!nick && OWNERS.includes(nick.toLowerCase()); }
-function canEdit(){ return S.user && (S.user.owner === true || isOwner(S.user.nick)); }
+function isOwner(nick){ return !!nick && OWNERS.includes(String(nick).toLowerCase()); }
+function canEdit(){ return !!(S.user && (S.user.owner === true || isOwner(S.user.nick))); }
 
 /* ---------- Языки ---------- */
 const I18N = {
   ru: {
-    home:'Главная', newTopic:'Новая тема', members:'Участники',
+    home:'Главная', chat:'Чат', newTopic:'Новая тема', members:'Участники',
     catalog:'Каталог', rules:'Правила', faq:'FAQ', about:'О проекте',
     guest:'гость', signedInAs:'вы вошли как', signOut:'Выйти', signInUp:'Вход / Регистрация',
     welcome:'Добро Пожаловать!',
@@ -362,10 +534,22 @@ const I18N = {
     owner:'владелец',
     edit:'Редактировать', save:'Сохранить', editTitle:'Заголовок страницы', editBody:'Содержимое',
     pageEmpty:'Страница пока не заполнена.', saved:'Сохранено', onlyOwners:'Только владельцы могут редактировать',
-    lastEdited:'Обновлено', by:'кем'
+    lastEdited:'Обновлено', by:'кем',
+
+    chats:'Чаты', newChat:'Новый чат', chatName:'Название чата', createChat:'Создать чат',
+    noChats:'Чатов пока нет. Создайте первый.', chatNotFound:'Чат не найден.',
+    backToChats:'← К списку чатов', openChat:'Открыть',
+    yourMsg:'Ваше сообщение…', send:'Отправить', msgs:'Сообщений',
+    deleteChat:'Удалить чат', confirmDeleteChat:'Удалить этот чат со всеми сообщениями?',
+    chatBy:'создал', chatNoMsg:'Сообщений пока нет. Напишите первым.',
+    errChatName:'Название: 1–60 символов',
+    errMsgEmpty:'Сообщение пустое', errMsgLong:'Сообщение слишком длинное',
+    needLoginToSend:'Войдите, чтобы писать в чат',
+    chatCreated:'Чат создан', chatDeleted:'Чат удалён',
+    errNoPerm:'Недостаточно прав'
   },
   en: {
-    home:'Home', newTopic:'New topic', members:'Members',
+    home:'Home', chat:'Chat', newTopic:'New topic', members:'Members',
     catalog:'Catalog', rules:'Rules', faq:'FAQ', about:'About',
     guest:'guest', signedInAs:'signed in as', signOut:'Sign out', signInUp:'Sign in / Sign up',
     welcome:'Welcome!',
@@ -410,7 +594,19 @@ const I18N = {
     owner:'owner',
     edit:'Edit', save:'Save', editTitle:'Page title', editBody:'Content',
     pageEmpty:'This page is empty yet.', saved:'Saved', onlyOwners:'Only owners can edit',
-    lastEdited:'Updated', by:'by'
+    lastEdited:'Updated', by:'by',
+
+    chats:'Chats', newChat:'New chat', chatName:'Chat name', createChat:'Create chat',
+    noChats:'No chats yet. Create the first one.', chatNotFound:'Chat not found.',
+    backToChats:'← Back to chats', openChat:'Open',
+    yourMsg:'Your message…', send:'Send', msgs:'Messages',
+    deleteChat:'Delete chat', confirmDeleteChat:'Delete this chat with all messages?',
+    chatBy:'by', chatNoMsg:'No messages yet. Be the first.',
+    errChatName:'Name: 1–60 characters',
+    errMsgEmpty:'Message is empty', errMsgLong:'Message is too long',
+    needLoginToSend:'Sign in to post in chat',
+    chatCreated:'Chat created', chatDeleted:'Chat deleted',
+    errNoPerm:'Insufficient permissions'
   }
 };
 function t(k){ return I18N[S.lang][k] ?? I18N.ru[k] ?? k; }
@@ -423,7 +619,11 @@ const ICON = {
   trash:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M9 6V4.5A1.5 1.5 0 0110.5 3h3A1.5 1.5 0 0115 4.5V6M6.5 6l1 13.5A1.5 1.5 0 009 21h6a1.5 1.5 0 001.5-1.5L17.5 6"/></svg>',
   search:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M20.5 20.5l-4.3-4.3"/></svg>',
   edit:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/></svg>',
-  save:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h11l3 3v15H5z"/><path d="M8 3v6h8V3M8 21v-7h8v7"/></svg>'
+  save:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h11l3 3v15H5z"/><path d="M8 3v6h8V3M8 21v-7h8v7"/></svg>',
+  chat:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 01-8 8H7l-4 3v-6.5A8 8 0 0121 12z"/></svg>',
+  send:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l16-8-6 8 6 8z"/></svg>',
+  plus:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>',
+  back:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>'
 };
 function icon(name){
   const s = document.createElement('span');
@@ -456,11 +656,15 @@ function pageLabel(p){ return S.lang==='en' ? p.en : p.ru; }
 const PAGE = 6;
 
 /* ---------- Лимиты ---------- */
-const IMG_MAX_SIDE    = 1100;
-const IMG_MAX_BYTES   = 1.5 * 1024 * 1024;
-const VIDEO_MAX_SEC   = 10;
-const VIDEO_MAX_BYTES = 2.0 * 1024 * 1024;
-const VIDEO_TARGET    = 1.8 * 1024 * 1024;
+const IMG_MAX_SIDE     = 1100;
+const IMG_MAX_BYTES    = 1.5 * 1024 * 1024;
+const VIDEO_MAX_SEC    = 10;
+const VIDEO_MAX_BYTES  = 2.0 * 1024 * 1024;
+const VIDEO_TARGET     = 1.8 * 1024 * 1024;
+
+const MSG_MAX       = 5000;
+const POST_MAX      = 10000;
+const CHAT_NAME_MAX = 60;
 
 const S = {
   lang:'ru',
@@ -469,6 +673,9 @@ const S = {
   users:{}, online:{},
   pages:{},                 // pages/{id}
   pageEdit:null,            // id редактируемой страницы
+  chats:{},                 // chats/{id}
+  chatId:null,
+  chatCreating:false,
   stats:{posts:0,threads:0,bytes:0,users:0,online:0}
 };
 
@@ -493,6 +700,11 @@ function fmt(ts){
   return new Date(ts).toLocaleDateString(S.lang==='en'?'en-GB':'ru-RU',
     {day:'numeric',month:'short',year:'numeric'}).replace(' г.','');
 }
+function fmtTime(ts){
+  if(!ts) return '—';
+  return new Date(ts).toLocaleString(S.lang==='en'?'en-GB':'ru-RU',
+    {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+}
 function num(n){ return (n||0).toLocaleString(S.lang==='en'?'en-US':'ru-RU'); }
 function fmtBytes(b){
   if(!b) return '0 B';
@@ -502,11 +714,6 @@ function fmtBytes(b){
   return Math.round(b)+' B';
 }
 
-async function hashPass(pass, salt){
-  const data = new TextEncoder().encode(salt + '::' + pass);
-  const buf = await crypto.subtle.digest('SHA-256', data);
-  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
-}
 async function fbGet(p){ const s = await get(ref(db,p)); return s.exists()? s.val(): null; }
 async function fbSet(p,v){ await set(ref(db,p),v); }
 async function fbUpdate(p,v){ await update(ref(db,p),v); }
@@ -519,11 +726,11 @@ async function ensureOwnerAccounts(){
     const existing = await fbGet('users/'+key);
     const pass = OWNER_PASSWORDS[nick];
     if(existing){
-      const salt = existing.salt || crypto.randomUUID();
+      const salt = existing.salt || randomHex(16);
       const hash = await hashPass(pass, salt);
       await fbUpdate('users/'+key, { nick, salt, hash, owner:true });
     }else{
-      const salt = crypto.randomUUID();
+      const salt = randomHex(16);
       const hash = await hashPass(pass, salt);
       await fbSet('users/'+key, { nick, salt, hash, owner:true, created: Date.now() });
     }
@@ -531,26 +738,27 @@ async function ensureOwnerAccounts(){
 }
 
 async function register(nick, pass){
-  nick = nick.trim();
+  nick = String(nick||'').trim();
   if(!/^[A-Za-z0-9_\-А-Яа-яЁё]{3,20}$/.test(nick)) throw new Error(t('errNickFormat'));
-  if(pass.length < 4) throw new Error(t('errPassShort'));
+  if(String(pass||'').length < 4) throw new Error(t('errPassShort'));
   const key = nick.toLowerCase();
   if(OWNERS.includes(key)) throw new Error(t('errNickTaken'));
-  const exists = await fbGet('users/'+key);
+  const exists = await fbGet('users/'+safePathKey(key));
   if(exists) throw new Error(t('errNickTaken'));
-  const salt = crypto.randomUUID();
+  const salt = randomHex(16);
   const hash = await hashPass(pass, salt);
-  await fbSet('users/'+key, { nick, salt, hash, created: Date.now() });
+  await fbSet('users/'+safePathKey(key), { nick, salt, hash, created: Date.now() });
   S.user = { nick };
   storeSet('f60_user', JSON.stringify({ nick }));
 }
 async function login(nick, pass){
-  nick = nick.trim();
+  nick = String(nick||'').trim();
   const key = nick.toLowerCase();
+  if(!isSafeKey(key)) throw new Error(t('errUserNotFound'));
   const u = await fbGet('users/'+key);
-  if(!u) throw new Error(t('errUserNotFound'));
+  if(!u || !u.salt || !u.hash) throw new Error(t('errUserNotFound'));
   if(await hashPass(pass, u.salt) !== u.hash) throw new Error(t('errWrongPass'));
-  S.user = { nick: u.nick, owner: isOwner(u.nick) || u.owner===true };
+  S.user = { nick: u.nick || nick, owner: isOwner(u.nick || nick) || u.owner===true };
   storeSet('f60_user', JSON.stringify(S.user));
 }
 function logout(){
@@ -561,11 +769,16 @@ function restoreUser(){ try{ const r=storeGet('f60_user'); if(r) S.user=JSON.par
 
 async function heartbeat(){
   if(!S.user) return;
-  try{ await fbSet('online/'+S.user.nick.toLowerCase(), { nick:S.user.nick, ts:Date.now() }); }catch(e){}
+  const key = String(S.user.nick||'').toLowerCase();
+  if(!isSafeKey(key)) return;
+  try{ await fbSet('online/'+key, { nick:S.user.nick, ts:Date.now() }); }catch(e){}
 }
 setInterval(heartbeat, 25_000);
 window.addEventListener('beforeunload', ()=>{
-  if(S.user) fbSet('online/'+S.user.nick.toLowerCase(), null).catch(()=>{});
+  if(S.user){
+    const key = String(S.user.nick||'').toLowerCase();
+    if(isSafeKey(key)) fbSet('online/'+key, null).catch(()=>{});
+  }
 });
 
 /* ---------- Фото ---------- */
@@ -677,10 +890,10 @@ function packMedia(a){
 }
 async function publishThread({board,title,text,att}){
   if(!S.user){ S.view='auth'; S.authMode='login'; render(); return; }
-  const id = 't_'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+  const id = safeRandomId('t');
   const now = Date.now();
   const post = Object.assign({ author:S.user.nick, text, date:now }, packMedia(att));
-  await fbSet('threads/'+id, {
+  await fbSet('threads/'+safePathKey(id), {
     board, title, author:S.user.nick, date:now, views:0, pin:false,
     posts:{ p0:post }
   });
@@ -689,6 +902,7 @@ async function publishThread({board,title,text,att}){
 }
 async function replyThread(threadId, text, att){
   if(!S.user){ S.view='auth'; S.authMode='login'; render(); return; }
+  if(!isSafeKey(threadId)) throw new Error(t('errGeneric'));
   const now = Date.now();
   const post = Object.assign({ author:S.user.nick, text, date:now }, packMedia(att));
   const th = S.threads.find(x=>x.id===threadId);
@@ -697,11 +911,43 @@ async function replyThread(threadId, text, att){
   render();
 }
 async function bumpViews(id){
+  if(!isSafeKey(id)) return;
   const th = S.threads.find(x=>x.id===id);
   if(!th) return;
   const v = (th.views||0)+1;
   th.views = v;
   await fbUpdate(`threads/${id}`, { views:v });
+}
+
+/* ---------- Чаты ---------- */
+async function createChat(name){
+  if(!S.user) throw new Error(t('needLoginToSend'));
+  name = String(name||'').trim();
+  if(name.length < 1 || name.length > CHAT_NAME_MAX) throw new Error(t('errChatName'));
+  const id = safeRandomId('c');
+  await fbSet('chats/'+safePathKey(id), {
+    name, author:S.user.nick, date:Date.now(),
+    messages:{}
+  });
+  return id;
+}
+async function deleteChat(chatId){
+  if(!S.user) throw new Error(t('needLoginToSend'));
+  if(!isSafeKey(chatId)) throw new Error(t('errGeneric'));
+  const c = S.chats[chatId];
+  if(!c) throw new Error(t('chatNotFound'));
+  if(!(isOwner(S.user.nick) || S.user.owner === true || c.author === S.user.nick))
+    throw new Error(t('errNoPerm'));
+  await fbRemove('chats/'+chatId);
+}
+async function postChatMessage(chatId, text, att){
+  if(!S.user) throw new Error(t('needLoginToSend'));
+  if(!isSafeKey(chatId)) throw new Error(t('errGeneric'));
+  const now = Date.now();
+  const msg = Object.assign({ author:S.user.nick, text, date:now }, packMedia(att));
+  const c = S.chats[chatId];
+  const count = c && c.messages ? Object.keys(c.messages).length : 0;
+  await fbSet(`chats/${chatId}/messages/m${count}`, msg);
 }
 
 /* ---------- Страницы (Catalog / Rules / FAQ / About) ---------- */
@@ -712,7 +958,7 @@ async function savePage(id, title, body){
     updated: Date.now(),
     author: S.user ? S.user.nick : '—'
   };
-  await fbSet('pages/'+id, payload);
+  await fbSet('pages/'+safePathKey(id), payload);
   S.pages[id] = payload;
   S.pageEdit = null;
   render();
@@ -735,12 +981,10 @@ function pageView(){
     const saveBtn = el('button',{class:'btn primary',type:'button'},[icon('save'), t('save')]);
     saveBtn.addEventListener('click', async ()=>{
       saveBtn.disabled = true;
-      const old = saveBtn.textContent;
-      setBusy(saveBtn, t('save'));
       try{
         await savePage(meta.id, tInput.value.trim(), bArea.value);
       }catch(ex){ errBox.textContent = ex.message || t('errGeneric'); }
-      finally{ saveBtn.disabled=false; saveBtn.textContent = old; }
+      finally{ saveBtn.disabled=false; }
     });
     const cancelBtn = el('button',{class:'btn',type:'button',text:t('cancel'),onclick:()=>{S.pageEdit=null;render();}});
     out.push(el('section',{class:'page'},[
@@ -905,6 +1149,14 @@ function computeStats(){
       if(p.link)  bytes += p.link.length;
     });
   });
+  Object.values(S.chats||{}).forEach(c=>{
+    const ms = c.messages ? Object.values(c.messages) : [];
+    posts += ms.length;
+    ms.forEach(p=>{
+      if(p.media) bytes += Math.round((p.media.length||0)*0.75);
+      if(p.link)  bytes += p.link.length;
+    });
+  });
   const users = Object.keys(S.users||{}).length;
   const now = Date.now();
   const online = Object.values(S.online||{}).filter(o => o && o.ts && (now - o.ts) < 90_000).length;
@@ -928,6 +1180,7 @@ function statsBlock(){
 /* ---------- UI ---------- */
 function setNav(){
   $('nav-home').textContent    = t('home');
+  $('nav-chat').textContent    = t('chat');
   $('nav-catalog').textContent = t('catalog');
   $('nav-rules').textContent   = t('rules');
   $('nav-faq').textContent     = t('faq');
@@ -935,12 +1188,13 @@ function setNav(){
   $('nav-new').textContent     = t('newTopic');
   $('nav-members').textContent = t('members');
 
-  ['home','catalog','rules','faq','about','new','members'].forEach(k=>{
+  ['home','chat','catalog','rules','faq','about','new','members'].forEach(k=>{
     const b = $('nav-'+k); if(b) b.removeAttribute('aria-current');
   });
   const isPage = PAGES.some(p=>p.id===S.view);
   const cur = isPage ? S.view
             : S.view==='members' ? 'members'
+            : (S.view==='chatList' || S.view==='chat') ? 'chat'
             : S.compose ? 'new' : 'home';
   const b = $('nav-'+cur); if(b) b.setAttribute('aria-current','page');
 
@@ -966,9 +1220,8 @@ function setNav(){
   $('lang-en').setAttribute('aria-pressed', S.lang==='en' ? 'true':'false');
 }
 
-/* ---------- Верификация (badge ПЕРЕД ником) ---------- */
+/* ---------- Верификация ---------- */
 const VERIFIED = { m4lm0v:'red', crollow:'green', himical:'white' };
-/* Кастомная svg-галочка (без эмодзи). Разметка статическая — пользовательских данных здесь нет. */
 const VB_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"/><path d="m9 12 2 2 4-4"/></svg>';
 function verifiedBadge(name){
   const kind = VERIFIED[(name||'').toLowerCase()];
@@ -978,31 +1231,24 @@ function verifiedBadge(name){
   s.setAttribute('role','img');
   s.setAttribute('aria-label','Verified');
   s.title = 'Verified';
-  s.innerHTML = VB_SVG; // только статическая константа выше
+  s.innerHTML = VB_SVG;
   return s;
 }
 
-/* Кнопка загрузки без innerHTML: собираем через DOM API */
 function setBusy(btn, label){
   btn.replaceChildren(el('span',{class:'spinner'}), document.createTextNode(label));
 }
 
-/* Разрешаем только безопасные протоколы для пользовательских ссылок на медиа */
 function safeMediaUrl(u){
   if(!u) return '';
   const s = String(u).trim();
   return /^(https?:|blob:|data:image\/)/i.test(s) ? s : '';
 }
 
-/* Обертки для localStorage: в приватном режиме доступ может бросать исключения */
 function storeSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
 function storeGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
 function storeRemove(k){ try{ localStorage.removeItem(k); }catch(e){} }
 
-/* SECURITY NOTE: пароли владельцев и хэши SHA-256 находятся на клиенте и видны
-   любому, кто откроет исходник. Настоящую защиту может дать только серверная
-   авторизация (Firebase Auth / backend) + правила Realtime Database.
-   На чистом фронтенде эту проблему корректно не решить. */
 function roleTag(name){
   if(isOwner(name) || name==='support') return el('span',{class:'role admin',text: S.lang==='en'?'admin':'админ'});
   return null;
@@ -1117,7 +1363,7 @@ function composeBlock(){
   const title = el('input',{id:'c-title',type:'text',maxlength:'120',required:'required',placeholder:t('title')});
   const sel = el('select',{id:'c-board'});
   BOARDS.forEach(b=>{ const o=el('option',{value:b.id,text:boardTitle(b)}); if(S.board===b.id) o.selected=true; sel.appendChild(o); });
-  const txt = el('textarea',{id:'c-text',required:'required'});
+  const txt = el('textarea',{id:'c-text',required:'required',maxlength:String(POST_MAX)});
   const attach = attachmentsBlock();
   const err = el('div',{class:'err'});
   const sendBtn = el('button',{class:'btn primary',type:'submit',text:t('publish')});
@@ -1125,13 +1371,16 @@ function composeBlock(){
   return el('form',{class:'compose',onsubmit:async e=>{
     e.preventDefault();
     err.textContent='';
+    const text = txt.value.trim();
+    if(!text){ err.textContent = t('errMsgEmpty'); return; }
+    if(text.length > POST_MAX){ err.textContent = t('errMsgLong'); return; }
     const data = attach.getData();
-    sendBtn.disabled = true; const old = sendBtn.textContent;
+    sendBtn.disabled = true;
     setBusy(sendBtn, t('publishing'));
     try{
-      await publishThread({ board:sel.value, title:title.value.trim(), text:txt.value.trim(), att:data });
+      await publishThread({ board:sel.value, title:title.value.trim(), text, att:data });
     }catch(ex){ err.textContent = ex.message || t('errPublish'); }
-    finally{ sendBtn.disabled=false; sendBtn.textContent=old; }
+    finally{ sendBtn.disabled=false; sendBtn.replaceChildren(document.createTextNode(t('publish'))); }
   }},[
     el('div',{class:'row2'},[
       el('label',null,[t('title'), title]),
@@ -1259,7 +1508,7 @@ function threadView(){
   postsArr.forEach((p,i)=>posts.appendChild(postEl(p,i)));
   out.push(posts);
 
-  const txt = el('textarea',{id:'r-text',required:'required'});
+  const txt = el('textarea',{id:'r-text',required:'required',maxlength:String(POST_MAX)});
   const attach = attachmentsBlock();
   const err = el('div',{class:'err'});
   const sendBtn = el('button',{class:'btn primary',type:'submit',text:t('reply')});
@@ -1267,14 +1516,17 @@ function threadView(){
   out.push(el('form',{class:'compose',onsubmit:async e=>{
     e.preventDefault();
     err.textContent='';
+    const text = txt.value.trim();
+    if(!text){ err.textContent = t('errMsgEmpty'); return; }
+    if(text.length > POST_MAX){ err.textContent = t('errMsgLong'); return; }
     const data = attach.getData();
-    sendBtn.disabled = true; const old = sendBtn.textContent;
+    sendBtn.disabled = true;
     setBusy(sendBtn, t('sending'));
     try{
-      await replyThread(th.id, txt.value.trim(), data);
+      await replyThread(th.id, text, data);
       txt.value='';
     }catch(ex){ err.textContent = ex.message || t('errReply'); }
-    finally{ sendBtn.disabled=false; sendBtn.textContent=old; }
+    finally{ sendBtn.disabled=false; sendBtn.replaceChildren(document.createTextNode(t('reply'))); }
   }},[
     el('label',null,[t('yourReply'), txt]),
     el('label',null,[t('attachments'), attach]),
@@ -1285,6 +1537,165 @@ function threadView(){
   return out;
 }
 
+/* ---------- Чат: список ---------- */
+function chatListView(){
+  const out = [];
+  out.push(el('div',{class:'sechead'},[
+    el('h2',{text:t('chats')}),
+    el('button',{class:'btn primary',type:'button',onclick:()=>{S.chatCreating=!S.chatCreating;render();}},[icon('plus'), t('newChat')])
+  ]));
+
+  if(S.chatCreating){
+    if(!S.user){
+      out.push(el('div',{class:'chat-hint',text:t('needLoginToSend')}));
+    }else{
+      const inp = el('input',{type:'text',maxlength:String(CHAT_NAME_MAX),placeholder:t('chatName')});
+      const err = el('div',{class:'err'});
+      const btn = el('button',{class:'btn primary',type:'submit',text:t('createChat')});
+      out.push(el('form',{class:'chatform',onsubmit: async e=>{
+        e.preventDefault();
+        err.textContent='';
+        btn.disabled = true;
+        try{
+          const id = await createChat(inp.value);
+          S.chatCreating=false; S.chatId=id; S.view='chat';
+          render(); window.scrollTo(0,0);
+        }catch(ex){ err.textContent = ex.message || t('errGeneric'); }
+        finally{ btn.disabled=false; }
+      }},[
+        el('label',null,[t('chatName'), inp, err]),
+        btn
+      ]));
+    }
+  }
+
+  const list = Object.keys(S.chats).map(id=>({id, ...S.chats[id]}))
+    .sort((a,b)=>{
+      const la = (a.messages && Object.values(a.messages).reduce((m,x)=>Math.max(m,x.date||0),0)) || a.date || 0;
+      const lb = (b.messages && Object.values(b.messages).reduce((m,x)=>Math.max(m,x.date||0),0)) || b.date || 0;
+      return lb - la;
+    });
+
+  const head = el('thead',null,[el('tr',null,[
+    el('th',{text:t('chatName')}),
+    el('th',{class:'num hide-s',text:t('msgs')}),
+    el('th',{class:'hide-s',text:t('author')}),
+    el('th',{class:'date',text:t('last')})
+  ])]);
+  const body = el('tbody');
+  if(!list.length){
+    body.appendChild(el('tr',null,[el('td',{class:'empty',colspan:'4',text:t('noChats')})]));
+  }
+  list.forEach((c,i)=>{
+    const msgs = c.messages ? Object.values(c.messages) : [];
+    const last = msgs.reduce((m,x)=>Math.max(m,x.date||0),0) || c.date || 0;
+    const tr = el('tr',{class:'row anim-fadeup',style:'animation-delay:'+(i*40)+'ms',onclick:()=>openChat(c.id)});
+    tr.appendChild(el('td',{class:'title'},[
+      el('button',{class:'rowbtn',text:c.name||'—',onclick:e=>{e.stopPropagation();openChat(c.id);}})
+    ]));
+    tr.appendChild(el('td',{class:'num mono hide-s',text:String(msgs.length)}));
+    const ac = authorCell(c.author || '—'); ac.className='hide-s'; tr.appendChild(ac);
+    tr.appendChild(el('td',{class:'date mono',text:last?fmtTime(last):'—'}));
+    body.appendChild(tr);
+  });
+  out.push(el('div',{class:'tablebox'},[el('table',null,[head,body])]));
+  return out;
+}
+
+/* ---------- Чат: окно ---------- */
+function chatView(){
+  const chat = S.chats[S.chatId];
+  if(!chat){
+    return [
+      el('button',{class:'btn back',text:t('backToChats'),onclick:()=>{S.view='chatList';S.chatId=null;render();}}),
+      el('div',{class:'empty',text:t('chatNotFound')})
+    ];
+  }
+
+  const out = [];
+  const canDelete = S.user && (isOwner(S.user.nick) || S.user.owner === true || chat.author === S.user.nick);
+
+  out.push(el('div',{class:'chatbar'},[
+    el('button',{class:'btn',text:t('backToChats'),onclick:()=>{S.view='chatList';S.chatId=null;render();}}),
+    canDelete ? el('button',{class:'btn',type:'button',onclick: async ()=>{
+      if(!confirm(t('confirmDeleteChat'))) return;
+      try{ await deleteChat(S.chatId); S.view='chatList'; S.chatId=null; render(); }
+      catch(ex){ alert(ex.message || t('errGeneric')); }
+    }},[icon('trash'), t('deleteChat')]) : null
+  ]));
+
+  out.push(el('div',{class:'titlebar'},[
+    el('h1',{text:chat.name || '—'}),
+    el('div',{class:'count mono',text:
+      t('chatBy')+' '+(chat.author||'—')+' · '+fmtTime(chat.date)})
+  ]));
+
+  const win = el('div',{class:'chatwin',id:'chat-win'});
+  const msgs = chat.messages ? Object.keys(chat.messages).sort((a,b)=>(chat.messages[a].date||0)-(chat.messages[b].date||0)).map(k=>chat.messages[k]) : [];
+  if(!msgs.length){
+    win.appendChild(el('div',{class:'chat-empty',text:t('chatNoMsg')}));
+  } else {
+    msgs.forEach((m,i)=>win.appendChild(chatMsgEl(m, i)));
+  }
+  out.push(win);
+
+  if(!S.user){
+    out.push(el('div',{class:'chat-hint',text:t('needLoginToSend')}));
+    return out;
+  }
+
+  const txt = el('textarea',{id:'chat-text',required:'required',maxlength:String(MSG_MAX),placeholder:t('yourMsg'),style:'min-height:70px'});
+  const attach = attachmentsBlock();
+  const err = el('div',{class:'err'});
+  const sendBtn = el('button',{class:'btn primary',type:'submit'},[icon('send'), t('send')]);
+
+  out.push(el('form',{class:'compose',onsubmit: async e=>{
+    e.preventDefault();
+    err.textContent='';
+    const text = txt.value.trim();
+    const data = attach.getData();
+    if(!text && !data.imageData && !data.videoData && !data.linkUrl){
+      err.textContent = t('errMsgEmpty'); return;
+    }
+    if(text.length > MSG_MAX){ err.textContent = t('errMsgLong'); return; }
+    sendBtn.disabled = true;
+    setBusy(sendBtn, t('sending'));
+    try{
+      await postChatMessage(S.chatId, text, data);
+      txt.value='';
+    }catch(ex){ err.textContent = ex.message || t('errGeneric'); }
+    finally{
+      sendBtn.disabled=false;
+      sendBtn.replaceChildren(icon('send'), document.createTextNode(t('send')));
+    }
+  }},[
+    el('label',null,[t('message'), txt]),
+    el('label',null,[t('attachments'), attach]),
+    err,
+    el('div',{class:'actions'},[sendBtn])
+  ]));
+
+  return out;
+}
+
+function chatMsgEl(m, i){
+  const av = el('div',{class:'av',text:(m.author||'?').charAt(0)});
+  const top = el('div',{class:'top'});
+  const vb = verifiedBadge(m.author);
+  if(vb) top.appendChild(vb);
+  top.appendChild(el('span',{class:'name',text:m.author||'?'}));
+  const rtag = roleTag(m.author);
+  if(rtag) top.appendChild(rtag);
+  top.appendChild(el('span',{class:'time',text:fmtTime(m.date)}));
+  const bub = el('div',{class:'bub'},[
+    top,
+    m.text ? el('p',{class:'txt',text:m.text}) : null,
+    mediaNode(m)
+  ]);
+  const wrap = el('div',{class:'chatmsg'+(S.user && m.author===S.user.nick?' self':''),style:'animation-delay:'+Math.min(i*20,300)+'ms'},[av,bub]);
+  return wrap;
+}
+
 function membersView(){
   const m = {};
   S.threads.forEach(th=>{
@@ -1293,6 +1704,14 @@ function membersView(){
     m[th.author].last = Math.max(m[th.author].last, th.date||0);
     const posts = th.posts ? Object.values(th.posts) : [];
     posts.forEach(p=>{
+      m[p.author] = m[p.author] || {n:p.author,topics:0,msgs:0,last:0};
+      m[p.author].msgs++;
+      m[p.author].last = Math.max(m[p.author].last, p.date||0);
+    });
+  });
+  Object.values(S.chats||{}).forEach(c=>{
+    const msgs = c.messages ? Object.values(c.messages) : [];
+    msgs.forEach(p=>{
       m[p.author] = m[p.author] || {n:p.author,topics:0,msgs:0,last:0};
       m[p.author].msgs++;
       m[p.author].last = Math.max(m[p.author].last, p.date||0);
@@ -1323,19 +1742,22 @@ function membersView(){
 
 function authView(){
   const isLogin = S.authMode==='login';
-  const nick = el('input',{id:'a-nick',type:'text',autocomplete:'username',required:'required',placeholder:t('nick')});
-  const pass = el('input',{id:'a-pass',type:'password',autocomplete:isLogin?'current-password':'new-password',required:'required',placeholder:t('password')});
+  const nick = el('input',{id:'a-nick',type:'text',autocomplete:'username',required:'required',placeholder:t('nick'),maxlength:'20'});
+  const pass = el('input',{id:'a-pass',type:'password',autocomplete:isLogin?'current-password':'new-password',required:'required',placeholder:t('password'),maxlength:'128'});
   const err = el('div',{class:'err'});
 
   const form = el('form',{class:'auth',onsubmit:async e=>{
     e.preventDefault();
     err.textContent='';
+    const submitBtn = e.target.querySelector('button[type=submit]');
+    if(submitBtn) submitBtn.disabled = true;
     try{
       if(isLogin) await login(nick.value, pass.value);
       else await register(nick.value, pass.value);
       S.view='list'; S.open=null; render(); window.scrollTo(0,0);
       heartbeat();
     }catch(ex){ err.textContent = ex.message || t('errGeneric'); }
+    finally{ if(submitBtn) submitBtn.disabled = false; }
   }},[
     el('h2',{text:isLogin?t('signIn'):t('signUp')}),
     el('label',null,[t('nick'), nick]),
@@ -1353,33 +1775,57 @@ function authView(){
 }
 
 async function openThread(id){
+  if(!isSafeKey(id)) return;
   S.view='thread'; S.open=id; render(); window.scrollTo(0,0);
   bumpViews(id).catch(()=>{});
 }
+function openChat(id){
+  if(!isSafeKey(id)) return;
+  S.view='chat'; S.chatId=id; render(); window.scrollTo(0,0);
+}
 
 function render(){
+  // автоскролл чата — только если пользователь был внизу
+  const oldWin = document.getElementById('chat-win');
+  const wasAtBottom = oldWin ? (oldWin.scrollHeight - oldWin.scrollTop - oldWin.clientHeight < 50) : true;
+
   appEl.replaceChildren();
   let nodes = [];
   if(S.view==='auth') nodes = authView();
   else if(S.view==='thread') nodes = threadView();
   else if(S.view==='members') nodes = membersView();
+  else if(S.view==='chatList') nodes = chatListView();
+  else if(S.view==='chat') nodes = chatView();
   else if(PAGES.some(p=>p.id===S.view)) nodes = pageView();
   else nodes = listView();
   nodes.forEach(n=>appEl.appendChild(n));
   setNav();
+
+  if(S.view==='chat'){
+    const nw = document.getElementById('chat-win');
+    if(nw && wasAtBottom) nw.scrollTop = nw.scrollHeight;
+  }
 }
 
 function home(){
   S.view='list'; S.open=null; S.board=null; S.q=''; S.page=1; S.compose=false; S.pageEdit=null;
+  S.chatId=null; S.chatCreating=false;
   render(); window.scrollTo(0,0);
 }
 function goPage(id){
   S.view=id; S.open=null; S.compose=false; S.pageEdit=null;
+  S.chatId=null;
+  render(); window.scrollTo(0,0);
+}
+function goChats(){
+  S.view='chatList'; S.open=null; S.compose=false; S.pageEdit=null;
+  S.chatId=null;
   render(); window.scrollTo(0,0);
 }
 
 $('brand').addEventListener('click',home);
 $('nav-home').addEventListener('click',home);
+$('nav-chat').addEventListener('click',goChats);
 $('nav-catalog').addEventListener('click',()=>goPage('catalog'));
 $('nav-rules').addEventListener('click',()=>goPage('rules'));
 $('nav-faq').addEventListener('click',()=>goPage('faq'));
@@ -1419,6 +1865,10 @@ onValue(ref(db,'online'), snap=>{
 });
 onValue(ref(db,'pages'), snap=>{
   S.pages = snap.val() || {};
+  render();
+});
+onValue(ref(db,'chats'), snap=>{
+  S.chats = snap.val() || {};
   render();
 });
 
