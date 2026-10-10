@@ -337,18 +337,14 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
 /* ============================================================
-   БЕЗОПАСНОСТЬ / КРИПТО
+   КРИПТО (SHA-256)
    ------------------------------------------------------------
-   crypto.subtle доступен ТОЛЬКО в защищённом контексте
-   (https / localhost). При открытии файла как file:// или
-   по IP он undefined — отсюда была ошибка
-   "undefined is not an object (evaluating 'crypto.subtle.digest')".
-   Ниже — чистый JS SHA-256, работает везде и всегда даёт
-   одинаковый результат независимо от контекста.
+   crypto.subtle доступен только в secure context (https/localhost).
+   По http:// или file:// он undefined. Ниже — своя реализация
+   SHA-256 на чистом JS, работает везде и даёт тот же результат.
    ============================================================ */
 
 function jsSha256(msg){
-  // msg: обычная JS-строка, кодируется в UTF-8 внутри
   const K = [
     0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,
     0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,
@@ -361,7 +357,6 @@ function jsSha256(msg){
   ];
   const H0 = [0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19];
 
-  // UTF-8 encoding
   let bytes;
   if (typeof TextEncoder !== 'undefined'){
     bytes = new TextEncoder().encode(msg);
@@ -432,11 +427,20 @@ function jsSha256(msg){
   return hex;
 }
 
+async function sha256Hex(str){
+  try{
+    if (typeof crypto !== 'undefined' && crypto.subtle && crypto.subtle.digest){
+      const buf = new TextEncoder().encode(str);
+      const dig = await crypto.subtle.digest('SHA-256', buf);
+      return Array.from(new Uint8Array(dig)).map(b=>b.toString(16).padStart(2,'0')).join('');
+    }
+  }catch(e){ /* not secure context */ }
+  return jsSha256(str);
+}
 async function hashPass(pass, salt){
-  return jsSha256(String(salt) + '::' + String(pass));
+  return sha256Hex(String(salt) + '::' + String(pass));
 }
 
-/* ---------- Крипто-безопасный рандом без secure-context ---------- */
 function randomHex(nBytes){
   try{
     if (typeof crypto !== 'undefined' && crypto.getRandomValues){
@@ -464,7 +468,6 @@ function safeRandomId(prefix){
   return out;
 }
 
-/* ---------- Валидация ключей Firebase (защита от path injection) ---------- */
 function isSafeKey(k){
   return typeof k === 'string' && k.length > 0 && k.length < 80 && /^[A-Za-z0-9_\-]+$/.test(k);
 }
@@ -473,10 +476,7 @@ function safePathKey(k){
   return k;
 }
 
-/* ---------- Владельцы ----------
-   Внимание: на чистом клиенте невозможно надёжно спрятать пароли.
-   Мы храним только хэши паролей владельцев (SHA-256 от salt+pass);
-   сам соль генерируется автоматически при первом входе. */
+/* ---------- Владельцы ---------- */
 const OWNERS = ['m4lm0v','crollow','himical'];
 const OWNER_PASSWORDS = {
   m4lm0v:  '@m4lm0v!',
@@ -546,7 +546,9 @@ const I18N = {
     errMsgEmpty:'Сообщение пустое', errMsgLong:'Сообщение слишком длинное',
     needLoginToSend:'Войдите, чтобы писать в чат',
     chatCreated:'Чат создан', chatDeleted:'Чат удалён',
-    errNoPerm:'Недостаточно прав'
+    errNoPerm:'Недостаточно прав',
+    loginFailed:'Не удалось войти. Проверьте ник и пароль.',
+    dbDenied:'Нет доступа к базе данных. Проверьте правила Firebase.'
   },
   en: {
     home:'Home', chat:'Chat', newTopic:'New topic', members:'Members',
@@ -606,7 +608,9 @@ const I18N = {
     errMsgEmpty:'Message is empty', errMsgLong:'Message is too long',
     needLoginToSend:'Sign in to post in chat',
     chatCreated:'Chat created', chatDeleted:'Chat deleted',
-    errNoPerm:'Insufficient permissions'
+    errNoPerm:'Insufficient permissions',
+    loginFailed:'Could not sign in. Check nickname and password.',
+    dbDenied:'No access to database. Check Firebase rules.'
   }
 };
 function t(k){ return I18N[S.lang][k] ?? I18N.ru[k] ?? k; }
@@ -671,12 +675,13 @@ const S = {
   view:'list', authMode:'login', board:null, q:'', mode:'title',
   page:1, open:null, compose:false, threads:[], user:null,
   users:{}, online:{},
-  pages:{},                 // pages/{id}
-  pageEdit:null,            // id редактируемой страницы
-  chats:{},                 // chats/{id}
+  pages:{},
+  pageEdit:null,
+  chats:{},
   chatId:null,
   chatCreating:false,
-  stats:{posts:0,threads:0,bytes:0,users:0,online:0}
+  stats:{posts:0,threads:0,bytes:0,users:0,online:0},
+  _busy:false
 };
 
 const appEl = document.getElementById('app');
@@ -719,22 +724,31 @@ async function fbSet(p,v){ await set(ref(db,p),v); }
 async function fbUpdate(p,v){ await update(ref(db,p),v); }
 async function fbRemove(p){ await remove(ref(db,p)); }
 
-/* ---------- Аккаунты ---------- */
-async function ensureOwnerAccounts(){
-  for(const nick of OWNERS){
-    const key = nick.toLowerCase();
-    const existing = await fbGet('users/'+key);
-    const pass = OWNER_PASSWORDS[nick];
-    if(existing){
-      const salt = existing.salt || randomHex(16);
-      const hash = await hashPass(pass, salt);
-      await fbUpdate('users/'+key, { nick, salt, hash, owner:true });
-    }else{
+/* ============================================================
+   ВЛАДЕЛЬЦЫ: создаём/восстанавливаем, НЕ перезаписывая пароль.
+   ============================================================ */
+let _ownersReady = null;
+function ensureOwnerAccounts(){
+  if(_ownersReady) return _ownersReady;
+  _ownersReady = (async ()=>{
+    for(const nick of OWNERS){
+      const key = nick.toLowerCase();
+      let existing = null;
+      try{ existing = await fbGet('users/'+key); }catch(e){ existing = null; }
+      if(existing && existing.salt && existing.hash){
+        if(existing.owner !== true || existing.nick !== nick){
+          try{ await fbUpdate('users/'+key, { nick, owner:true }); }catch(e){}
+        }
+        continue;
+      }
       const salt = randomHex(16);
-      const hash = await hashPass(pass, salt);
-      await fbSet('users/'+key, { nick, salt, hash, owner:true, created: Date.now() });
+      const hash = await hashPass(OWNER_PASSWORDS[nick], salt);
+      try{
+        await fbSet('users/'+key, { nick, salt, hash, owner:true, created: Date.now() });
+      }catch(e){}
     }
-  }
+  })();
+  return _ownersReady;
 }
 
 async function register(nick, pass){
@@ -748,17 +762,47 @@ async function register(nick, pass){
   const salt = randomHex(16);
   const hash = await hashPass(pass, salt);
   await fbSet('users/'+safePathKey(key), { nick, salt, hash, created: Date.now() });
-  S.user = { nick };
-  storeSet('f60_user', JSON.stringify({ nick }));
+  S.user = { nick, owner:false };
+  storeSet('f60_user', JSON.stringify(S.user));
 }
+
 async function login(nick, pass){
   nick = String(nick||'').trim();
   const key = nick.toLowerCase();
   if(!isSafeKey(key)) throw new Error(t('errUserNotFound'));
-  const u = await fbGet('users/'+key);
+
+  // Гарантируем, что владельцы есть в базе.
+  await ensureOwnerAccounts();
+
+  let u = null;
+  try{ u = await fbGet('users/'+key); }catch(e){ /* ignore */ }
+
+  if(isOwner(nick)){
+    // Пароль владельца сверяем с константой.
+    if(pass !== OWNER_PASSWORDS[key]){
+      throw new Error(t('errWrongPass'));
+    }
+    // Если записи нет или она битая — создаём/починим.
+    if(!u || !u.salt || !u.hash){
+      const salt = randomHex(16);
+      const hash = await hashPass(pass, salt);
+      try{ await fbSet('users/'+key, { nick, salt, hash, owner:true, created: Date.now() }); }catch(e){}
+    } else {
+      const check = await hashPass(pass, u.salt);
+      if(check !== u.hash || u.owner !== true || u.nick !== nick){
+        const salt = randomHex(16);
+        const hash = await hashPass(pass, salt);
+        try{ await fbUpdate('users/'+key, { nick, salt, hash, owner:true }); }catch(e){}
+      }
+    }
+    S.user = { nick, owner:true };
+    storeSet('f60_user', JSON.stringify(S.user));
+    return;
+  }
+
   if(!u || !u.salt || !u.hash) throw new Error(t('errUserNotFound'));
-  if(await hashPass(pass, u.salt) !== u.hash) throw new Error(t('errWrongPass'));
-  S.user = { nick: u.nick || nick, owner: isOwner(u.nick || nick) || u.owner===true };
+  if((await hashPass(pass, u.salt)) !== u.hash) throw new Error(t('errWrongPass'));
+  S.user = { nick: u.nick || nick, owner: u.owner === true };
   storeSet('f60_user', JSON.stringify(S.user));
 }
 function logout(){
@@ -950,7 +994,7 @@ async function postChatMessage(chatId, text, att){
   await fbSet(`chats/${chatId}/messages/m${count}`, msg);
 }
 
-/* ---------- Страницы (Catalog / Rules / FAQ / About) ---------- */
+/* ---------- Страницы ---------- */
 async function savePage(id, title, body){
   if(!canEdit()) throw new Error(t('onlyOwners'));
   const payload = {
@@ -1033,6 +1077,9 @@ function attachmentsBlock(){
 
   const pasteBtn = el('button',{type:'button',class:'btn'},[icon('clipboard'), t('fromClipboard')]);
   pasteBtn.addEventListener('click',async ()=>{
+    if(!(navigator.clipboard && navigator.clipboard.read)){
+      setInfo(t('clipboardDenied'),'warn'); return;
+    }
     try{
       const items = await navigator.clipboard.read();
       for(const it of items){
@@ -1745,27 +1792,32 @@ function authView(){
   const nick = el('input',{id:'a-nick',type:'text',autocomplete:'username',required:'required',placeholder:t('nick'),maxlength:'20'});
   const pass = el('input',{id:'a-pass',type:'password',autocomplete:isLogin?'current-password':'new-password',required:'required',placeholder:t('password'),maxlength:'128'});
   const err = el('div',{class:'err'});
+  const submitBtn = el('button',{class:'btn primary',type:'submit',text:isLogin?t('enter'):t('register')});
 
   const form = el('form',{class:'auth',onsubmit:async e=>{
     e.preventDefault();
+    if(S._busy) return;
     err.textContent='';
-    const submitBtn = e.target.querySelector('button[type=submit]');
-    if(submitBtn) submitBtn.disabled = true;
+    S._busy = true;
+    submitBtn.disabled = true;
     try{
       if(isLogin) await login(nick.value, pass.value);
       else await register(nick.value, pass.value);
-      S.view='list'; S.open=null; render(); window.scrollTo(0,0);
+      S.view='list'; S.open=null; S.authMode='login';
+      render(); window.scrollTo(0,0);
       heartbeat();
-    }catch(ex){ err.textContent = ex.message || t('errGeneric'); }
-    finally{ if(submitBtn) submitBtn.disabled = false; }
+    }catch(ex){
+      err.textContent = (ex && ex.message) ? ex.message : t('loginFailed');
+    }finally{
+      S._busy = false;
+      submitBtn.disabled = false;
+    }
   }},[
     el('h2',{text:isLogin?t('signIn'):t('signUp')}),
     el('label',null,[t('nick'), nick]),
     el('label',null,[t('password'), pass]),
     err,
-    el('div',{class:'actions'},[
-      el('button',{class:'btn primary',type:'submit',text:isLogin?t('enter'):t('register')})
-    ]),
+    el('div',{class:'actions'},[ submitBtn ]),
     el('div',{class:'switch'},[
       isLogin? t('noAccount')+' ' : t('hasAccount')+' ',
       el('button',{type:'button',text:isLogin?t('create'):t('enter'),onclick:()=>{S.authMode=isLogin?'register':'login';render();}})
@@ -1785,7 +1837,6 @@ function openChat(id){
 }
 
 function render(){
-  // автоскролл чата — только если пользователь был внизу
   const oldWin = document.getElementById('chat-win');
   const wasAtBottom = oldWin ? (oldWin.scrollHeight - oldWin.scrollTop - oldWin.clientHeight < 50) : true;
 
@@ -1847,32 +1898,40 @@ else S.lang = (navigator.language||'ru').toLowerCase().startsWith('en') ? 'en' :
 restoreUser();
 render();
 
-ensureOwnerAccounts().catch(()=>{});
+/* onValue-подписки: НЕ перерисовываем экран, пока открыта форма авторизации,
+   чтобы сабмит формы не терялся. */
+function safeRender(){
+  if(S.view==='auth'){ setNav(); return; }
+  render();
+}
 
 onValue(ref(db,'threads'), snap=>{
   const data = snap.val() || {};
   S.threads = Object.keys(data).map(k=>({id:k, ...data[k]}))
     .sort((a,b)=> (b.pin?1:0)-(a.pin?1:0) || (b.date||0)-(a.date||0));
-  render();
+  safeRender();
 });
 onValue(ref(db,'users'), snap=>{
   S.users = snap.val() || {};
-  render();
+  safeRender();
 });
 onValue(ref(db,'online'), snap=>{
   S.online = snap.val() || {};
-  render();
+  safeRender();
 });
 onValue(ref(db,'pages'), snap=>{
   S.pages = snap.val() || {};
-  render();
+  safeRender();
 });
 onValue(ref(db,'chats'), snap=>{
   S.chats = snap.val() || {};
-  render();
+  safeRender();
 });
 
 if(S.user) heartbeat();
+
+/* Создаём владельцев в фоне. login() сам дождётся этого промиса. */
+ensureOwnerAccounts().catch(()=>{});
 </script>
 
 </body>
