@@ -557,6 +557,7 @@ const I18N = {
     needLoginToSend:'Войдите, чтобы писать в чат',
     chatCreated:'Чат создан', chatDeleted:'Чат удалён',
     errNoPerm:'Недостаточно прав',
+    generalChat:'Общий чат', generalChatDesc:'Закреплён · для всех участников',
     loginFailed:'Не удалось войти. Проверьте ник и пароль.',
     dbDenied:'Нет доступа к базе. Проверьте правила Firebase.',
     hintLogin:'Введите ник и пароль, указанные при регистрации.',
@@ -621,6 +622,7 @@ const I18N = {
     needLoginToSend:'Sign in to post in chat',
     chatCreated:'Chat created', chatDeleted:'Chat deleted',
     errNoPerm:'Insufficient permissions',
+    generalChat:'General chat', generalChatDesc:'Pinned · for everyone',
     loginFailed:'Could not sign in. Check nickname and password.',
     dbDenied:'No access to database. Check Firebase rules.',
     hintLogin:'Enter the nickname and password you used to sign up.',
@@ -683,6 +685,14 @@ const VIDEO_TARGET     = 1.8 * 1024 * 1024;
 const MSG_MAX       = 5000;
 const POST_MAX      = 10000;
 const CHAT_NAME_MAX = 60;
+const GENERAL_CHAT_ID = 'general';
+function getChat(id){
+  if(id === GENERAL_CHAT_ID){
+    const c = S.chats[id] || {};
+    return Object.assign({}, c, { name:t('generalChat'), author:c.author||'', date:c.date||0, messages:c.messages||{} });
+  }
+  return S.chats[id] || null;
+}
 
 const S = {
   lang:'ru',
@@ -1032,6 +1042,7 @@ async function createChat(name){
 async function deleteChat(chatId){
   if(!S.user) throw new Error(t('needLoginToSend'));
   if(!isSafeKey(chatId)) throw new Error(t('errGeneric'));
+  if(chatId === GENERAL_CHAT_ID) throw new Error(t('errNoPerm'));
   const c = S.chats[chatId];
   if(!c) throw new Error(t('chatNotFound'));
   if(!(isOwner(S.user.nick) || S.user.owner === true || c.author === S.user.nick))
@@ -1670,12 +1681,13 @@ function chatListView(){
     }
   }
 
-  const list = Object.keys(S.chats).map(id=>({id, ...S.chats[id]}))
+  const others = Object.keys(S.chats).filter(id=>id!==GENERAL_CHAT_ID).map(id=>({id, ...S.chats[id]}))
     .sort((a,b)=>{
       const la = (a.messages && Object.values(a.messages).reduce((m,x)=>Math.max(m,x.date||0),0)) || a.date || 0;
       const lb = (b.messages && Object.values(b.messages).reduce((m,x)=>Math.max(m,x.date||0),0)) || b.date || 0;
       return lb - la;
     });
+  const list = [Object.assign({id:GENERAL_CHAT_ID, pin:true}, getChat(GENERAL_CHAT_ID))].concat(others);
 
   const head = el('thead',null,[el('tr',null,[
     el('th',{text:t('chatName')}),
@@ -1684,18 +1696,16 @@ function chatListView(){
     el('th',{class:'date',text:t('last')})
   ])]);
   const body = el('tbody');
-  if(!list.length){
-    body.appendChild(el('tr',null,[el('td',{class:'empty',colspan:'4',text:t('noChats')})]));
-  }
   list.forEach((c,i)=>{
     const msgs = c.messages ? Object.values(c.messages) : [];
     const last = msgs.reduce((m,x)=>Math.max(m,x.date||0),0) || c.date || 0;
-    const tr = el('tr',{class:'row anim-fadeup',style:'animation-delay:'+(i*40)+'ms',onclick:()=>openChat(c.id)});
+    const tr = el('tr',{class:'row anim-fadeup'+(c.pin?' pin':''),style:'animation-delay:'+(i*40)+'ms',onclick:()=>openChat(c.id)});
     tr.appendChild(el('td',{class:'title'},[
-      el('button',{class:'rowbtn',text:c.name||'—',onclick:e=>{e.stopPropagation();openChat(c.id);}})
+      el('button',{class:'rowbtn',text:c.name||'—',onclick:e=>{e.stopPropagation();openChat(c.id);}}),
+      c.pin ? el('span',{class:'sub',text:t('generalChatDesc')}) : null
     ]));
     tr.appendChild(el('td',{class:'num mono hide-s',text:String(msgs.length)}));
-    const ac = authorCell(c.author || '—'); ac.className='hide-s'; tr.appendChild(ac);
+    const ac = c.pin ? el('td',{class:'hide-s',text:'—'}) : authorCell(c.author || '—'); ac.className='hide-s'; tr.appendChild(ac);
     tr.appendChild(el('td',{class:'date mono',text:last?fmtTime(last):'—'}));
     body.appendChild(tr);
   });
@@ -1705,7 +1715,7 @@ function chatListView(){
 
 /* ---------- Чат: окно ---------- */
 function chatView(){
-  const chat = S.chats[S.chatId];
+  const chat = getChat(S.chatId);
   if(!chat){
     return [
       el('button',{class:'btn back',text:t('backToChats'),onclick:()=>{S.view='chatList';S.chatId=null;render();}}),
@@ -1714,7 +1724,7 @@ function chatView(){
   }
 
   const out = [];
-  const canDelete = S.user && (isOwner(S.user.nick) || S.user.owner === true || chat.author === S.user.nick);
+  const canDelete = S.chatId !== GENERAL_CHAT_ID && S.user && (isOwner(S.user.nick) || S.user.owner === true || chat.author === S.user.nick);
 
   out.push(el('div',{class:'chatbar'},[
     el('button',{class:'btn',text:t('backToChats'),onclick:()=>{S.view='chatList';S.chatId=null;render();}}),
@@ -1727,8 +1737,9 @@ function chatView(){
 
   out.push(el('div',{class:'titlebar'},[
     el('h1',{text:chat.name || '—'}),
-    el('div',{class:'count mono',text:
-      t('chatBy')+' '+(chat.author||'—')+' · '+fmtTime(chat.date)})
+    el('div',{class:'count mono',text: S.chatId===GENERAL_CHAT_ID
+      ? t('generalChatDesc')
+      : t('chatBy')+' '+(chat.author||'—')+' · '+fmtTime(chat.date)})
   ]));
 
   const win = el('div',{class:'chatwin',id:'chat-win'});
@@ -1967,13 +1978,23 @@ onValue(ref(db,'threads'), snap=>{
     .sort((a,b)=> (b.pin?1:0)-(a.pin?1:0) || (b.date||0)-(a.date||0));
   safeRender();
 });
+/* Статистика обновляется на месте — без перерисовки страницы. */
+function refreshStats(){
+  computeStats();
+  const vs = document.querySelectorAll('.stats .cell .v');
+  if(vs.length !== 4) return;
+  vs[0].textContent = num(S.stats.posts);
+  vs[1].textContent = num(S.stats.online);
+  vs[2].textContent = num(S.stats.threads);
+  vs[3].textContent = fmtBytes(S.stats.bytes);
+}
 onValue(ref(db,'users'), snap=>{
   S.users = snap.val() || {};
-  safeRender();
+  refreshStats();
 });
 onValue(ref(db,'online'), snap=>{
   S.online = snap.val() || {};
-  safeRender();
+  refreshStats();
 });
 onValue(ref(db,'pages'), snap=>{
   S.pages = snap.val() || {};
