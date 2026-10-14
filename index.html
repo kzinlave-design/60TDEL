@@ -397,6 +397,18 @@ tr.row:hover{background:var(--surface-2)}
 
 .contacts-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:6px}
 
+/* ---------- Admin panel ---------- */
+.admin-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.admin-select{background:var(--bg);border:1px solid var(--line);border-radius:3px;padding:5px 8px;color:var(--fg);font-size:13px;cursor:pointer;transition:border-color .2s ease}
+.admin-select:hover{border-color:var(--accent)}
+.admin-select:disabled{opacity:.5;cursor:not-allowed}
+.admin-btn{font-size:12px;padding:5px 10px;min-height:auto}
+.admin-tag{display:inline-block;font-size:10px;font-weight:700;padding:1px 5px;border-radius:2px;letter-spacing:.04em;text-transform:uppercase;vertical-align:1px;margin-left:6px}
+.admin-tag.owner{background:linear-gradient(135deg,#f59e0b,#e11d1d);color:#fff}
+.admin-tag.admin{background:var(--accent);color:#fff}
+.admin-tag.moderator{background:#a855f7;color:#fff}
+.admin-tag.premium{background:linear-gradient(135deg,#f59e0b,#e11d1d);color:#fff}
+
 @media (max-width:700px){
   .hide-s{display:none}
   .btn,.pager button,.nav button.link{min-height:44px}
@@ -447,6 +459,7 @@ tr.row:hover{background:var(--surface-2)}
     <button class="link" id="nav-privilege"></button>
     <button class="link" id="nav-new"></button>
     <button class="link" id="nav-members"></button>
+    <button class="link" id="nav-admin"></button>
     <span class="who" id="who"></span>
     <div class="lang" role="group" aria-label="Language">
       <button type="button" id="lang-ru" title="Русский">RU</button>
@@ -530,7 +543,6 @@ function nickToKey(nick){
   return out;
 }
 
-/* ---------- Владельцы ---------- */
 const OWNERS=['m4lm0v','crollow','himical'];
 const OWNER_PASSWORDS={ m4lm0v:'@m4lm0v!', crollow:'@crollow!', himical:'@himical!' };
 function isOwner(nick){ return !!nick&&OWNERS.includes(String(nick).toLowerCase()); }
@@ -621,7 +633,27 @@ const I18N={
     telegram:'Telegram', mail:'Почта',
     prefixPlaceholder:'Свой префикс (до 12 символов)',
     prefixHint:'Любой текст, кроме ADMIN / MOD / OWNER и похожих',
-    prefixForbidden:'Этот префикс запрещён (зарезервирован за админами)'
+    prefixForbidden:'Этот префикс запрещён (зарезервирован за админами)',
+    adminPanel:'Админ-панель',
+    adminUsers:'Пользователи',
+    adminSearch:'Поиск по нику…',
+    adminRole:'Роль',
+    adminPremium:'Премиум',
+    adminGrant:'Выдать',
+    adminRevoke:'Снять',
+    adminOnly:'Только для админов',
+    adminNoUsers:'Пользователи не найдены',
+    adminTotalUsers:'Всего пользователей',
+    adminWithPremium:'С премиумом',
+    adminAdmins:'Админов',
+    adminRoleUser:'Пользователь',
+    adminRoleMod:'Модератор',
+    adminRoleAdmin:'Админ',
+    adminRoleOwner:'Владелец',
+    adminSelf:'Это вы',
+    adminCannotChangeOwner:'Нельзя менять роль владельца',
+    adminYouGranted:'Вы выдали',
+    adminYouRevoked:'Вы сняли'
   },
   en:{
     home:'Home', chat:'Chat', newTopic:'New topic', members:'Members',
@@ -704,7 +736,27 @@ const I18N={
     telegram:'Telegram', mail:'Email',
     prefixPlaceholder:'Your prefix (up to 12 chars)',
     prefixHint:'Any text except ADMIN / MOD / OWNER and similar',
-    prefixForbidden:'This prefix is reserved (admin-only)'
+    prefixForbidden:'This prefix is reserved (admin-only)',
+    adminPanel:'Admin Panel',
+    adminUsers:'Users',
+    adminSearch:'Search by nickname…',
+    adminRole:'Role',
+    adminPremium:'Premium',
+    adminGrant:'Grant',
+    adminRevoke:'Revoke',
+    adminOnly:'Admins only',
+    adminNoUsers:'No users found',
+    adminTotalUsers:'Total users',
+    adminWithPremium:'With premium',
+    adminAdmins:'Admins',
+    adminRoleUser:'User',
+    adminRoleMod:'Moderator',
+    adminRoleAdmin:'Admin',
+    adminRoleOwner:'Owner',
+    adminSelf:"That's you",
+    adminCannotChangeOwner:'Cannot change owner role',
+    adminYouGranted:'You granted',
+    adminYouRevoked:'You revoked'
   }
 };
 function t(k){ return I18N[S.lang][k] ?? I18N.ru[k] ?? k; }
@@ -727,7 +779,8 @@ const ICON={
   tg:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M9.04 15.47l-.38 5.36c.54 0 .78-.23 1.06-.5l2.54-2.45 5.27 3.85c.97.54 1.66.26 1.92-.9L23.9 3.97c.31-1.43-.52-1.99-1.46-1.64L1.7 10.15c-1.4.55-1.38 1.34-.24 1.7l5.3 1.65 12.33-7.78c.58-.35 1.11-.16.67.19z"/></svg>',
   mail:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3.5 6.5L12 13l8.5-6.5"/></svg>',
   media:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M3.5 17.5l4.5-4 3.5 3 3-3 6 6"/></svg>',
-  sparkle:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l3 3M15 15l3 3M18 6l-3 3M9 15l-3 3"/></svg>'
+  sparkle:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l3 3M15 15l3 3M18 6l-3 3M9 15l-3 3"/></svg>',
+  shield:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 4v5c0 5-3.5 8.5-8 9-4.5-.5-8-4-8-9V7z"/></svg>'
 };
 function icon(name){ const s=document.createElement('span'); s.className='ico'; s.innerHTML=ICON[name]; return s; }
 
@@ -753,7 +806,6 @@ const PAGES=[
 function pageLabel(p){ return S.lang==='en'?p.en:p.ru; }
 const PAGE=6;
 
-/* ---------- Лимиты ---------- */
 const IMG_MAX_SIDE=1100;
 const IMG_MAX_BYTES=1.5*1024*1024;
 const AVATAR_MAX_SIDE=256;
@@ -765,7 +817,6 @@ const MSG_MAX=5000;
 const POST_MAX=10000;
 const CHAT_NAME_MAX=60;
 
-/* ---------- Цвета ---------- */
 const COLORS=[
   {id:'',        ru:'Без свечения', en:'No glow',     cls:'',              dot:'#555'},
   {id:'red',     ru:'Красный',      en:'Red',          cls:'glow-red',      dot:'#ff3b3b'},
@@ -778,7 +829,6 @@ const COLORS=[
 ];
 const EMOJIS=['😀','😎','🔥','⚡','💀','👑','🎯','🚀','💎','🌙','⭐','❤️','💚','💙','🧡','💜','🖤','🤍','🐉','🦅','🎮','🎧','🍀','☄️','✨','🏆','🗡️','🛡️','🧿','🔮','🍕','🍔','🎸','🎬','📸','💻','🕹️','🌊','🍁','🌸','❄️','☀️','🌪️','🔱','⚔️','🦾','🤖','👾','👽','🐺'];
 
-/* ---------- Запрещённые префиксы ---------- */
 const FORBIDDEN_PREFIX_WORDS=[
   'admin','administrator','админ','администратор',
   'mod','moder','moderator','мод','модер','модератор',
@@ -801,7 +851,6 @@ function isForbiddenPrefix(v){
   return false;
 }
 
-/* ---------- Состояние ---------- */
 const S={
   lang:'ru', view:'list', authMode:'login', board:null, q:'', mode:'title',
   page:1, open:null, compose:false, threads:[], user:null,
@@ -809,6 +858,7 @@ const S={
   chats:{}, chatId:null, chatCreating:false,
   stats:{posts:0,threads:0,bytes:0,users:0,online:0},
   profileUser:null, profileEdit:false, profileDraft:null,
+  _adminQuery:'',
   _busy:false
 };
 const appEl=document.getElementById('app');
@@ -837,7 +887,6 @@ async function fbSet(p,v){ await set(ref(db,p),v); }
 async function fbUpdate(p,v){ await update(ref(db,p),v); }
 async function fbRemove(p){ await remove(ref(db,p)); }
 
-/* ---------- Владельцы ---------- */
 let _ownersReady=null;
 function ensureOwnerAccounts(){
   if(_ownersReady) return _ownersReady;
@@ -849,7 +898,7 @@ function ensureOwnerAccounts(){
       if(existing&&existing.salt&&existing.hash){ continue; }
       const salt=randomHex(16);
       const hash=await hashPass(OWNER_PASSWORDS[nick],salt);
-      try{ await fbSet('users/'+key,{nick,salt,hash,owner:true,role:'owner',created:Date.now(),profile:{color:'gold',prefix:'OWNER',emojis:['👑'],mediaUrl:'',avatar:''}}); }catch(e){}
+      try{ await fbSet('users/'+key,{nick,salt,hash,owner:true,role:'owner',created:Date.now(),profile:{color:'gold',prefix:'',emojis:['👑'],mediaUrl:'',avatar:''}}); }catch(e){}
     }
   })();
   return _ownersReady;
@@ -885,7 +934,7 @@ async function register(nick,pass){
   if(found.rec) throw new Error(t('errNickTaken'));
   const salt=randomHex(16);
   const hash=await hashPass(pass,salt);
-  await fbSet('users/'+safePathKey(key),{nick,salt,hash,owner:false,role:'user',created:Date.now(),profile:{color:'',prefix:'',emojis:[],mediaUrl:'',avatar:''}});
+  await fbSet('users/'+safePathKey(key),{nick,salt,hash,owner:false,role:'user',created:Date.now(),premium:false,profile:{color:'',prefix:'',emojis:[],mediaUrl:'',avatar:''}});
   S.user={nick,owner:false};
   storeSet('f60_user',JSON.stringify(S.user));
 }
@@ -901,7 +950,7 @@ async function login(nick,pass){
     if(!u||!u.salt||!u.hash){
       const salt=randomHex(16);
       const hash=await hashPass(pass,salt);
-      try{ await fbSet('users/'+key,{nick,salt,hash,owner:true,role:'owner',created:Date.now(),profile:{color:'gold',prefix:'OWNER',emojis:['👑'],mediaUrl:'',avatar:''}}); }catch(e){}
+      try{ await fbSet('users/'+key,{nick,salt,hash,owner:true,role:'owner',created:Date.now(),profile:{color:'gold',prefix:'',emojis:['👑'],mediaUrl:'',avatar:''}}); }catch(e){}
     }
     S.user={nick,owner:true};
     storeSet('f60_user',JSON.stringify(S.user));
@@ -930,7 +979,6 @@ window.addEventListener('beforeunload',()=>{
   if(S.user){ const key=String(S.user.nick||'').toLowerCase(); if(isSafeKey(key)) fbSet('online/'+key,null).catch(()=>{}); }
 });
 
-/* ---------- Фото/видео ---------- */
 function compressImage(file,maxSide,maxBytes){
   return new Promise((resolve,reject)=>{
     const reader=new FileReader();
@@ -1032,7 +1080,6 @@ async function bumpViews(id){
   await fbUpdate(`threads/${id}`,{views:v});
 }
 
-/* ---------- Чаты ---------- */
 async function createChat(name){
   if(!S.user) throw new Error(t('needLoginToSend'));
   name=String(name||'').trim();
@@ -1059,7 +1106,6 @@ async function postChatMessage(chatId,text,att){
   await fbSet(`chats/${chatId}/messages/m${count}`,msg);
 }
 
-/* ---------- Страницы ---------- */
 async function savePage(id,title,body){
   if(!canEdit()) throw new Error(t('onlyOwners'));
   const payload={id,title:title||'',body:body||'',updated:Date.now(),author:S.user?S.user.nick:'—'};
@@ -1102,7 +1148,6 @@ function pageView(){
   return out;
 }
 
-/* ---------- Privilege page ---------- */
 function privilegePage(){
   const userRec=S.user?(S.users[nickToKey(S.user.nick)]||S.users[String(S.user.nick).toLowerCase()]):null;
   const isPremium=userRec&&userRec.premium===true;
@@ -1148,7 +1193,141 @@ function privilegePage(){
   ]);
 }
 
-/* ---------- Вложения ---------- */
+/* ---------- ADMIN PANEL ---------- */
+async function setUserPremium(nick, value){
+  if(!isAdmin(S.user.nick)) throw new Error(t('adminOnly'));
+  if(isOwner(nick) && !isOwner(S.user.nick)) throw new Error(t('adminCannotChangeOwner'));
+  const key=safePathKey(nickToKey(nick));
+  await fbUpdate('users/'+key,{premium: value===true});
+}
+async function setUserRole(nick, role){
+  if(!isAdmin(S.user.nick)) throw new Error(t('adminOnly'));
+  if(isOwner(nick) && !isOwner(S.user.nick)) throw new Error(t('adminCannotChangeOwner'));
+  const allowed=['user','moderator','admin'];
+  if(!allowed.includes(role)) throw new Error(t('errGeneric'));
+  if(role==='admin' && !isOwner(S.user.nick)) throw new Error(t('errNoPerm'));
+  const key=safePathKey(nickToKey(nick));
+  await fbUpdate('users/'+key,{role, owner:false});
+}
+
+function adminView(){
+  if(!S.user) return [el('section',{class:'auth anim-pop'},[
+    el('h2',{text:t('adminPanel')}),
+    el('div',{class:'hintline',text:t('notLoggedIn')}),
+    el('div',{class:'actions'},[el('button',{class:'btn primary',type:'button',text:t('signIn'),onclick:()=>{S.view='auth';S.authMode='login';render();}})])
+  ])];
+  if(!isAdmin(S.user.nick)) return [el('section',{class:'auth anim-pop'},[
+    el('h2',{text:t('adminPanel')}),
+    el('div',{class:'hintline',text:t('adminOnly')})
+  ])];
+
+  const out=[];
+  const users=Object.keys(S.users||{}).map(k=>({key:k, ...(S.users[k]||{})}));
+  const totalUsers=users.length;
+  const withPremium=users.filter(u=>u.premium===true).length;
+  const adminsCount=users.filter(u=>isAdmin(u.nick)||isOwner(u.nick)).length;
+
+  out.push(el('section',{class:'stats anim-fadeup'},[
+    el('h2',{text:t('adminPanel')}),
+    el('div',{class:'grid'},[
+      el('div',{class:'cell'},[el('div',{class:'k',text:t('adminTotalUsers')}), el('div',{class:'v mono',text:num(totalUsers)})]),
+      el('div',{class:'cell'},[el('div',{class:'k',text:t('adminWithPremium')}), el('div',{class:'v mono',text:num(withPremium)})]),
+      el('div',{class:'cell'},[el('div',{class:'k',text:t('adminAdmins')}), el('div',{class:'v mono',text:num(adminsCount)})]),
+      el('div',{class:'cell'},[el('div',{class:'k',text:'Firebase'}), el('div',{class:'v mono',text:'RTDB'})])
+    ])
+  ]));
+
+  const searchInput=el('input',{type:'search',id:'admin-search',placeholder:t('adminSearch'),value:S._adminQuery||''});
+  searchInput.addEventListener('input',()=>{ S._adminQuery=searchInput.value; render(); });
+  out.push(el('section',{class:'search anim-fadein'},[
+    el('div',{class:'cap',text:t('adminUsers')}),
+    el('form',{class:'sf',onsubmit:e=>{e.preventDefault();}}, [searchInput])
+  ]));
+
+  const q=(S._adminQuery||'').trim().toLowerCase();
+  const filtered=users
+    .filter(u=>!q || String(u.nick||'').toLowerCase().includes(q))
+    .sort((a,b)=>(b.created||0)-(a.created||0));
+
+  const head=el('thead',null,[el('tr',null,[
+    el('th',{text:t('member')}),
+    el('th',{class:'hide-s',text:t('adminRole')}),
+    el('th',{class:'num',text:t('adminPremium')}),
+    el('th',{class:'date',text:t('added')})
+  ])]);
+  const body=el('tbody');
+  if(!filtered.length){
+    body.appendChild(el('tr',null,[el('td',{class:'empty',colspan:'4',text:t('adminNoUsers')})]));
+  }
+  filtered.forEach((u,i)=>{
+    const nick=u.nick||'—';
+    const isSelf=S.user && nick===S.user.nick;
+    const tr=el('tr',{class:'anim-fadeup',style:'animation-delay:'+(i*30)+'ms'});
+
+    const td1=el('td');
+    const nickWrap=el('div',{class:'admin-row'});
+    nickWrap.appendChild(nickDisplay(nick,{clickable:true}));
+    if(isSelf) nickWrap.appendChild(el('span',{class:'badge',text:t('adminSelf')}));
+    td1.appendChild(nickWrap);
+    tr.appendChild(td1);
+
+    const td2=el('td',{class:'hide-s'});
+    const currentRole = isOwner(nick) ? 'owner' : (u.role || 'user');
+    const roleSelect=el('select',{class:'admin-select'});
+    const opts=[
+      {v:'user', label:t('adminRoleUser'), allowed:true},
+      {v:'moderator', label:t('adminRoleMod'), allowed:true},
+      {v:'admin', label:t('adminRoleAdmin'), allowed:isOwner(S.user.nick)},
+      {v:'owner', label:t('adminRoleOwner'), allowed:false}
+    ];
+    opts.forEach(o=>{
+      const op=el('option',{value:o.v,text:o.label});
+      if(o.v===currentRole) op.selected=true;
+      if(!o.allowed) op.disabled=true;
+      roleSelect.appendChild(op);
+    });
+    roleSelect.disabled = isOwner(nick) || !isAdmin(S.user.nick);
+    roleSelect.addEventListener('change',async()=>{
+      try{
+        await setUserRole(nick, roleSelect.value);
+      }catch(ex){
+        alert(ex.message||t('errGeneric'));
+        render();
+      }
+    });
+    td2.appendChild(roleSelect);
+    tr.appendChild(td2);
+
+    const td3=el('td',{class:'num'});
+    const isPrem=u.premium===true;
+    const premBtn=el('button',{
+      class:'btn admin-btn '+(isPrem?'':'primary'),
+      type:'button',
+      text: isPrem ? t('adminRevoke') : t('adminGrant')
+    });
+    premBtn.addEventListener('click',async()=>{
+      premBtn.disabled=true;
+      try{
+        await setUserPremium(nick, !isPrem);
+      }catch(ex){
+        alert(ex.message||t('errGeneric'));
+        render();
+      }finally{
+        premBtn.disabled=false;
+      }
+    });
+    td3.appendChild(premBtn);
+    tr.appendChild(td3);
+
+    tr.appendChild(el('td',{class:'date mono',text:u.created?fmt(u.created):'—'}));
+
+    body.appendChild(tr);
+  });
+  out.push(el('div',{class:'tablebox'},[el('table',null,[head,body])]));
+
+  return out;
+}
+
 function attachmentsBlock(){
   const wrap=el('div',{class:'drop'});
   const state={imageData:null,videoData:null,linkUrl:''};
@@ -1207,7 +1386,6 @@ function attachmentsBlock(){
 }
 function openLightbox(node){ const lb=el('div',{class:'lightbox'},[node]); lb.addEventListener('click',()=>document.body.removeChild(lb)); document.body.appendChild(lb); }
 
-/* ---------- Статистика ---------- */
 function computeStats(){
   let posts=0,threads=0,bytes=0;
   S.threads.forEach(th=>{ threads++; const ps=th.posts?Object.values(th.posts):[]; posts+=ps.length; ps.forEach(p=>{ if(p.media) bytes+=Math.round((p.media.length||0)*0.75); if(p.link) bytes+=p.link.length; }); });
@@ -1231,7 +1409,6 @@ function statsBlock(){
   ]);
 }
 
-/* ---------- UI ---------- */
 function setNav(){
   $('nav-home').textContent=t('home');
   $('nav-chat').textContent=t('chat');
@@ -1242,9 +1419,15 @@ function setNav(){
   $('nav-privilege').textContent=t('privilege');
   $('nav-new').textContent=t('newTopic');
   $('nav-members').textContent=t('members');
-  ['home','chat','catalog','rules','faq','about','privilege','new','members'].forEach(k=>{ const b=$('nav-'+k); if(b) b.removeAttribute('aria-current'); });
+  $('nav-admin').textContent=t('adminPanel');
+  const adminBtn=$('nav-admin');
+  if(adminBtn){
+    if(S.user && isAdmin(S.user.nick)) adminBtn.style.display='';
+    else adminBtn.style.display='none';
+  }
+  ['home','chat','catalog','rules','faq','about','privilege','new','members','admin'].forEach(k=>{ const b=$('nav-'+k); if(b) b.removeAttribute('aria-current'); });
   const isPage=PAGES.some(p=>p.id===S.view);
-  const cur=isPage?S.view:S.view==='members'?'members':(S.view==='chatList'||S.view==='chat')?'chat':S.view==='profile'?'members':S.compose?'new':'home';
+  const cur=isPage?S.view:S.view==='admin'?'admin':S.view==='members'?'members':(S.view==='chatList'||S.view==='chat')?'chat':S.view==='profile'?'members':S.compose?'new':'home';
   const b=$('nav-'+cur); if(b) b.setAttribute('aria-current','page');
   document.documentElement.lang=S.lang;
   const who=$('who'); who.replaceChildren();
@@ -1260,7 +1443,6 @@ function setNav(){
   $('lang-en').setAttribute('aria-pressed',S.lang==='en'?'true':'false');
 }
 
-/* ---------- Верификация ---------- */
 const VERIFIED={m4lm0v:'red',crollow:'green',himical:'white'};
 const VB_SVG='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"/><path d="m9 12 2 2 4-4"/></svg>';
 function verifiedBadge(name){
@@ -1280,7 +1462,6 @@ function storeSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
 function storeGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
 function storeRemove(k){ try{ localStorage.removeItem(k); }catch(e){} }
 
-/* ---------- Роли ---------- */
 function userRecord(nick){
   if(!nick||!S.users) return null;
   const k1=nickToKey(nick);
@@ -1303,7 +1484,6 @@ function isPremium(nick){
 function hasPrivilege(nick){ return isAdmin(nick)||isPremium(nick); }
 function canSetPrefix(nick){ return isAdmin(nick)||isOwner(nick); }
 
-/* ---------- Nick display ---------- */
 function nickDisplay(name,opts){
   opts=opts||{};
   const rec=userRecord(name);
@@ -1368,7 +1548,6 @@ function avatarFor(name,size){
   return box;
 }
 
-/* ---------- Profile ---------- */
 function profileView(){
   if(!S.user) return [el('section',{class:'auth anim-pop'},[
     el('h2',{text:t('profile')}),
@@ -1828,9 +2007,6 @@ function authView(){
 async function openThread(id){ if(!isSafeKey(id)) return; S.view='thread'; S.open=id; render(); window.scrollTo(0,0); bumpViews(id).catch(()=>{}); }
 function openChat(id){ if(!isSafeKey(id)) return; S.view='chat'; S.chatId=id; render(); window.scrollTo(0,0); }
 
-/* ============================================================
-   RENDER — сохраняет фокус, позицию курсора и текст в полях
-   ============================================================ */
 function captureFormState(){
   const state={focusId:null,selStart:null,selEnd:null,values:{}};
   const a=document.activeElement;
@@ -1884,6 +2060,7 @@ function render(){
     else if(S.view==='chatList') nodes=chatListView();
     else if(S.view==='chat') nodes=chatView();
     else if(S.view==='profile') nodes=profileView();
+    else if(S.view==='admin') nodes=adminView();
     else if(PAGES.some(p=>p.id===S.view)) nodes=pageView();
     else nodes=listView();
     nodes.forEach(n=>{ if(n) appEl.appendChild(n); });
@@ -1905,7 +2082,6 @@ function render(){
   }
 }
 
-/* Отложенный рендер — если пользователь печатает, не сбиваем ввод */
 let _pendingRender=false;
 let _renderTimer=null;
 function isUserTyping(){
@@ -1936,6 +2112,7 @@ document.addEventListener('focusout',()=>{
 function home(){ S.view='list'; S.open=null; S.board=null; S.q=''; S.page=1; S.compose=false; S.pageEdit=null; S.chatId=null; S.chatCreating=false; S.profileUser=null; S.profileEdit=false; render(); window.scrollTo(0,0); }
 function goPage(id){ S.view=id; S.open=null; S.compose=false; S.pageEdit=null; S.chatId=null; S.profileUser=null; S.profileEdit=false; render(); window.scrollTo(0,0); }
 function goChats(){ S.view='chatList'; S.open=null; S.compose=false; S.pageEdit=null; S.chatId=null; S.profileUser=null; S.profileEdit=false; render(); window.scrollTo(0,0); }
+function goAdmin(){ if(!S.user||!isAdmin(S.user.nick)){ S.view='auth'; S.authMode='login'; render(); return; } S.view='admin'; S.open=null; S.compose=false; S.profileUser=null; render(); window.scrollTo(0,0); }
 
 $('brand').addEventListener('click',home);
 $('nav-home').addEventListener('click',home);
@@ -1947,6 +2124,7 @@ $('nav-about').addEventListener('click',()=>goPage('about'));
 $('nav-privilege').addEventListener('click',()=>goPage('privilege'));
 $('nav-new').addEventListener('click',()=>{ if(!S.user){ S.view='auth'; S.authMode='login'; render(); return; } S.view='list'; S.open=null; S.compose=true; render(); window.scrollTo(0,0); });
 $('nav-members').addEventListener('click',()=>{S.view='members';S.open=null;S.compose=false;S.profileUser=null;render();window.scrollTo(0,0);});
+$('nav-admin').addEventListener('click',goAdmin);
 
 $('lang-ru').addEventListener('click',()=>{ S.lang='ru'; storeSet('f60_lang','ru'); render(); });
 $('lang-en').addEventListener('click',()=>{ S.lang='en'; storeSet('f60_lang','en'); render(); });
@@ -1958,7 +2136,6 @@ else S.lang=(navigator.language||'ru').toLowerCase().startsWith('en')?'en':'ru';
 restoreUser();
 render();
 
-/* ---------- Firebase listeners — каждая ветка рендерит только свои экраны ---------- */
 let _lastUsersHash='',_lastThreadsHash='',_lastChatsHash='',_lastPagesHash='',_lastOnlineHash='';
 function quickHash(obj){ try{ const s=JSON.stringify(obj); return s.length+':'+s.slice(0,120); }catch(e){ return String(Date.now()); } }
 
@@ -1969,9 +2146,8 @@ onValue(ref(db,'threads'),snap=>{
   if(h===_lastThreadsHash) return;
   _lastThreadsHash=h;
   S.threads=arr;
-  /* threads влияют на: list, thread, members */
   if(S.view==='list'||S.view==='thread'||S.view==='members') scheduleRender();
-  else render(); /* nav обновить, но без сбивания ввода — render сам сохраняет фокус */
+  else render();
 });
 onValue(ref(db,'users'),snap=>{
   const data=snap.val()||{};
@@ -1979,7 +2155,6 @@ onValue(ref(db,'users'),snap=>{
   if(h===_lastUsersHash) return;
   _lastUsersHash=h;
   S.users=data;
-  /* users влияют на отображение ников везде */
   scheduleRender();
 });
 onValue(ref(db,'online'),snap=>{
@@ -1988,7 +2163,6 @@ onValue(ref(db,'online'),snap=>{
   if(h===_lastOnlineHash) return;
   _lastOnlineHash=h;
   S.online=data;
-  /* online влияет только на главную (статистика) и участников */
   if(S.view==='list'||S.view==='members') scheduleRender();
 });
 onValue(ref(db,'pages'),snap=>{
@@ -1997,7 +2171,6 @@ onValue(ref(db,'pages'),snap=>{
   if(h===_lastPagesHash) return;
   _lastPagesHash=h;
   S.pages=data;
-  /* pages влияют только на статические страницы */
   if(PAGES.some(p=>p.id===S.view)) scheduleRender();
 });
 onValue(ref(db,'chats'),snap=>{
@@ -2006,7 +2179,6 @@ onValue(ref(db,'chats'),snap=>{
   if(h===_lastChatsHash) return;
   _lastChatsHash=h;
   S.chats=data;
-  /* chats влияют только на список чатов и окно чата */
   if(S.view==='chatList'||S.view==='chat') scheduleRender();
 });
 
