@@ -55,7 +55,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .logo-wind-big .paper1{animation:windRustle1 4.2s ease-in-out infinite;transform-origin:110px 98px}
 .logo-wind-big .paper2{animation:windRustle2 4.6s ease-in-out infinite;transform-origin:114px 94px}
 .logo-wind-big .paper3{animation:windRustle3 4.0s ease-in-out infinite;transform-origin:118px 90px}
-.logo-wind-big .paper4{animation:windRustle4 4.4s ease-in-out infinite;transform-origin:122px 90px}
+.logo-wind-big .paper4{animation:windRustle4 4.4s ease-in-out infinite;transform-origin:126px 90px}
 
 .ico{display:inline-flex;vertical-align:-3px;margin-right:6px;flex:none}
 .ico svg{display:block;width:16px;height:16px}
@@ -276,7 +276,7 @@ tr.row:hover{background:var(--surface-2)}
 .nick-glow.glow-pink{color:#ec4899;text-shadow:0 0 6px #ec4899,0 0 14px #ec4899,0 0 24px #be185d;animation:glowPulse 2.4s ease-in-out infinite}
 .nick-glow.shimmer{background:linear-gradient(90deg,#fff,#e11d1d,#fff,#e11d1d,#fff);background-size:200% auto;-webkit-background-clip:text;background-clip:text;color:transparent;animation:nickShimmer 3s linear infinite}
 
-/* ============ ЭМОДЗИ В НИКЕ — работает везде ============ */
+/* ============ ЭМОДЗИ — работает везде ============ */
 .nick-emoji{
   display:inline-block;
   font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji","Noto Emoji","Android Emoji","EmojiOne Color","Twemoji Mozilla","EmojiSymbols","Segoe UI Symbol",sans-serif;
@@ -289,26 +289,75 @@ tr.row:hover{background:var(--surface-2)}
   animation:emojiBounce 1.6s ease-in-out infinite;
   margin-left:1px;
   vertical-align:-2px;
-  /* фикс для iOS */
   -webkit-text-fill-color:currentColor;
-  /* фикс для Android */
   text-shadow:none;
-  /* фикс чтоб не перекрывался glow ника */
   isolation:isolate;
   z-index:1;
 }
+@media (max-width:700px){ .nick-emoji{font-size:1em} }
+
+/* ============ МИНИ-МЕДИА РЯДОМ С НИКОМ — как стикер ============ */
+.nick-media{
+  display:inline-block;
+  width:18px;height:18px;
+  border-radius:3px;
+  object-fit:cover;
+  vertical-align:-3px;
+  margin-right:3px;
+  border:1px solid var(--line);
+  background:var(--surface-2);
+  transition:transform .25s ease;
+  cursor:pointer;
+  /* важно: без контролов */
+  pointer-events:auto;
+}
+.nick-media:hover{transform:scale(1.6);z-index:2;position:relative;border-color:var(--accent)}
+.nick-media-video{
+  position:relative;
+  display:inline-block;
+  vertical-align:-3px;
+  margin-right:3px;
+  line-height:0;
+  width:18px;height:18px;
+  border-radius:3px;
+  overflow:hidden;
+  border:1px solid var(--line);
+  background:var(--surface-2);
+  transition:transform .25s ease;
+  cursor:pointer;
+}
+.nick-media-video:hover{transform:scale(1.6);z-index:2;position:relative;border-color:var(--accent)}
+.nick-media-video .nick-media{
+  margin:0;
+  vertical-align:0;
+  display:block;
+  width:100%;height:100%;
+  border:0;
+  border-radius:0;
+  transform:none !important;
+  transition:none !important;
+}
+/* убираем системные контролы видео (Chrome/Safari/Edge) */
+.nick-media-video video::-webkit-media-controls,
+.nick-media-video video::-webkit-media-controls-enclosure,
+.nick-media-video video::-webkit-media-controls-panel,
+.nick-media-video video::-webkit-media-controls-play-button,
+.nick-media-video video::-webkit-media-controls-start-playback-button{
+  display:none !important;
+  -webkit-appearance:none !important;
+  opacity:0 !important;
+  pointer-events:none !important;
+}
+/* Firefox */
+.nick-media-video video::-moz-media-controls{display:none !important}
+/* IE/Edge */
+.nick-media-video video::-ms-media-controls{display:none !important}
 
 .nick-prefix{font-size:.85em;font-weight:700;opacity:.95;margin-right:2px;display:inline-block;vertical-align:middle}
 .nick-prefix.prefix-admin{color:#e11d1d;text-shadow:0 0 6px rgba(225,29,29,.8)}
 .nick-prefix.prefix-moderator{color:#a855f7;text-shadow:0 0 6px rgba(168,85,247,.8)}
 .nick-prefix.prefix-owner{color:#f59e0b;text-shadow:0 0 6px rgba(245,158,11,.9)}
 .nick-prefix.prefix-custom{color:#3b82f6;text-shadow:0 0 6px rgba(59,130,246,.7)}
-
-.nick-media{display:inline-block;width:18px;height:18px;border-radius:3px;object-fit:cover;vertical-align:-3px;margin-right:3px;border:1px solid var(--line);transition:transform .25s ease;cursor:pointer;background:var(--surface-2)}
-.nick-media:hover{transform:scale(1.5);z-index:2;position:relative;border-color:var(--accent)}
-.nick-media-video{position:relative;display:inline-block;vertical-align:-3px;margin-right:3px}
-.nick-media-video::after{content:"▶";position:absolute;inset:0;display:grid;place-items:center;font-size:9px;color:#fff;background:rgba(0,0,0,.45);border-radius:3px;pointer-events:none}
-.nick-media-video .nick-media{margin:0;vertical-align:0}
 
 .profile-edit{border:1px solid var(--line);border-radius:3px;background:var(--surface);padding:20px;display:flex;flex-direction:column;gap:16px;animation:slideInRight .4s cubic-bezier(.22,.7,.3,1) both}
 .profile-edit label{display:flex;flex-direction:column;gap:6px;font-size:14px;color:var(--muted)}
@@ -364,7 +413,6 @@ tr.row:hover{background:var(--surface-2)}
   .profile-info{align-items:center}
   .profile-avatar{width:90px;height:90px;font-size:30px}
   .contacts-grid{grid-template-columns:1fr}
-  .nick-emoji{font-size:1em}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
@@ -764,16 +812,13 @@ function isForbiddenPrefix(v){
   return false;
 }
 
-/* ---------- Проверка URL: это прямая ссылка на медиа ---------- */
 function isDirectMediaUrl(url){
   const s=String(url||'').trim();
   if(!s) return false;
   if(/^data:(image|video)\//i.test(s)) return true;
   if(!/^https?:\/\//i.test(s)) return false;
-  /* отсеиваем страницы, а не файлы */
   const badDomains=/(youtube\.com|youtu\.be|vimeo\.com|instagram\.com|facebook\.com|vk\.com|tiktok\.com|imgur\.com\/a\/|imgur\.com\/gallery|drive\.google\.com|dropbox\.com\/s\/|docs\.google\.com)/i;
   if(badDomains.test(s)) return false;
-  /* принимаем только прямые расширения */
   return /\.(jpe?g|png|gif|webp|avif|bmp|svg|mp4|webm|ogg|ogv|mov|m4v)(\?|#|$)/i.test(s);
 }
 
@@ -824,7 +869,7 @@ function ensureOwnerAccounts(){
       if(existing&&existing.salt&&existing.hash){ continue; }
       const salt=randomHex(16);
       const hash=await hashPass(OWNER_PASSWORDS[nick],salt);
-      try{ await fbSet('users/'+key,{nick,salt,hash,owner:true,role:'owner',created:Date.now(),profile:{color:'gold',prefix:'',emojis:['👑'],mediaUrl:'',avatar:''}}); }catch(e){}
+      try{ await fbSet('users/'+key,{nick,salt,hash,owner:true,role:'owner',created:Date.now(),profile:{color:'gold',prefix:'',emojis:['👑'],mediaUrl:'',mediaPoster:'',avatar:''}}); }catch(e){}
     }
   })();
   return _ownersReady;
@@ -860,7 +905,7 @@ async function register(nick,pass){
   if(found.rec) throw new Error(t('errNickTaken'));
   const salt=randomHex(16);
   const hash=await hashPass(pass,salt);
-  await fbSet('users/'+safePathKey(key),{nick,salt,hash,owner:false,role:'user',created:Date.now(),premium:false,profile:{color:'',prefix:'',emojis:[],mediaUrl:'',avatar:''}});
+  await fbSet('users/'+safePathKey(key),{nick,salt,hash,owner:false,role:'user',created:Date.now(),premium:false,profile:{color:'',prefix:'',emojis:[],mediaUrl:'',mediaPoster:'',avatar:''}});
   S.user={nick,owner:false};
   storeSet('f60_user',JSON.stringify(S.user));
 }
@@ -876,7 +921,7 @@ async function login(nick,pass){
     if(!u||!u.salt||!u.hash){
       const salt=randomHex(16);
       const hash=await hashPass(pass,salt);
-      try{ await fbSet('users/'+key,{nick,salt,hash,owner:true,role:'owner',created:Date.now(),profile:{color:'gold',prefix:'',emojis:['👑'],mediaUrl:'',avatar:''}}); }catch(e){}
+      try{ await fbSet('users/'+key,{nick,salt,hash,owner:true,role:'owner',created:Date.now(),profile:{color:'gold',prefix:'',emojis:['👑'],mediaUrl:'',mediaPoster:'',avatar:''}}); }catch(e){}
     }
     S.user={nick,owner:true};
     storeSet('f60_user',JSON.stringify(S.user));
@@ -928,6 +973,52 @@ function compressImage(file,maxSide,maxBytes){
     reader.readAsDataURL(file);
   });
 }
+/* ============================================================
+   Генерация poster-кадра из видео — для случаев, когда автоплей заблокирован
+   ============================================================ */
+function videoPoster(fileOrUrl){
+  return new Promise((resolve)=>{
+    const isFile = fileOrUrl instanceof Blob;
+    const url = isFile ? URL.createObjectURL(fileOrUrl) : fileOrUrl;
+    const v=document.createElement('video');
+    v.crossOrigin='anonymous';
+    v.muted=true;
+    v.playsInline=true;
+    v.preload='metadata';
+    let done=false;
+    const cleanup=(result)=>{
+      if(done) return;
+      done=true;
+      try{ v.pause(); }catch(e){}
+      if(isFile) URL.revokeObjectURL(url);
+      resolve(result||'');
+    };
+    v.addEventListener('loadeddata',()=>{
+      try{
+        v.currentTime = Math.min(0.1, v.duration/10 || 0.1);
+      }catch(e){}
+    });
+    v.addEventListener('seeked',()=>{
+      try{
+        const w=v.videoWidth, h=v.videoHeight;
+        if(!w||!h){ cleanup(''); return; }
+        const maxSide=64;
+        const scale=Math.min(1, maxSide/Math.max(w,h));
+        const cw=Math.max(2,Math.round(w*scale));
+        const ch=Math.max(2,Math.round(h*scale));
+        const c=document.createElement('canvas');
+        c.width=cw; c.height=ch;
+        c.getContext('2d').drawImage(v,0,0,cw,ch);
+        const dataUrl=c.toDataURL('image/jpeg',0.7);
+        cleanup(dataUrl);
+      }catch(e){ cleanup(''); }
+    });
+    v.addEventListener('error',()=>cleanup(''));
+    setTimeout(()=>cleanup(''),4000);
+    v.src=url;
+  });
+}
+
 function videoDuration(file){
   return new Promise((resolve,reject)=>{
     const url=URL.createObjectURL(file);
@@ -1409,7 +1500,7 @@ function isPremium(nick){
 function hasPrivilege(nick){ return isAdmin(nick)||isPremium(nick); }
 function canSetPrefix(nick){ return isAdmin(nick)||isOwner(nick); }
 
-/* ---------- Nick display (эмодзи работают везде) ---------- */
+/* ---------- Nick display ---------- */
 function nickDisplay(name,opts){
   opts=opts||{};
   const rec=userRecord(name);
@@ -1428,25 +1519,42 @@ function nickDisplay(name,opts){
   }
   const emojis=Array.isArray(prof.emojis)?prof.emojis.slice(0,1):[];
   const mediaUrl=safeMediaUrl(prof.mediaUrl);
+  const mediaPoster=safeMediaUrl(prof.mediaPoster||'');
   const wrap=document.createElement('span');
   wrap.className='nick-wrap';
   if(opts.clickable&&S.user){
     wrap.style.cursor='pointer';
     wrap.addEventListener('click',e=>{ e.stopPropagation(); S.profileUser=name; S.profileEdit=false; S.view='profile'; render(); window.scrollTo(0,0); });
   }
-  /* мини-медиа рядом с ником — только если URL валидный */
+  /* мини-медиа — как стикер */
   if(mediaUrl && (isDirectMediaUrl(mediaUrl)||/^data:(image|video)\//i.test(mediaUrl))){
     const isVid=/\.(mp4|webm|ogg|mov)(\?|$)/i.test(mediaUrl)||/^data:video\//i.test(mediaUrl);
     if(isVid){
-      const v=el('span',{class:'nick-media-video'});
-      const vid=el('video',{class:'nick-media',src:mediaUrl,autoplay:'',loop:'',muted:'',playsinline:'',preload:'metadata'});
-      /* если видео битое — убираем весь блок */
+      const v=el('span',{class:'nick-media-video',title:'▶'});
+      const vid=document.createElement('video');
+      vid.className='nick-media';
+      if(mediaPoster) vid.poster=mediaPoster;
+      vid.src=mediaUrl;
+      vid.autoplay=true;
+      vid.loop=true;
+      vid.muted=true;
+      vid.defaultMuted=true;
+      vid.playsInline=true;
+      vid.setAttribute('muted','');
+      vid.setAttribute('playsinline','');
+      vid.setAttribute('webkit-playsinline','');
+      vid.setAttribute('disablepictureinpicture','');
+      vid.setAttribute('controlslist','nodownload nofullscreen noremoteplayback');
+      vid.preload='auto';
+      const tryPlay=()=>{ const p=vid.play(); if(p&&p.catch) p.catch(()=>{}); };
+      vid.addEventListener('loadeddata',tryPlay);
+      vid.addEventListener('canplay',tryPlay);
       vid.addEventListener('error',()=>{ try{ v.remove(); }catch(e){} });
       v.appendChild(vid);
       wrap.appendChild(v);
+      setTimeout(tryPlay,50);
     } else {
       const img=el('img',{class:'nick-media',src:mediaUrl,alt:''});
-      /* если картинка не загрузилась — убираем, чтобы не было "полосок" */
       img.addEventListener('error',()=>{ try{ img.remove(); }catch(e){} });
       img.addEventListener('click',()=>openLightbox(el('img',{src:mediaUrl,alt:''})));
       wrap.appendChild(img);
@@ -1463,7 +1571,6 @@ function nickDisplay(name,opts){
     nickEl.appendChild(pref);
   }
   nickEl.appendChild(document.createTextNode(name));
-  /* ЭМОДЗИ — работают на всех устройствах */
   emojis.forEach(em=>{
     const s=document.createElement('span');
     s.className='nick-emoji';
@@ -1486,7 +1593,6 @@ function avatarFor(name,size){
   if(avatar && (isDirectMediaUrl(avatar)||/^data:image\//i.test(avatar))){
     const img=el('img',{src:avatar,alt:''});
     img.addEventListener('error',()=>{
-      /* если битая — показываем букву вместо "полосок" */
       img.remove();
       box.textContent=String(name||'?').charAt(0);
     });
@@ -1497,12 +1603,12 @@ function avatarFor(name,size){
   return box;
 }
 
-/* ---------- MEDIA PICKER (для аватара и мини-медиа) ---------- */
+/* ---------- MEDIA PICKER ---------- */
 function mediaPicker(opts){
   opts=opts||{};
   const round=!!opts.round;
-  const kind=opts.kind||'media';   /* 'avatar' or 'media' */
-  const state={ url:(opts.initial&&opts.initial.url)||'', dataUrl:(opts.initial&&opts.initial.dataUrl)||'' };
+  const kind=opts.kind||'media';
+  const state={ url:(opts.initial&&opts.initial.url)||'', dataUrl:(opts.initial&&opts.initial.dataUrl)||'', poster:(opts.initial&&opts.initial.poster)||'' };
 
   const wrap=el('div',{class:'media-picker'});
   const row=el('div',{class:'row'});
@@ -1518,16 +1624,21 @@ function mediaPicker(opts){
   const fileInput=el('input',{type:'file',accept:kind==='avatar'?'image/*':'image/*,video/*',style:'display:none'});
 
   function getSrc(){ return state.dataUrl||state.url; }
+  function pushChange(){
+    if(typeof opts.onChange==='function') opts.onChange(getSrc(), state.poster||'');
+  }
   function renderPreview(){
     preview.replaceChildren();
     const src=getSrc();
     if(!src){
       preview.appendChild(el('span',{class:'ph',text:kind==='avatar'?'Аватар':'Фото/видео'}));
+      pushChange();
       return;
     }
     const isVid=kind!=='avatar' && (/\.(mp4|webm|ogg|mov)(\?|$)/i.test(src)||/^data:video\//i.test(src));
     if(isVid){
       const v=el('video',{src:src,muted:'',autoplay:'',loop:'',playsinline:''});
+      if(state.poster) v.poster=state.poster;
       v.addEventListener('error',()=>{ preview.replaceChildren(el('span',{class:'err',text:'Не работает'})); });
       preview.appendChild(v);
     } else {
@@ -1535,13 +1646,14 @@ function mediaPicker(opts){
       im.addEventListener('error',()=>{ preview.replaceChildren(el('span',{class:'err',text:'Не работает'})); });
       preview.appendChild(im);
     }
-    if(typeof opts.onChange==='function') opts.onChange(getSrc());
+    pushChange();
   }
   renderPreview();
 
   urlInput.addEventListener('input',()=>{
     state.url=urlInput.value.trim();
     state.dataUrl='';
+    state.poster='';
     if(state.url && !isDirectMediaUrl(state.url)){
       urlInput.style.borderColor='#ff6b6b';
     } else {
@@ -1557,13 +1669,15 @@ function mediaPicker(opts){
   });
   btnGal.addEventListener('click',()=>fileInput.click());
   btnClr.addEventListener('click',()=>{
-    state.url=''; state.dataUrl=''; urlInput.value=''; fileInput.value='';
+    state.url=''; state.dataUrl=''; state.poster='';
+    urlInput.value=''; fileInput.value='';
     urlInput.style.borderColor='';
+    /* явно сообщаем наружу */
+    if(typeof opts.onChange==='function') opts.onChange('','');
     renderPreview();
   });
 
-  fileInput.addEventListener('change',async()=>{
-    const f=fileInput.files[0];
+  async function handleFile(f){
     if(!f) return;
     try{
       if(f.type.startsWith('video/')){
@@ -1571,38 +1685,28 @@ function mediaPicker(opts){
         if(!isFinite(dur)||dur>VIDEO_MAX_SEC+0.3) throw new Error(t('videoTooLong')+dur.toFixed(1)+t('videoTooLongTail'));
         if(f.size>VIDEO_MAX_BYTES) throw new Error(t('videoTooBig')+fmtBytes(f.size));
         const dataUrl=await readAsDataURL(f);
-        state.dataUrl=dataUrl; state.url=''; urlInput.value='';
+        const poster=await videoPoster(f);
+        state.dataUrl=dataUrl; state.url=''; state.poster=poster||'';
+        urlInput.value='';
       } else {
         const dataUrl=await compressImage(f,kind==='avatar'?AVATAR_MAX_SIDE:IMG_MAX_SIDE,kind==='avatar'?AVATAR_MAX_BYTES:IMG_MAX_BYTES);
-        state.dataUrl=dataUrl; state.url=''; urlInput.value='';
+        state.dataUrl=dataUrl; state.url=''; state.poster='';
+        urlInput.value='';
       }
       urlInput.style.borderColor='';
       renderPreview();
     }catch(ex){
       alert(ex.message||t('fileReadFail'));
     }
-  });
+  }
 
-  /* drag&drop */
+  fileInput.addEventListener('change',()=>handleFile(fileInput.files[0]));
+
   ['dragenter','dragover'].forEach(ev=>wrap.addEventListener(ev,e=>{e.preventDefault();wrap.classList.add('dragover');}));
   ['dragleave','drop'].forEach(ev=>wrap.addEventListener(ev,e=>{e.preventDefault();wrap.classList.remove('dragover');}));
-  wrap.addEventListener('drop',async e=>{
+  wrap.addEventListener('drop',e=>{
     const f=e.dataTransfer.files&&e.dataTransfer.files[0];
-    if(!f) return;
-    try{
-      if(f.type.startsWith('video/')){
-        const dur=await videoDuration(f);
-        if(!isFinite(dur)||dur>VIDEO_MAX_SEC+0.3) throw new Error(t('videoTooLong')+dur.toFixed(1)+t('videoTooLongTail'));
-        if(f.size>VIDEO_MAX_BYTES) throw new Error(t('videoTooBig')+fmtBytes(f.size));
-        const dataUrl=await readAsDataURL(f);
-        state.dataUrl=dataUrl; state.url=''; urlInput.value='';
-      } else {
-        const dataUrl=await compressImage(f,kind==='avatar'?AVATAR_MAX_SIDE:IMG_MAX_SIDE,kind==='avatar'?AVATAR_MAX_BYTES:IMG_MAX_BYTES);
-        state.dataUrl=dataUrl; state.url=''; urlInput.value='';
-      }
-      urlInput.style.borderColor='';
-      renderPreview();
-    }catch(ex){ alert(ex.message||t('fileReadFail')); }
+    handleFile(f);
   });
 
   controls.appendChild(el('div',{class:'actions'},[btnUrl,btnGal,btnClr]));
@@ -1616,11 +1720,11 @@ function mediaPicker(opts){
 
   return {
     node:wrap,
-    getData:()=>({ url:state.url, dataUrl:state.dataUrl, value:(state.dataUrl||state.url) })
+    getData:()=>({ url:state.url, dataUrl:state.dataUrl, poster:state.poster, value:(state.dataUrl||state.url) })
   };
 }
 
-/* ---------- Profile view ---------- */
+/* ---------- Profile ---------- */
 function profileView(){
   if(!S.user) return [el('section',{class:'auth anim-pop'},[
     el('h2',{text:t('profile')}),
@@ -1660,7 +1764,14 @@ function profileView(){
   if(isMe) out.push(el('div',{class:'actions'},[
     el('button',{class:'btn primary',type:'button',onclick:()=>{
       S.profileEdit=!S.profileEdit;
-      S.profileDraft={avatar:prof.avatar||'',color:prof.color||'',prefix:prof.prefix||'',emojis:Array.isArray(prof.emojis)?prof.emojis.slice(0,1):[],mediaUrl:prof.mediaUrl||''};
+      S.profileDraft={
+        avatar:prof.avatar||'',
+        mediaUrl:prof.mediaUrl||'',
+        mediaPoster:prof.mediaPoster||'',
+        color:prof.color||'',
+        prefix:prof.prefix||'',
+        emojis:Array.isArray(prof.emojis)?prof.emojis.slice(0,1):[]
+      };
       render();
     }},[icon('edit'),S.profileEdit?t('cancel'):t('editProfile')])
   ]));
@@ -1671,23 +1782,28 @@ function profileEditor(){
   const draft=S.profileDraft;
   const err=el('div',{class:'err'});
 
-  /* ----- Аватар: ссылка + галерея ----- */
   const avatarPicker=mediaPicker({
     kind:'avatar',
     round:true,
-    initial:{ url: (draft.avatar && !/^data:/i.test(draft.avatar)) ? draft.avatar : '', dataUrl: (draft.avatar && /^data:/i.test(draft.avatar)) ? draft.avatar : '' },
+    initial:{
+      url: (draft.avatar && !/^data:/i.test(draft.avatar)) ? draft.avatar : '',
+      dataUrl: (draft.avatar && /^data:/i.test(draft.avatar)) ? draft.avatar : '',
+      poster: ''
+    },
     onChange:(src)=>{ draft.avatar=src||''; }
   });
 
-  /* ----- Мини-медиа у ника: ссылка + галерея ----- */
   const mediaPickerInst=mediaPicker({
     kind:'media',
     round:false,
-    initial:{ url: (draft.mediaUrl && !/^data:/i.test(draft.mediaUrl)) ? draft.mediaUrl : '', dataUrl: (draft.mediaUrl && /^data:/i.test(draft.mediaUrl)) ? draft.mediaUrl : '' },
-    onChange:(src)=>{ draft.mediaUrl=src||''; }
+    initial:{
+      url: (draft.mediaUrl && !/^data:/i.test(draft.mediaUrl)) ? draft.mediaUrl : '',
+      dataUrl: (draft.mediaUrl && /^data:/i.test(draft.mediaUrl)) ? draft.mediaUrl : '',
+      poster: draft.mediaPoster||''
+    },
+    onChange:(src,poster)=>{ draft.mediaUrl=src||''; draft.mediaPoster=poster||''; }
   });
 
-  /* ----- Цвет ----- */
   const colorGrid=el('div',{class:'color-grid'});
   COLORS.forEach(c=>{
     const opt=el('div',{class:'color-opt'+(draft.color===c.id?' selected':'')},[el('div',{class:'color-dot',style:'background:'+c.dot}),el('span',{text:S.lang==='en'?c.en:c.ru})]);
@@ -1695,7 +1811,6 @@ function profileEditor(){
     colorGrid.appendChild(opt);
   });
 
-  /* ----- Префикс ----- */
   const prefixInput=el('input',{type:'text',maxlength:'12',placeholder:t('prefixPlaceholder'),value:draft.prefix||'',id:'pf-prefix'});
   const prefixPreview=el('div',{class:'nick-preview-box',style:'min-height:44px;font-size:16px'});
   function renderPrefixPreview(){
@@ -1726,7 +1841,6 @@ function profileEditor(){
   });
   renderPrefixPreview();
 
-  /* ----- Эмодзи: только 1 ----- */
   const emojiGrid=el('div',{class:'emoji-picker'});
   EMOJIS.forEach(em=>{
     const b=el('button',{type:'button',class:'emoji-btn'+(draft.emojis[0]===em?' selected':''),text:em});
@@ -1739,18 +1853,16 @@ function profileEditor(){
     emojiGrid.appendChild(b);
   });
 
-  /* ----- Превью ника ----- */
   const previewBox=el('div',{class:'nick-preview-box'});
   function renderPreview(){
     previewBox.replaceChildren();
     const oldRec=S.users[nickToKey(S.user.nick)];
-    S.users[nickToKey(S.user.nick)]=Object.assign({},oldRec,{profile:{color:draft.color,prefix:draft.prefix,emojis:draft.emojis,mediaUrl:draft.mediaUrl,avatar:draft.avatar}});
+    S.users[nickToKey(S.user.nick)]=Object.assign({},oldRec,{profile:{color:draft.color,prefix:draft.prefix,emojis:draft.emojis,mediaUrl:draft.mediaUrl,mediaPoster:draft.mediaPoster,avatar:draft.avatar}});
     previewBox.appendChild(nickDisplay(S.user.nick));
     if(oldRec) S.users[nickToKey(S.user.nick)]=oldRec; else delete S.users[nickToKey(S.user.nick)];
   }
   renderPreview();
 
-  /* ----- Сохранить ----- */
   const saveBtn=el('button',{class:'btn primary',type:'button'},[icon('save'),t('saveProfile')]);
   saveBtn.addEventListener('click',async()=>{
     saveBtn.disabled=true;
@@ -1758,7 +1870,6 @@ function profileEditor(){
     try{
       const prefixVal=String(draft.prefix||'').trim();
       if(prefixVal&&!canSetPrefix(S.user.nick)&&isForbiddenPrefix(prefixVal)){ err.textContent=t('prefixForbidden'); saveBtn.disabled=false; return; }
-      /* проверяем, что URL валидны, если заданы */
       if(draft.avatar && !/^data:/i.test(draft.avatar) && !isDirectMediaUrl(draft.avatar)){ err.textContent=t('urlInvalid'); saveBtn.disabled=false; return; }
       if(draft.mediaUrl && !/^data:/i.test(draft.mediaUrl) && !isDirectMediaUrl(draft.mediaUrl)){ err.textContent=t('urlInvalid'); saveBtn.disabled=false; return; }
       const key=safePathKey(nickToKey(S.user.nick));
@@ -1767,7 +1878,8 @@ function profileEditor(){
         color:draft.color||'',
         prefix:draft.prefix||'',
         emojis:Array.isArray(draft.emojis)?draft.emojis.slice(0,1):[],
-        mediaUrl:draft.mediaUrl||''
+        mediaUrl:draft.mediaUrl||'',
+        mediaPoster:draft.mediaPoster||''
       };
       await fbUpdate('users/'+key,{profile});
       S.profileEdit=false;
