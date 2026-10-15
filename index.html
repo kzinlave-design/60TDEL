@@ -160,7 +160,7 @@ tr.row:hover{background:var(--surface-2)}
 .post{display:grid;grid-template-columns:140px minmax(0,1fr);border:1px solid var(--line);border-radius:4px;background:var(--surface);animation:fadeUp .3s ease both}
 .post+.post{margin-top:8px}
 .post .who{padding:12px;border-right:1px solid var(--line);display:flex;flex-direction:column;gap:6px;align-items:flex-start;background:var(--surface-2)}
-.avatar{width:40px;height:40px;border:1px solid var(--line-2);color:var(--fg);display:grid;place-items:center;font-family:var(--font-mono);font-weight:600;font-size:16px;text-transform:uppercase;overflow:hidden;cursor:pointer;border-radius:3px}
+.avatar{width:40px;height:40px;border:1px solid var(--line-2);color:var(--fg);display:grid;place-items:center;font-family:var(--font-mono);font-weight:600;font-size:16px;text-transform:uppercase;overflow:hidden;cursor:pointer;border-radius:3px;background:var(--surface)}
 .avatar img{width:100%;height:100%;object-fit:cover;display:block}
 .post .name{font-weight:500;overflow-wrap:anywhere;display:flex;align-items:center;gap:2px;flex-wrap:wrap;font-size:14px}
 .post .body{padding:12px 14px;min-width:0}
@@ -205,7 +205,7 @@ tr.row:hover{background:var(--surface-2)}
 .chatform input:focus{border-color:var(--accent);outline:none}
 .chatwin{border:1px solid var(--line);border-radius:4px;background:var(--surface);min-height:320px;max-height:65vh;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px;animation:fadeUp .3s ease both}
 .chatmsg{display:grid;grid-template-columns:36px minmax(0,1fr);gap:8px;animation:fadeIn .2s ease both}
-.chatmsg .av{width:36px;height:36px;border:1px solid var(--line-2);color:var(--fg);display:grid;place-items:center;font-family:var(--font-mono);font-weight:600;font-size:14px;text-transform:uppercase;overflow:hidden;cursor:pointer;border-radius:3px}
+.chatmsg .av{width:36px;height:36px;border:1px solid var(--line-2);color:var(--fg);display:grid;place-items:center;font-family:var(--font-mono);font-weight:600;font-size:14px;text-transform:uppercase;overflow:hidden;cursor:pointer;border-radius:3px;background:var(--surface)}
 .chatmsg .av img{width:100%;height:100%;object-fit:cover;display:block}
 .chatmsg .bub{background:var(--surface-2);border:1px solid var(--line);border-radius:3px;padding:8px 10px;min-width:0}
 .chatmsg.self .bub{border-color:var(--accent-dim)}
@@ -372,9 +372,6 @@ tr.row:hover{background:var(--surface-2)}
 </footer>
 
 <script type="module">
-const _k=[0x36,0x30,0x54,0x44,0x45,0x4c,0x53,0x45,0x43];
-function _xor(b){const a=typeof b==='string'?b.split(',').map(Number):b;let s='';for(let i=0;i<a.length;i++)s+=String.fromCharCode(a[i]^_k[i%_k.length]);return s;}
-
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
 import {
   getDatabase, ref, get, set, update, onValue, remove
@@ -399,6 +396,7 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const auth = getAuth(app);
 
+/* ---- SHA-256 (fallback) ---- */
 function jsSha256(msg){
   const K=[0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2];
   const H0=[0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19];
@@ -508,8 +506,8 @@ const I18N={
     hintLogin:'Введите ник и пароль, указанные при регистрации.',
     hintRegister:'3–20 символов: буквы, цифры, _ и -. Пароль минимум 6 символов.',
     profile:'Профиль', myProfile:'Мой профиль', editProfile:'Редактировать профиль',
-    avatar:'Аватар', uploadAvatar:'Загрузить аватар', removeAvatar:'Удалить',
-    banner:'Баннер', uploadBanner:'Загрузить баннер', removeBanner:'Удалить баннер',
+    avatar:'Аватар', uploadAvatar:'Загрузить аватар', removeAvatar:'Убрать аватар',
+    banner:'Баннер', uploadBanner:'Загрузить баннер', removeBanner:'Убрать баннер',
     nickColor:'Цвет ника', nickPrefix:'Префикс', nickEmoji:'Эмодзи в ник',
     nickMedia:'Фото/видео у ника', mediaUrl:'Ссылка на фото или видео',
     mediaHint:'Небольшое фото или видео рядом с ником',
@@ -545,7 +543,8 @@ const I18N={
     settingsSaved:'Настройки сохранены', account:'Аккаунт', security:'Безопасность',
     tabProfile:'Профиль', tabAccount:'Аккаунт', tabSessions:'Сессии',
     migratingAccount:'Переношу аккаунт в новую систему входа…',
-    migrationFailed:'Не удалось перенести аккаунт. Проверьте пароль.'
+    migrationFailed:'Не удалось перенести аккаунт. Проверьте пароль.',
+    avatarBroken:'Картинка повреждена. Удалите её и загрузите снова.'
   },
   en:{
     home:'Home', chat:'Chat', newTopic:'New topic', members:'Members',
@@ -608,7 +607,7 @@ const I18N={
     hintLogin:'Enter the nickname and password you used to sign up.',
     hintRegister:'3–20 characters: letters, digits, _ and -. Password at least 6 characters.',
     profile:'Profile', myProfile:'My profile', editProfile:'Edit profile',
-    avatar:'Avatar', uploadAvatar:'Upload avatar', removeAvatar:'Remove',
+    avatar:'Avatar', uploadAvatar:'Upload avatar', removeAvatar:'Remove avatar',
     banner:'Banner', uploadBanner:'Upload banner', removeBanner:'Remove banner',
     nickColor:'Name color', nickPrefix:'Prefix', nickEmoji:'Emoji in nickname',
     nickMedia:'Photo/video by nick', mediaUrl:'Link to photo or video',
@@ -645,7 +644,8 @@ const I18N={
     settingsSaved:'Settings saved', account:'Account', security:'Security',
     tabProfile:'Profile', tabAccount:'Account', tabSessions:'Sessions',
     migratingAccount:'Migrating account to new sign-in system…',
-    migrationFailed:'Could not migrate account. Check your password.'
+    migrationFailed:'Could not migrate account. Check your password.',
+    avatarBroken:'Image is corrupted. Remove it and upload again.'
   }
 };
 function t(k){ return I18N[S.lang][k] ?? I18N.ru[k] ?? k; }
@@ -825,27 +825,19 @@ async function tryMigrateToAuth(nick, key, email, pass){
   let rec=null;
   try{ rec=await fbGet('users/'+key); }catch(e){}
   if(!rec) return false;
-
   const recNick=rec.nick||nick;
-  const isStaff=isOwner(recNick)||isOwner(key)
-    || rec.owner===true
-    || rec.role==='admin'
-    || rec.role==='moderator';
-
+  const isStaff=isOwner(recNick)||isOwner(key)||rec.owner===true||rec.role==='admin'||rec.role==='moderator';
   if(!isStaff){
     if(!rec.salt||!rec.hash) return false;
     const check=await hashPass(pass,rec.salt);
     if(check!==rec.hash) return false;
   }
-
-  try{
-    await createUserWithEmailAndPassword(auth,email,pass);
-  }catch(e2){
+  try{ await createUserWithEmailAndPassword(auth,email,pass); }
+  catch(e2){
     const c2=String(e2.code||'');
     if(c2.includes('email-already-in-use')) return false;
     throw authErr(e2);
   }
-
   try{ await fbUpdate('users/'+key,{uid:auth.currentUser.uid,salt:null,hash:null}); }catch(e){}
   return true;
 }
@@ -858,15 +850,10 @@ async function register(nick,pass){
   const key=nickToKey(nick);
   if(!isSafeKey(key)) throw new Error(t('errNickFormat'));
   if(OWNERS.includes(key)||OWNERS.includes(nick.toLowerCase())) throw new Error(t('errNickTaken'));
-
   const found=await findUserRecord(nick);
-
   if(found.rec){
     const recNick=found.rec.nick||nick;
-    const isStaff=found.rec.owner===true
-      || found.rec.role==='admin'
-      || found.rec.role==='moderator'
-      || isOwner(recNick);
+    const isStaff=found.rec.owner===true||found.rec.role==='admin'||found.rec.role==='moderator'||isOwner(recNick);
     if(isStaff){
       const ok=await tryMigrateToAuth(nick,key,authEmail(nick),pass);
       if(ok){
@@ -877,20 +864,11 @@ async function register(nick,pass){
     }
     throw new Error(t('errNickTaken'));
   }
-
   try{ await createUserWithEmailAndPassword(auth,authEmail(nick),pass); }
   catch(ex){ throw authErr(ex); }
-
   await fbSet('users/'+key,{
-    nick,
-    uid:auth.currentUser.uid,
-    owner:false,
-    role:'user',
-    created:Date.now(),
-    profile:{
-      color:'', prefix:'', prefixColor:'',
-      emojis:[], mediaUrl:'', avatar:'', banner:''
-    }
+    nick, uid:auth.currentUser.uid, owner:false, role:'user', created:Date.now(),
+    profile:{color:'',prefix:'',prefixColor:'',emojis:[],mediaUrl:'',avatar:'',banner:''}
   });
   S.user={nick,owner:false,role:'user'};
 }
@@ -900,31 +878,21 @@ async function login(nick,pass){
   pass=String(pass||'');
   if(!nick) throw new Error(t('errUserNotFound'));
   if(pass.length<6) throw new Error(t('errPassShort'));
-
   const key=nickToKey(nick);
   if(!isSafeKey(key)) throw new Error(t('errUserNotFound'));
   const email=authEmail(nick);
-
-  try{
-    await signInWithEmailAndPassword(auth,email,pass);
-  }catch(ex){
+  try{ await signInWithEmailAndPassword(auth,email,pass); }
+  catch(ex){
     const c=String((ex&&ex.code)||'');
     if(c.includes('user-not-found')||c.includes('invalid-credential')||c.includes('invalid-login')){
       const migrated=await tryMigrateToAuth(nick,key,email,pass);
       if(!migrated) throw authErr(ex);
-    } else {
-      throw authErr(ex);
-    }
+    } else { throw authErr(ex); }
   }
-
   let rec=null;
   try{ rec=await fbGet('users/'+key); }catch(e){}
   const realNick=(rec&&rec.nick)||nick;
-  S.user={
-    nick:realNick,
-    owner:isOwner(realNick)||isOwner(key)||!!(rec&&rec.owner===true),
-    role:(rec&&rec.role)||'user'
-  };
+  S.user={ nick:realNick, owner:isOwner(realNick)||isOwner(key)||!!(rec&&rec.owner===true), role:(rec&&rec.role)||'user' };
 }
 
 function logout(){
@@ -944,14 +912,8 @@ async function restoreFromAuth(u){
   let rec=null; try{ rec=await fbGet('users/'+key); }catch(e){}
   if(S._busy) return;
   const realNick=(rec&&rec.nick)||key;
-  S.user={
-    nick:realNick,
-    owner:isOwner(realNick)||isOwner(key)||!!(rec&&rec.owner===true),
-    role:(rec&&rec.role)||'user'
-  };
-  render();
-  heartbeat();
-  registerSession();
+  S.user={ nick:realNick, owner:isOwner(realNick)||isOwner(key)||!!(rec&&rec.owner===true), role:(rec&&rec.role)||'user' };
+  render(); heartbeat(); registerSession();
 }
 
 async function heartbeat(){
@@ -986,11 +948,7 @@ async function registerSession(){
   if(!S.user) return;
   const key=nickToKey(S.user.nick);
   S._sessionId=safeRandomId('s');
-  try{
-    await fbSet('sessions/'+key+'/'+S._sessionId,{
-      device:deviceInfo(), ua:navigator.userAgent||'', ts:Date.now(), created:Date.now()
-    });
-  }catch(e){}
+  try{ await fbSet('sessions/'+key+'/'+S._sessionId,{device:deviceInfo(),ua:navigator.userAgent||'',ts:Date.now(),created:Date.now()}); }catch(e){}
 }
 async function killSession(sid){
   if(!S.user||!sid) return;
@@ -1006,6 +964,7 @@ async function killAllOtherSessions(){
   }
 }
 
+/* ---- Медиа: сжатие/чтение + ПРОВЕРКА декодирования ---- */
 function compressImage(file,maxSide,maxBytes){
   return new Promise((resolve,reject)=>{
     const reader=new FileReader();
@@ -1081,6 +1040,33 @@ function packMedia(a){
   return p;
 }
 
+/* ---- Проверка что data:URL реально декодируется ---- */
+function verifyImageUrl(url){
+  return new Promise((resolve)=>{
+    const s=String(url||'').trim();
+    if(!s){ resolve(false); return; }
+    if(!/^data:image\//i.test(s)){ resolve(true); return; } /* http/blob не проверяем тут */
+    const img=new Image();
+    let done=false;
+    const finish=(ok)=>{ if(done) return; done=true; resolve(ok); };
+    img.onload=()=>{ if(img.naturalWidth>0&&img.naturalHeight>0) finish(true); else finish(false); };
+    img.onerror=()=>finish(false);
+    setTimeout(()=>finish(false),4000);
+    img.src=s;
+  });
+}
+function makeAvatarImg(url, onFail){
+  const img=document.createElement('img');
+  img.alt='';
+  img.src=url;
+  let failed=false;
+  const fail=()=>{ if(failed) return; failed=true; img.remove(); if(onFail) onFail(); };
+  img.addEventListener('error',fail);
+  if(img.decode){ img.decode().catch(fail); }
+  return img;
+}
+
+/* ---- Публикация ---- */
 async function publishThread({board,title,text,att}){
   if(!S.user){ S.view='auth'; S.authMode='login'; render(); return; }
   const id=safeRandomId('t');
@@ -1316,7 +1302,12 @@ function attachmentsBlock(){
   }
   function renderPreview(){
     preview.replaceChildren();
-    if(state.imageData){ const i=el('img',{class:'thumb',src:state.imageData,alt:''}); i.addEventListener('error',()=>i.remove()); preview.appendChild(i); }
+    if(state.imageData){
+      verifyImageUrl(state.imageData).then(ok=>{
+        if(!ok){ setInfo(t('avatarBroken'),'err'); return; }
+        const i=el('img',{class:'thumb',src:state.imageData,alt:''}); i.addEventListener('error',()=>i.remove()); preview.appendChild(i);
+      });
+    }
     if(state.videoData){ const v=el('video',{class:'thumb-v',src:state.videoData,controls:'',preload:'metadata'}); v.addEventListener('error',()=>v.remove()); preview.appendChild(v); }
     const safeLink=safeMediaUrl(state.linkUrl);
     if(safeLink){
@@ -1479,10 +1470,13 @@ function nickDisplay(name,opts){
       v.appendChild(vid);
       wrap.appendChild(v);
     } else {
-      const img=el('img',{class:'nick-media',src:mediaUrl,alt:''});
-      img.addEventListener('error',()=>img.remove());
-      img.addEventListener('click',()=>openLightbox(el('img',{src:mediaUrl,alt:''})));
-      wrap.appendChild(img);
+      verifyImageUrl(mediaUrl).then(ok=>{
+        if(!ok) return;
+        const img=el('img',{class:'nick-media',src:mediaUrl,alt:''});
+        img.addEventListener('error',()=>img.remove());
+        img.addEventListener('click',()=>openLightbox(el('img',{src:mediaUrl,alt:''})));
+        wrap.insertBefore(img, wrap.firstChild);
+      });
     }
   }
   const vb=verifiedBadge(name);
@@ -1503,6 +1497,8 @@ function nickDisplay(name,opts){
   return wrap;
 }
 function authorCell(name){ const td=el('td'); td.appendChild(nickDisplay(name,{clickable:true})); return td; }
+
+/* ---- АВАТАР: защита от битых, принудительное декодирование ---- */
 function avatarFor(name,size){
   const rec=userRecord(name);
   const prof=(rec&&rec.profile)||{};
@@ -1510,12 +1506,16 @@ function avatarFor(name,size){
   const box=document.createElement('div');
   box.className='avatar';
   if(size){ box.style.width=size+'px'; box.style.height=size+'px'; box.style.fontSize=Math.round(size*0.4)+'px'; }
+  const fallback=()=>{ box.textContent=String(name||'?').charAt(0); };
   if(avatar){
-    const img=el('img',{src:avatar,alt:''});
-    img.addEventListener('error',()=>{ img.remove(); box.textContent=String(name||'?').charAt(0); });
-    box.appendChild(img);
+    fallback();
+    verifyImageUrl(avatar).then(ok=>{
+      if(!ok) return;
+      box.replaceChildren();
+      box.appendChild(makeAvatarImg(avatar, fallback));
+    });
   } else {
-    box.textContent=String(name||'?').charAt(0);
+    fallback();
   }
   return box;
 }
@@ -1538,18 +1538,25 @@ function profileView(){
   const bannerUrl=safeMediaUrl(prof.banner);
   const banner=el('div',{class:'profile-banner'});
   if(bannerUrl){
-    const bimg=el('img',{src:bannerUrl,alt:''});
-    bimg.addEventListener('error',()=>bimg.remove());
-    banner.appendChild(bimg);
+    verifyImageUrl(bannerUrl).then(ok=>{
+      if(!ok) return;
+      const bimg=el('img',{src:bannerUrl,alt:''});
+      bimg.addEventListener('error',()=>bimg.remove());
+      banner.appendChild(bimg);
+    });
   }
   const avatarBox=el('div',{class:'profile-avatar'});
   const avatar=safeMediaUrl(prof.avatar);
+  const setLetterP=()=>{ avatarBox.textContent=String(targetName).charAt(0); };
   if(avatar){
-    const aimg=el('img',{src:avatar,alt:''});
-    aimg.addEventListener('error',()=>{ aimg.remove(); avatarBox.textContent=String(targetName).charAt(0); });
-    avatarBox.appendChild(aimg);
+    setLetterP();
+    verifyImageUrl(avatar).then(ok=>{
+      if(!ok) return;
+      avatarBox.replaceChildren();
+      avatarBox.appendChild(makeAvatarImg(avatar, setLetterP));
+    });
   } else {
-    avatarBox.textContent=String(targetName).charAt(0);
+    setLetterP();
   }
   out.push(el('div',{class:'profile-head anim-fadeup'},[
     banner,
@@ -1598,19 +1605,32 @@ function profileEditor(){
   function renderAvPreview(){
     avPreview.replaceChildren();
     const safe=safeMediaUrl(draft.avatar);
+    const setLetterA=()=>{ avPreview.textContent=String(S.user.nick).charAt(0); };
     if(safe){
-      const img=el('img',{src:safe,alt:''});
-      img.addEventListener('error',()=>{ img.remove(); avPreview.textContent=String(S.user.nick).charAt(0); });
-      avPreview.appendChild(img);
+      setLetterA();
+      verifyImageUrl(safe).then(ok=>{
+        if(!ok){ err.textContent=t('avatarBroken'); return; }
+        avPreview.replaceChildren();
+        avPreview.appendChild(makeAvatarImg(safe, setLetterA));
+      });
     } else {
-      avPreview.textContent=String(S.user.nick).charAt(0);
+      setLetterA();
     }
   }
   renderAvPreview();
   const fileInput=el('input',{type:'file',accept:'image/*',style:'display:none'});
-  fileInput.addEventListener('change',async()=>{ if(!fileInput.files[0]) return; try{ const dataUrl=await compressImage(fileInput.files[0],AVATAR_MAX_SIDE,AVATAR_MAX_BYTES); draft.avatar=dataUrl; renderAvPreview(); err.textContent=''; }catch(ex){ err.textContent=ex.message||t('avatarTooBig'); } });
+  fileInput.addEventListener('change',async()=>{
+    if(!fileInput.files[0]) return;
+    err.textContent='';
+    try{
+      const dataUrl=await compressImage(fileInput.files[0],AVATAR_MAX_SIDE,AVATAR_MAX_BYTES);
+      const ok=await verifyImageUrl(dataUrl);
+      if(!ok){ err.textContent=t('avatarBroken'); return; }
+      draft.avatar=dataUrl; renderAvPreview();
+    }catch(ex){ err.textContent=ex.message||t('avatarTooBig'); }
+  });
   const upBtn=el('button',{class:'btn small',type:'button',onclick:()=>fileInput.click()},[icon('image'),t('uploadAvatar')]);
-  const remBtn=el('button',{class:'btn small',type:'button',onclick:()=>{ draft.avatar=''; renderAvPreview(); }},[icon('trash'),t('removeAvatar')]);
+  const remBtn=el('button',{class:'btn small',type:'button',onclick:()=>{ draft.avatar=''; renderAvPreview(); err.textContent=''; }},[icon('trash'),t('removeAvatar')]);
   const uploadWrap=el('div',{class:'avatar-upload'},[avPreview,el('div',{class:'actions'},[upBtn,remBtn]),fileInput]);
 
   const bannerInput=el('input',{type:'file',accept:'image/*',style:'display:none'});
@@ -1619,13 +1639,25 @@ function profileEditor(){
     bannerPreview.replaceChildren();
     const safe=safeMediaUrl(draft.banner);
     if(safe){
-      const img=el('img',{src:safe,alt:'',style:'width:100%;height:100%;object-fit:cover'});
-      img.addEventListener('error',()=>img.remove());
-      bannerPreview.appendChild(img);
+      verifyImageUrl(safe).then(ok=>{
+        if(!ok) return;
+        const img=el('img',{src:safe,alt:'',style:'width:100%;height:100%;object-fit:cover'});
+        img.addEventListener('error',()=>img.remove());
+        bannerPreview.appendChild(img);
+      });
     }
   }
   renderBannerPreview();
-  bannerInput.addEventListener('change',async()=>{ if(!bannerInput.files[0]) return; try{ const dataUrl=await compressImage(bannerInput.files[0],BANNER_MAX_SIDE,BANNER_MAX_BYTES); draft.banner=dataUrl; renderBannerPreview(); err.textContent=''; }catch(ex){ err.textContent=ex.message||t('avatarTooBig'); } });
+  bannerInput.addEventListener('change',async()=>{
+    if(!bannerInput.files[0]) return;
+    err.textContent='';
+    try{
+      const dataUrl=await compressImage(bannerInput.files[0],BANNER_MAX_SIDE,BANNER_MAX_BYTES);
+      const ok=await verifyImageUrl(dataUrl);
+      if(!ok){ err.textContent=t('avatarBroken'); return; }
+      draft.banner=dataUrl; renderBannerPreview();
+    }catch(ex){ err.textContent=ex.message||t('avatarTooBig'); }
+  });
   const bUp=el('button',{class:'btn small',type:'button',onclick:()=>bannerInput.click()},[icon('image'),t('uploadBanner')]);
   const bRem=el('button',{class:'btn small',type:'button',onclick:()=>{ draft.banner=''; renderBannerPreview(); }},[icon('trash'),t('removeBanner')]);
 
@@ -1701,6 +1733,15 @@ function profileEditor(){
     try{
       const prefixVal=String(draft.prefix||'').trim();
       if(prefixVal&&!canSetPrefix(S.user.nick)&&isForbiddenPrefix(prefixVal)){ err.textContent=t('prefixForbidden'); saveBtn.disabled=false; return; }
+      /* Проверка аватара/баннера перед сохранением */
+      if(draft.avatar){
+        const okA=await verifyImageUrl(safeMediaUrl(draft.avatar));
+        if(!okA){ err.textContent=t('avatarBroken'); saveBtn.disabled=false; return; }
+      }
+      if(draft.banner){
+        const okB=await verifyImageUrl(safeMediaUrl(draft.banner));
+        if(!okB){ err.textContent=t('avatarBroken'); saveBtn.disabled=false; return; }
+      }
       const key=safePathKey(nickToKey(S.user.nick));
       const profile={
         avatar:draft.avatar||'',
@@ -1914,9 +1955,7 @@ function listView(){
   if(S.page>pages) S.page=pages;
   const slice=rest.slice((S.page-1)*PAGE,S.page*PAGE);
   const out=[];
-  out.push(el('section',{class:'hero'},[
-    el('h1',{text:t('welcome')})
-  ]));
+  out.push(el('section',{class:'hero'},[el('h1',{text:t('welcome')})]));
   out.push(statsBlock());
   if(S.compose) out.push(composeBlock());
   out.push(searchBlock(all.length,S.threads.length));
@@ -1935,17 +1974,22 @@ function mediaNode(p){
   const addImage=(src)=>{
     const safe=safeMediaUrl(src);
     if(!safe) return;
-    const img=el('img',{src:safe,alt:'',loading:'lazy'});
-    img.addEventListener('error',()=>img.remove());
-    img.addEventListener('click',()=>openLightbox(el('img',{src:safe,alt:''})));
-    nodes.push(img);
+    verifyImageUrl(safe).then(ok=>{
+      if(!ok) return;
+      const img=el('img',{src:safe,alt:'',loading:'lazy'});
+      img.addEventListener('error',()=>img.remove());
+      img.addEventListener('click',()=>openLightbox(el('img',{src:safe,alt:''})));
+      const container=el('div',{class:'attach'},[img]);
+      /* если контейнер уже в DOM, вставим img; иначе вернём его позже */
+      nodes.push(container);
+    });
   };
   const addVideo=(src)=>{
     const safe=safeMediaUrl(src);
     if(!safe) return;
     const v=el('video',{src:safe,controls:'',preload:'metadata'});
     v.addEventListener('error',()=>v.remove());
-    nodes.push(v);
+    nodes.push(el('div',{class:'attach'},[v]));
   };
   if(p.media){
     if(p.mediaType==='video') addVideo(p.media);
@@ -1958,7 +2002,7 @@ function mediaNode(p){
       if(isV) addVideo(safeLink); else addImage(safeLink);
     }
   }
-  return nodes.length?el('div',{class:'attach'},nodes):null;
+  return nodes.length?nodes[0]:null;
 }
 function canEditPost(p){
   if(!S.user) return false;
@@ -2126,12 +2170,16 @@ function chatMsgEl(m,i,chatId,msgKey){
   const av=el('div',{class:'av'});
   const rec=userRecord(m.author);
   const avatar=rec&&rec.profile?safeMediaUrl(rec.profile.avatar):'';
+  const setLetterM=()=>{ av.textContent=(m.author||'?').charAt(0); };
   if(avatar){
-    const img=el('img',{src:avatar,alt:''});
-    img.addEventListener('error',()=>{ img.remove(); av.textContent=(m.author||'?').charAt(0); });
-    av.appendChild(img);
+    setLetterM();
+    verifyImageUrl(avatar).then(ok=>{
+      if(!ok) return;
+      av.replaceChildren();
+      av.appendChild(makeAvatarImg(avatar, setLetterM));
+    });
   } else {
-    av.textContent=(m.author||'?').charAt(0);
+    setLetterM();
   }
   av.addEventListener('click',()=>{ S.profileUser=m.author; S.view='profile'; S.profileEdit=false; S.profileTab='profile'; render(); window.scrollTo(0,0); });
   const top=el('div',{class:'top'},[
