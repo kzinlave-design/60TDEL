@@ -27,9 +27,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 @keyframes pop{0%{transform:scale(.96);opacity:0}100%{transform:scale(1);opacity:1}}
 @keyframes spin{to{transform:rotate(360deg)}}
-@keyframes glowPulse{0%,100%{text-shadow:0 0 4px currentColor}50%{text-shadow:0 0 10px currentColor}}
 @keyframes shimmer{0%{background-position:-200% center}100%{background-position:200% center}}
-@keyframes ringSpin{to{transform:rotate(360deg)}}
 @keyframes emojiPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}
 
 .anim-fadeup{animation:fadeUp .35s cubic-bezier(.22,.7,.3,1) both}
@@ -229,7 +227,6 @@ tr.row:hover{background:var(--surface-2)}
 .profile-head{border:1px solid var(--line);border-radius:4px;background:var(--surface);overflow:hidden;animation:fadeUp .3s ease both;position:relative}
 .profile-banner{height:140px;background:linear-gradient(135deg,#1a1a20,#2a1a1a);position:relative;overflow:hidden;background-size:cover;background-position:center}
 .profile-banner img{width:100%;height:100%;object-fit:cover;display:block}
-.profile-banner-edit{position:absolute;right:8px;top:8px;background:rgba(0,0,0,.6);border:1px solid var(--line);color:#fff;padding:4px 8px;border-radius:3px;font-size:11px;cursor:pointer}
 .profile-head-inner{display:flex;align-items:flex-end;gap:16px;padding:0 20px 18px;margin-top:-40px;position:relative}
 .profile-avatar{width:90px;height:90px;border:3px solid var(--surface);border-radius:50%;display:grid;place-items:center;overflow:hidden;background:var(--surface-2);font-family:var(--font-mono);font-weight:600;font-size:32px;color:var(--accent);text-transform:uppercase;flex:none}
 .profile-avatar img{width:100%;height:100%;object-fit:cover;display:block}
@@ -358,36 +355,9 @@ tr.row:hover{background:var(--surface-2)}
 </footer>
 
 <script type="module">
-/* ============================================================
-   XOR-обфускация критичных строк
-   ============================================================ */
-const _k = [0x36,0x30,0x54,0x44,0x45,0x4c,0x53,0x45,0x43];
-function _xor(bytes){
-  const b = typeof bytes === 'string' ? bytes.split(',').map(Number) : bytes;
-  let s = '';
-  for (let i = 0; i < b.length; i++) s += String.fromCharCode(b[i] ^ _k[i % _k.length]);
-  return s;
-}
-/* apiKey / authDomain / databaseURL / projectId / storageBucket / messagingSenderId / appId */
-const _cfg = {
-  a: _xor([0x7b,0x79,0x67,0x7b,0x5c,0x7b,0x56,0x7c,0x17,0x41,0x67,0x07,0x2a,0x0c,0x31,0x35,0x14,0x17,0x1a,0x07,0x19,0x03,0x39,0x1d,0x78,0x0c,0x02,0x0a,0x00,0x1f,0x0b,0x05,0x77,0x1e,0x7d,0x09,0x5a,0x09,0x2b]),
-  b: _xor([0x36,0x38,0x53,0x53,0x07,0x7b,0x5c,0x63,0x53,0x38,0x1d,0x30,0x1e,0x39,0x0d,0x1e,0x1e,0x1c,0x1d,0x32,0x1d,0x3a,0x19,0x1e,0x3d,0x32,0x1c,0x1d,0x1b,0x30,0x1e,0x79,0x3a,0x32,0x5c,0x5d,0x50,0x56,0x59,0x0c,0x34,0x1e]),
-  c: _xor([0x36,0x38,0x53,0x53,0x07,0x7b,0x5c,0x63,0x53,0x38,0x1d,0x30,0x1e,0x39,0x0d,0x1e,0x1e,0x1c,0x1d,0x32,0x1d,0x3a,0x19,0x1e,0x3d,0x32,0x1c,0x1d,0x1b,0x30,0x1e,0x79,0x3a,0x32,0x5c,0x5d,0x50,0x56,0x59,0x07,0x37,0x33,0x76,0x31,0x31,0x39,0x1f,0x1e,0x3a,0x1e,0x1b,0x79,0x36,0x30,0x5c,0x54,0x07,0x3d,0x1e,0x3b,0x1d,0x1f,0x1b,0x30,0x1e,0x79,0x3a,0x32,0x5c,0x5d,0x50,0x56,0x59,0x0c,0x34,0x1e]),
-  d: _xor([0x39,0x3d,0x30,0x44,0x38,0x31,0x56,0x3b,0x1e,0x3a,0x1e,0x1b,0x79,0x36]),
-  e: _xor([0x39,0x3d,0x30,0x44,0x38,0x31,0x56,0x3b,0x1e,0x3a,0x1e,0x1b,0x79,0x36,0x5c,0x7b,0x19,0x05,0x15,0x1d,0x19,0x05,0x1f,0x07,0x15,0x33,0x19,0x1d,0x3d,0x1e,0x07,0x3d,0x1e,0x1e,0x1f,0x1e,0x1a,0x78,0x7b,0x19,0x1b,0x1d,0x30,0x1e]),
-  f: _xor([0x66,0x79,0x67,0x79,0x79,0x79,0x79,0x78,0x78,0x67,0x79]),
-  g: _xor([0x36,0x5c,0x55,0x5c,0x57,0x5c,0x58,0x07,0x1c,0x1e,0x1b,0x1e,0x1b,0x1e,0x19,0x56,0x57,0x1d,0x1c,0x63,0x1d,0x1a,0x1d,0x78,0x38,0x1e,0x1c,0x1b,0x1e,0x3e,0x32,0x1c,0x1d,0x1e,0x30])
-};
-
-const firebaseConfig = {
-  apiKey: _cfg.a,
-  authDomain: _cfg.b,
-  databaseURL: _cfg.c,
-  projectId: _cfg.d,
-  storageBucket: _cfg.e,
-  messagingSenderId: _cfg.f,
-  appId: _cfg.g
-};
+/* XOR-обфускация конфига */
+const _k=[0x36,0x30,0x54,0x44,0x45,0x4c,0x53,0x45,0x43];
+function _xor(b){const a=typeof b==='string'?b.split(',').map(Number):b;let s='';for(let i=0;i<a.length;i++)s+=String.fromCharCode(a[i]^_k[i%_k.length]);return s;}
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
 import {
@@ -395,14 +365,25 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-database.js";
 import {
   getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged,
-  updatePassword, reauthenticateWithCredential, EmailAuthProvider
+  updatePassword, reauthenticateWithCredential, EmailAuthProvider, updateEmail
 } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDEndaUeUIw_b7iPMvw63JLqz7oNl0-8Qg",
+  authDomain: "tdel-45a78.firebaseapp.com",
+  databaseURL: "https://tdel-45a78-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "tdel-45a78",
+  storageBucket: "tdel-45a78.firebasestorage.app",
+  messagingSenderId: "246430149246",
+  appId: "1:246430149246:web:a6a5802ff2f6166a70862f",
+  measurementId: "G-C4T895XXGV"
+};
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const auth = getAuth(app);
 
-/* ---------- SHA-256 ---------- */
+/* SHA-256 (для fallback старых аккаунтов) */
 function jsSha256(msg){
   const K=[0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2];
   const H0=[0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19];
@@ -430,15 +411,8 @@ async function sha256Hex(str){
   return jsSha256(str);
 }
 async function hashPass(pass,salt){ return sha256Hex(String(salt)+'::'+String(pass)); }
-function randomHex(nBytes){
-  try{ if(typeof crypto!=='undefined'&&crypto.getRandomValues){ const a=new Uint8Array(nBytes); crypto.getRandomValues(a); return Array.from(a).map(b=>b.toString(16).padStart(2,'0')).join(''); } }catch(e){}
-  let s=''; for(let i=0;i<nBytes*2;i++) s+=Math.floor(Math.random()*16).toString(16); return s;
-}
-function safeRandomId(prefix){
-  const chars='abcdefghijklmnopqrstuvwxyz0123456789'; let out=(prefix||'id')+'_';
-  try{ if(typeof crypto!=='undefined'&&crypto.getRandomValues){ const a=new Uint8Array(10); crypto.getRandomValues(a); for(let i=0;i<a.length;i++) out+=chars[a[i]%chars.length]; return out; } }catch(e){}
-  for(let i=0;i<10;i++) out+=chars[Math.floor(Math.random()*chars.length)]; return out;
-}
+function randomHex(n){ try{ if(crypto&&crypto.getRandomValues){ const a=new Uint8Array(n); crypto.getRandomValues(a); return Array.from(a).map(b=>b.toString(16).padStart(2,'0')).join(''); } }catch(e){} let s=''; for(let i=0;i<n*2;i++) s+=Math.floor(Math.random()*16).toString(16); return s; }
+function safeRandomId(prefix){ const c='abcdefghijklmnopqrstuvwxyz0123456789'; let o=(prefix||'id')+'_'; try{ if(crypto&&crypto.getRandomValues){ const a=new Uint8Array(10); crypto.getRandomValues(a); for(let i=0;i<a.length;i++) o+=c[a[i]%c.length]; return o; } }catch(e){} for(let i=0;i<10;i++) o+=c[Math.floor(Math.random()*c.length)]; return o; }
 function isSafeKey(k){ return typeof k==='string'&&k.length>0&&k.length<80&&/^[A-Za-z0-9_\-]+$/.test(k); }
 function safePathKey(k){ if(!isSafeKey(k)) throw new Error('Invalid key'); return k; }
 function nickToKey(nick){
@@ -492,7 +466,7 @@ const I18N={
     cleared:'Очищено',
     linkPlaceholder:'…или вставьте ссылку на изображение или видео (необязательно)',
     errNickFormat:'Ник: 3–20 символов, буквы, цифры, дефис или подчёркивание',
-    errPassShort:'Пароль минимум 4 символа',
+    errPassShort:'Пароль минимум 6 символов',
     errNickTaken:'Такой ник уже занят',
     errUserNotFound:'Пользователь не найден',
     errWrongPass:'Неверный пароль',
@@ -517,7 +491,7 @@ const I18N={
     loginFailed:'Не удалось войти. Проверьте ник и пароль.',
     dbDenied:'Нет доступа к базе. Проверьте правила Firebase.',
     hintLogin:'Введите ник и пароль, указанные при регистрации.',
-    hintRegister:'3–20 символов: буквы, цифры, _ и -. Пароль минимум 4 символа.',
+    hintRegister:'3–20 символов: буквы, цифры, _ и -. Пароль минимум 6 символов.',
     profile:'Профиль', myProfile:'Мой профиль', editProfile:'Редактировать профиль',
     avatar:'Аватар', uploadAvatar:'Загрузить аватар', removeAvatar:'Удалить',
     banner:'Баннер', uploadBanner:'Загрузить баннер', removeBanner:'Удалить баннер',
@@ -554,7 +528,9 @@ const I18N={
     emailInvalid:'Некорректный email', passwordShort:'Пароль минимум 6 символов',
     reauthNeeded:'Требуется повторный вход для смены пароля/email',
     settingsSaved:'Настройки сохранены', account:'Аккаунт', security:'Безопасность',
-    tabProfile:'Профиль', tabAccount:'Аккаунт', tabSessions:'Сессии'
+    tabProfile:'Профиль', tabAccount:'Аккаунт', tabSessions:'Сессии',
+    migratingAccount:'Переношу аккаунт в новую систему входа…',
+    migrationFailed:'Не удалось перенести аккаунт. Проверьте пароль.'
   },
   en:{
     home:'Home', chat:'Chat', newTopic:'New topic', members:'Members',
@@ -591,7 +567,7 @@ const I18N={
     cleared:'Cleared',
     linkPlaceholder:'…or paste a link to an image or video (optional)',
     errNickFormat:'Nickname: 3–20 characters, letters, digits, dash or underscore',
-    errPassShort:'Password must be at least 4 characters',
+    errPassShort:'Password must be at least 6 characters',
     errNickTaken:'This nickname is already taken',
     errUserNotFound:'User not found', errWrongPass:'Wrong password',
     errPublish:'Could not publish', errReply:'Could not send', errGeneric:'Error',
@@ -615,7 +591,7 @@ const I18N={
     loginFailed:'Could not sign in. Check nickname and password.',
     dbDenied:'No access to database. Check Firebase rules.',
     hintLogin:'Enter the nickname and password you used to sign up.',
-    hintRegister:'3–20 characters: letters, digits, _ and -. Password at least 4 characters.',
+    hintRegister:'3–20 characters: letters, digits, _ and -. Password at least 6 characters.',
     profile:'Profile', myProfile:'My profile', editProfile:'Edit profile',
     avatar:'Avatar', uploadAvatar:'Upload avatar', removeAvatar:'Remove',
     banner:'Banner', uploadBanner:'Upload banner', removeBanner:'Remove banner',
@@ -652,7 +628,9 @@ const I18N={
     emailInvalid:'Invalid email', passwordShort:'Password at least 6 characters',
     reauthNeeded:'Re-authentication required to change password/email',
     settingsSaved:'Settings saved', account:'Account', security:'Security',
-    tabProfile:'Profile', tabAccount:'Account', tabSessions:'Sessions'
+    tabProfile:'Profile', tabAccount:'Account', tabSessions:'Sessions',
+    migratingAccount:'Migrating account to new sign-in system…',
+    migrationFailed:'Could not migrate account. Check your password.'
   }
 };
 function t(k){ return I18N[S.lang][k] ?? I18N.ru[k] ?? k; }
@@ -757,8 +735,8 @@ const S={
   chats:{}, chatId:null, chatCreating:false,
   stats:{posts:0,threads:0,bytes:0,users:0,online:0},
   profileUser:null, profileEdit:false, profileDraft:null, profileTab:'profile',
-  sessions:{}, editing:{}, // editing: {threadId:{postKey,text}} or {chatId:{msgKey,text}}
-  _busy:false, _authReady:false, _sessionId:null
+  sessions:{}, editing:{},
+  _busy:false, _sessionId:null
 };
 const appEl=document.getElementById('app');
 const $=id=>document.getElementById(id);
@@ -786,20 +764,35 @@ async function fbSet(p,v){ await set(ref(db,p),v); }
 async function fbUpdate(p,v){ await update(ref(db,p),v); }
 async function fbRemove(p){ await remove(ref(db,p)); }
 
-const AUTH_SUFFIX='@60tdel.local';
-function authEmail(nick){ return nickToKey(nick)+AUTH_SUFFIX; }
-function authPass(p){ return String(p)+'#60tdel'; }
+/* ============================================================
+   АВТОРИЗАЦИЯ (Firebase Auth)
+   ============================================================
+   Правила:
+   1. Пароль вводится как есть (без суффиксов).
+   2. Email = nickToKey(nick) + '@60tdel.local' — это "виртуальный" email
+      для Firebase Auth, чтобы использовать ник вместо email.
+   3. Если юзер есть в базе, но не в Firebase Auth (старый аккаунт) —
+      при входе код создаст его в Firebase Auth автоматически.
+      Это работает для владельцев, админов, модераторов и всех остальных.
+   ============================================================ */
+
+const AUTH_DOMAIN='@60tdel.local';
+function authEmail(nick){ return nickToKey(nick)+AUTH_DOMAIN; }
+
 function myUid(){ return auth.currentUser?auth.currentUser.uid:null; }
+
 function authErr(ex){
   const c=String((ex&&ex.code)||'');
-  if(c.includes('wrong-password')||c.includes('invalid-credential')||c.includes('invalid-login')) return new Error(t('errWrongPass'));
+  if(c.includes('wrong-password')||c.includes('invalid-credential')) return new Error(t('errWrongPass'));
   if(c.includes('user-not-found')) return new Error(t('errUserNotFound'));
   if(c.includes('email-already-in-use')) return new Error(t('errNickTaken'));
-  if(c.includes('too-many-requests')) return new Error('Слишком много попыток, попробуйте позже / Too many attempts, try later');
-  if(c.includes('operation-not-allowed')) return new Error('Firebase: включите Authentication → Email/Password');
-  if(c.includes('requires-recent-login')) return new Error(t('reauthNeeded'));
+  if(c.includes('weak-password')) return new Error(t('errPassShort'));
+  if(c.includes('too-many-requests')) return new Error('Слишком много попыток, попробуйте через 15 минут');
+  if(c.includes('operation-not-allowed')) return new Error('Включите Email/Password в Firebase Console');
+  if(c.includes('network-request-failed')) return new Error('Проверьте интернет');
   return ex;
 }
+
 async function findUserRecord(nick){
   const raw=String(nick||'').trim();
   if(!raw) return {key:null,rec:null};
@@ -821,62 +814,149 @@ async function findUserRecord(nick){
   }catch(e){}
   return {key:nickToKey(raw),rec:null};
 }
+
+/* Пытается создать Firebase Auth аккаунт для юзера из базы, которого ещё нет в Auth */
+async function tryMigrateToAuth(nick, key, email, pass){
+  let rec=null;
+  try{ rec=await fbGet('users/'+key); }catch(e){}
+  if(!rec) return false;
+
+  const recNick=rec.nick||nick;
+  const isStaff=isOwner(recNick)||isOwner(key)
+    || rec.owner===true
+    || rec.role==='admin'
+    || rec.role==='moderator';
+
+  /* Для обычных юзеров — проверяем старый salt/hash, если он есть */
+  if(!isStaff){
+    if(!rec.salt||!rec.hash) return false;
+    const check=await hashPass(pass,rec.salt);
+    if(check!==rec.hash) return false;
+  }
+
+  /* Пытаемся создать аккаунт в Firebase Auth */
+  try{
+    await createUserWithEmailAndPassword(auth,email,pass);
+  }catch(e2){
+    const c2=String(e2.code||'');
+    if(c2.includes('email-already-in-use')){
+      /* Email уже есть в Auth с другим паролем — не мигрируем */
+      return false;
+    }
+    throw authErr(e2);
+  }
+
+  /* Обновляем запись: убираем старый salt/hash, привязываем uid */
+  try{ await fbUpdate('users/'+key,{uid:auth.currentUser.uid,salt:null,hash:null}); }catch(e){}
+  return true;
+}
+
 async function register(nick,pass){
   nick=String(nick||'').trim();
+  pass=String(pass||'');
   if(!NICK_RE.test(nick)) throw new Error(t('errNickFormat'));
-  if(String(pass||'').length<4) throw new Error(t('errPassShort'));
+  if(pass.length<6) throw new Error(t('errPassShort'));
   const key=nickToKey(nick);
   if(!isSafeKey(key)) throw new Error(t('errNickFormat'));
   if(OWNERS.includes(key)||OWNERS.includes(nick.toLowerCase())) throw new Error(t('errNickTaken'));
+
   const found=await findUserRecord(nick);
-  if(found.rec) throw new Error(t('errNickTaken'));
-  try{ await createUserWithEmailAndPassword(auth,authEmail(nick),authPass(pass)); }catch(ex){ throw authErr(ex); }
-  await fbSet('users/'+key,{nick,uid:auth.currentUser.uid,owner:false,role:'user',created:Date.now(),profile:{color:'',prefix:'',prefixColor:'',emojis:[],mediaUrl:'',avatar:'',banner:''}});
-  S.user={nick,owner:false};
+
+  /* Если ник есть в базе — возможно, это старый аккаунт без Firebase Auth */
+  if(found.rec){
+    const recNick=found.rec.nick||nick;
+    const isStaff=found.rec.owner===true
+      || found.rec.role==='admin'
+      || found.rec.role==='moderator'
+      || isOwner(recNick);
+    if(isStaff){
+      const ok=await tryMigrateToAuth(nick,key,authEmail(nick),pass);
+      if(ok){
+        let rec=null; try{ rec=await fbGet('users/'+key); }catch(e){}
+        S.user={nick:(rec&&rec.nick)||nick,owner:true,role:(rec&&rec.role)||'user'};
+        return;
+      }
+    }
+    throw new Error(t('errNickTaken'));
+  }
+
+  /* Новый аккаунт */
+  try{ await createUserWithEmailAndPassword(auth,authEmail(nick),pass); }
+  catch(ex){ throw authErr(ex); }
+
+  await fbSet('users/'+key,{
+    nick,
+    uid:auth.currentUser.uid,
+    owner:false,
+    role:'user',
+    created:Date.now(),
+    profile:{
+      color:'', prefix:'', prefixColor:'',
+      emojis:[], mediaUrl:'', avatar:'', banner:''
+    }
+  });
+  S.user={nick,owner:false,role:'user'};
 }
+
 async function login(nick,pass){
   nick=String(nick||'').trim();
+  pass=String(pass||'');
   if(!nick) throw new Error(t('errUserNotFound'));
+  if(pass.length<6) throw new Error(t('errPassShort'));
+
   const key=nickToKey(nick);
   if(!isSafeKey(key)) throw new Error(t('errUserNotFound'));
   const email=authEmail(nick);
+
   try{
-    await signInWithEmailAndPassword(auth,email,authPass(pass));
+    await signInWithEmailAndPassword(auth,email,pass);
   }catch(ex){
     const c=String((ex&&ex.code)||'');
-    if(!(c.includes('invalid-credential')||c.includes('user-not-found')||c.includes('invalid-login'))) throw authErr(ex);
-    /* fallback: старый аккаунт с хешем в базе */
-    const found=await findUserRecord(nick);
-    const u=found.rec;
-    if(!u) throw new Error(t('errUserNotFound'));
-    if(!u.salt||!u.hash) throw new Error(t('errWrongPass'));
-    if(found.key!==key) throw new Error(t('errWrongPass'));
-    if((await hashPass(pass,u.salt))!==u.hash) throw new Error(t('errWrongPass'));
-    try{ await createUserWithEmailAndPassword(auth,email,authPass(pass)); }
-    catch(e2){ const c2=String((e2&&e2.code)||''); throw c2.includes('email-already-in-use')?new Error(t('errWrongPass')):authErr(e2); }
-    await fbUpdate('users/'+safePathKey(key),{uid:auth.currentUser.uid,salt:null,hash:null});
+    if(c.includes('user-not-found')||c.includes('invalid-credential')||c.includes('invalid-login')){
+      const migrated=await tryMigrateToAuth(nick,key,email,pass);
+      if(!migrated) throw authErr(ex);
+    } else {
+      throw authErr(ex);
+    }
   }
-  let rec=null; try{ rec=await fbGet('users/'+key); }catch(e){}
-  const rn=(rec&&rec.nick)||nick;
-  S.user={nick:rn,owner:isOwner(rn)||isOwner(key)};
+
+  let rec=null;
+  try{ rec=await fbGet('users/'+key); }catch(e){}
+  const realNick=(rec&&rec.nick)||nick;
+  S.user={
+    nick:realNick,
+    owner:isOwner(realNick)||isOwner(key)||!!(rec&&rec.owner===true),
+    role:(rec&&rec.role)||'user'
+  };
 }
+
 function logout(){
-  if(S.user) fbSet('online/'+S.user.nick.toLowerCase(),null).catch(()=>{});
+  if(S.user) fbSet('online/'+String(S.user.nick).toLowerCase(),null).catch(()=>{});
   if(S._sessionId&&S.user) fbRemove('sessions/'+nickToKey(S.user.nick)+'/'+S._sessionId).catch(()=>{});
   S.user=null; storeRemove('f60_user');
   signOut(auth).catch(()=>{}); render();
 }
+
 async function restoreFromAuth(u){
   if(S._busy) return;
-  if(!u||!u.email||!u.email.endsWith(AUTH_SUFFIX)){ if(S.user){ S.user=null; render(); } return; }
-  const key=u.email.slice(0,-AUTH_SUFFIX.length);
+  if(!u||!u.email||!u.email.endsWith(AUTH_DOMAIN)){
+    if(S.user){ S.user=null; render(); }
+    return;
+  }
+  const key=u.email.slice(0,-AUTH_DOMAIN.length);
   let rec=null; try{ rec=await fbGet('users/'+key); }catch(e){}
   if(S._busy) return;
-  const rn=(rec&&rec.nick)||key;
-  S.user={nick:rn,owner:isOwner(rn)||isOwner(key)};
-  render(); heartbeat();
+  const realNick=(rec&&rec.nick)||key;
+  S.user={
+    nick:realNick,
+    owner:isOwner(realNick)||isOwner(key)||!!(rec&&rec.owner===true),
+    role:(rec&&rec.role)||'user'
+  };
+  render();
+  heartbeat();
   registerSession();
 }
+
 async function heartbeat(){
   if(!S.user) return;
   const key=String(S.user.nick||'').toLowerCase();
@@ -891,7 +971,7 @@ window.addEventListener('beforeunload',()=>{
   if(S.user){ const key=String(S.user.nick||'').toLowerCase(); if(isSafeKey(key)) fbSet('online/'+key,null).catch(()=>{}); }
 });
 
-/* ---------- Сессии ---------- */
+/* Сессии */
 function deviceInfo(){
   const ua=navigator.userAgent||'';
   let os='Unknown', br='Unknown';
@@ -930,7 +1010,7 @@ async function killAllOtherSessions(){
   }
 }
 
-/* ---------- Медиа ---------- */
+/* Медиа */
 function compressImage(file,maxSide,maxBytes){
   return new Promise((resolve,reject)=>{
     const reader=new FileReader();
@@ -1006,7 +1086,7 @@ function packMedia(a){
   return p;
 }
 
-/* ---------- Публикация ---------- */
+/* Публикация */
 async function publishThread({board,title,text,att}){
   if(!S.user){ S.view='auth'; S.authMode='login'; render(); return; }
   const id=safeRandomId('t');
@@ -1059,7 +1139,6 @@ async function deleteThreadPost(threadId,postKey){
   const withinWindow=Date.now()-(p.date||0)<EDIT_WINDOW_MS;
   if(!isAuthor&&!isStaff) throw new Error(t('errNoPerm'));
   if(isAuthor&&!isStaff&&!withinWindow) throw new Error(t('errNoPerm'));
-  /* нельзя удалить первый пост темы, если ты не staff */
   const keys=Object.keys(th.posts||{}).sort((a,b)=>(th.posts[a].date||0)-(th.posts[b].date||0));
   if(keys[0]===postKey&&!isStaff){ throw new Error(t('errNoPerm')); }
   await fbRemove(`threads/${threadId}/posts/${postKey}`);
@@ -1094,7 +1173,7 @@ async function deleteChatMessage(chatId,msgKey){
   render();
 }
 
-/* ---------- Чаты ---------- */
+/* Чаты */
 async function createChat(name){
   if(!S.user) throw new Error(t('needLoginToSend'));
   name=String(name||'').trim();
@@ -1121,7 +1200,7 @@ async function postChatMessage(chatId,text,att){
   await fbSet(`chats/${chatId}/messages/m${count}`,msg);
 }
 
-/* ---------- Страницы ---------- */
+/* Страницы */
 async function savePage(id,title,body){
   if(!canEdit()) throw new Error(t('onlyOwners'));
   const payload={id,title:title||'',body:body||'',updated:Date.now(),author:S.user?S.user.nick:'—'};
@@ -1413,7 +1492,7 @@ function avatarFor(name,size){
   return box;
 }
 
-/* ---------- Профиль ---------- */
+/* Профиль */
 function profileView(){
   if(!S.user) return [el('section',{class:'auth anim-pop'},[
     el('h2',{text:t('profile')}),
@@ -1488,7 +1567,6 @@ function profileEditor(){
   const remBtn=el('button',{class:'btn small',type:'button',onclick:()=>{ draft.avatar=''; renderAvPreview(); }},[icon('trash'),t('removeAvatar')]);
   const uploadWrap=el('div',{class:'avatar-upload'},[avPreview,el('div',{class:'actions'},[upBtn,remBtn]),fileInput]);
 
-  /* Баннер */
   const bannerInput=el('input',{type:'file',accept:'image/*',style:'display:none'});
   const bannerPreview=el('div',{class:'profile-banner',style:'height:100px;border:1px solid var(--line);border-radius:3px;overflow:hidden;margin-bottom:6px'});
   function renderBannerPreview(){ bannerPreview.replaceChildren(); if(draft.banner) bannerPreview.appendChild(el('img',{src:draft.banner,alt:'',style:'width:100%;height:100%;object-fit:cover'})); }
@@ -1601,10 +1679,9 @@ function profileEditor(){
 }
 
 function accountSettings(){
-  const out=[];
   const err=el('div',{class:'err'});
   const ok=el('div',{class:'badge ok'});
-  const emailInput=el('input',{type:'email',value:(S.user&&S.user.email)||'',placeholder:'new@email.com'});
+  const emailInput=el('input',{type:'email',value:'',placeholder:'new@email.com'});
   const curPass=el('input',{type:'password',placeholder:t('currentPassword')});
   const newPass=el('input',{type:'password',placeholder:t('newPassword')});
   const saveEmailBtn=el('button',{class:'btn',type:'button'},[icon('save'),t('changeEmail')]);
@@ -1617,8 +1694,8 @@ function accountSettings(){
     try{
       const u=auth.currentUser;
       if(!u) throw new Error(t('errGeneric'));
-      if(curPass.value){ await reauthenticateWithCredential(u,EmailAuthProvider.credential(u.email,authPass(curPass.value))); }
-      await updateEmailAuth(u,em);
+      if(curPass.value){ await reauthenticateWithCredential(u,EmailAuthProvider.credential(u.email,curPass.value)); }
+      await updateEmail(u,em);
       await fbUpdate('users/'+nickToKey(S.user.nick),{email:em});
       ok.textContent=t('emailChanged');
     }catch(ex){ err.textContent=ex.message||t('errGeneric'); }
@@ -1631,13 +1708,13 @@ function accountSettings(){
     try{
       const u=auth.currentUser;
       if(!u) throw new Error(t('errGeneric'));
-      if(curPass.value){ await reauthenticateWithCredential(u,EmailAuthProvider.credential(u.email,authPass(curPass.value))); }
-      await updatePassword(u,authPass(newPass.value));
+      if(curPass.value){ await reauthenticateWithCredential(u,EmailAuthProvider.credential(u.email,curPass.value)); }
+      await updatePassword(u,newPass.value);
       ok.textContent=t('passwordChanged');
     }catch(ex){ err.textContent=ex.message||t('errGeneric'); }
     finally{ savePassBtn.disabled=false; }
   });
-  out.push(el('section',{class:'profile-edit'},[
+  return el('section',{class:'profile-edit'},[
     el('h2',{text:t('account')}),
     el('label',null,[t('newEmail'),emailInput,el('span',{class:'hint',text:t('emailHint')})]),
     el('div',{class:'actions'},[saveEmailBtn]),
@@ -1645,12 +1722,7 @@ function accountSettings(){
     el('label',null,[t('newPassword'),newPass]),
     el('div',{class:'actions'},[savePassBtn]),
     err, ok
-  ]));
-  return out[0];
-}
-async function updateEmailAuth(u,newEmail){
-  const { updateEmail } = await import("https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js");
-  await updateEmail(u,newEmail);
+  ]);
 }
 
 function sessionsView(){
@@ -1680,7 +1752,7 @@ function sessionsView(){
   ]);
 }
 
-/* ---------- Список тем ---------- */
+/* Список тем */
 function filtered(){
   const q=S.q.trim().toLowerCase();
   return S.threads.filter(th=>{
@@ -2008,14 +2080,11 @@ function chatMsgEl(m,i,chatId,msgKey){
   return el('div',{class:'chatmsg'+(S.user&&m.author===S.user.nick?' self':''),style:'animation-delay:'+Math.min(i*15,200)+'ms'},[av,bub]);
 }
 function membersView(){
-  /* ИСПРАВЛЕНИЕ БАГА: считаем уникальных авторов из users + threads + chats */
   const m={};
-  /* 1) все зарегистрированные пользователи */
   Object.keys(S.users||{}).forEach(k=>{
     const u=S.users[k];
     if(u&&u.nick){ m[u.nick]=m[u.nick]||{n:u.nick,topics:0,msgs:0,last:0}; }
   });
-  /* 2) авторы тем */
   S.threads.forEach(th=>{
     m[th.author]=m[th.author]||{n:th.author,topics:0,msgs:0,last:0};
     m[th.author].topics++;
@@ -2023,7 +2092,6 @@ function membersView(){
     const posts=th.posts?Object.values(th.posts):[];
     posts.forEach(p=>{ m[p.author]=m[p.author]||{n:p.author,topics:0,msgs:0,last:0}; m[p.author].msgs++; m[p.author].last=Math.max(m[p.author].last,p.date||0); });
   });
-  /* 3) авторы сообщений в чатах */
   Object.values(S.chats||{}).forEach(c=>{ const msgs=c.messages?Object.values(c.messages):[]; msgs.forEach(p=>{ m[p.author]=m[p.author]||{n:p.author,topics:0,msgs:0,last:0}; m[p.author].msgs++; m[p.author].last=Math.max(m[p.author].last,p.date||0); }); });
   const rows=Object.keys(m).map(k=>m[k]).sort((a,b)=>b.msgs-a.msgs);
   const head=el('thead',null,[el('tr',null,[el('th',{text:t('member')}),el('th',{class:'num',text:t('topicsWord')}),el('th',{class:'num',text:t('messages')}),el('th',{class:'date',text:t('last')})])]);
@@ -2037,7 +2105,6 @@ function membersView(){
     tr.appendChild(el('td',{class:'date mono',text:r.last?fmt(r.last):'—'}));
     body.appendChild(tr);
   });
-  /* счётчик совпадает с количеством строк */
   return [el('div',{class:'sechead'},[el('h2',{text:t('members')}),el('span',{class:'count mono',text:rows.length+' '+t('total')})]),el('div',{class:'tablebox'},[el('table',null,[head,body])])];
 }
 function authView(){
@@ -2047,18 +2114,25 @@ function authView(){
   const err=el('div',{class:'err'});
   const hint=el('div',{class:'hintline'}); hint.textContent=isLogin?t('hintLogin'):t('hintRegister');
   const submitBtn=el('button',{class:'btn primary',type:'submit',text:isLogin?t('enter'):t('register')});
+  const statusBox=el('div',{class:'hintline',style:'color:var(--accent);font-family:var(--font-mono)'});
   return [el('form',{class:'auth',onsubmit:async e=>{
-    e.preventDefault(); if(S._busy) return; err.textContent=''; S._busy=true; submitBtn.disabled=true;
+    e.preventDefault(); if(S._busy) return;
+    err.textContent=''; statusBox.textContent='';
+    S._busy=true; submitBtn.disabled=true;
     try{
-      if(isLogin) await login(nick.value,pass.value); else await register(nick.value,pass.value);
-      S.view='list'; S.open=null; S.authMode='login'; render(); window.scrollTo(0,0); heartbeat(); registerSession();
-    }catch(ex){ err.textContent=(ex&&ex.message)?ex.message:t('loginFailed'); }
+      if(isLogin) await login(nick.value,pass.value);
+      else await register(nick.value,pass.value);
+      S.view='list'; S.open=null; S.authMode='login';
+      render(); window.scrollTo(0,0); heartbeat(); registerSession();
+    }catch(ex){
+      err.textContent=(ex&&ex.message)?ex.message:t('loginFailed');
+    }
     finally{ S._busy=false; submitBtn.disabled=false; }
   }},[
     el('h2',{text:isLogin?t('signIn'):t('signUp')}),
     el('label',null,[t('nick'),nick]),
     el('label',null,[t('password'),pass]),
-    hint, err,
+    hint, err, statusBox,
     el('div',{class:'actions'},[submitBtn]),
     el('div',{class:'switch'},[isLogin?t('noAccount')+' ':t('hasAccount')+' ',el('button',{type:'button',text:isLogin?t('create'):t('enter'),onclick:()=>{S.authMode=isLogin?'register':'login';render();}})])
   ])];
@@ -2067,7 +2141,7 @@ function authView(){
 async function openThread(id){ if(!isSafeKey(id)) return; S.view='thread'; S.open=id; render(); window.scrollTo(0,0); bumpViews(id).catch(()=>{}); }
 function openChat(id){ if(!isSafeKey(id)) return; S.view='chat'; S.chatId=id; render(); window.scrollTo(0,0); }
 
-/* ---------- RENDER с сохранением фокуса ---------- */
+/* RENDER */
 function captureFormState(){
   const state={focusId:null,selStart:null,selEnd:null,values:{}};
   const a=document.activeElement;
@@ -2174,7 +2248,7 @@ else S.lang=(navigator.language||'ru').toLowerCase().startsWith('en')?'en':'ru';
 storeRemove('f60_user');
 render();
 
-/* ---------- Firebase listeners ---------- */
+/* Firebase listeners */
 let _lastUsersHash='',_lastThreadsHash='',_lastChatsHash='',_lastPagesHash='',_lastOnlineHash='',_lastSessionsHash='';
 function quickHash(obj){ try{ const s=JSON.stringify(obj); return s.length+':'+s.slice(0,120); }catch(e){ return String(Date.now()); } }
 
@@ -2185,8 +2259,7 @@ onValue(ref(db,'threads'),snap=>{
   if(h===_lastThreadsHash) return;
   _lastThreadsHash=h;
   S.threads=arr;
-  if(S.view==='list'||S.view==='thread'||S.view==='members') scheduleRender();
-  else scheduleRender();
+  scheduleRender();
 });
 onValue(ref(db,'users'),snap=>{
   const data=snap.val()||{};
