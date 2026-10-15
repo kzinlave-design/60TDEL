@@ -41,7 +41,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .nav{background:var(--nav-bg);border-bottom:1px solid var(--nav-line);padding-inline:16px;position:sticky;top:0;z-index:20;backdrop-filter:blur(8px)}
 .nav-in{max-width:1200px;margin-inline:auto;display:flex;align-items:center;gap:4px;min-height:56px;flex-wrap:wrap;padding-block:4px}
 .brand{display:flex;align-items:center;background:none;border:0;padding:4px 10px 4px 0;cursor:pointer;margin-right:6px}
-.brand svg{height:38px;width:auto;display:block}
+.brand svg{height:40px;width:auto;display:block}
 .nav button.link{background:none;border:0;color:var(--nav-fg);opacity:.7;padding:8px 10px;cursor:pointer;font-size:14px;position:relative;transition:opacity .2s,color .2s;white-space:nowrap;border-radius:3px}
 .nav button.link:hover{opacity:1;color:var(--accent);background:rgba(217,74,74,.06)}
 .nav button.link[aria-current="page"]{opacity:1;color:var(--accent)}
@@ -64,7 +64,6 @@ h2::before{content:"";position:absolute;left:0;top:5px;bottom:5px;width:2px;back
 
 .hero{padding:18px 0 4px;display:flex;flex-direction:column;gap:4px;border-bottom:1px solid var(--line);padding-bottom:14px}
 .hero h1{font-size:26px;letter-spacing:-.02em;font-weight:600}
-.hero .sub{color:var(--muted);font-size:14px;font-family:var(--font-mono)}
 
 .stats{border:1px solid var(--line);border-radius:4px;background:var(--surface);overflow:hidden;animation:fadeUp .35s ease both}
 .stats .grid{display:grid;grid-template-columns:repeat(4,1fr)}
@@ -321,14 +320,35 @@ tr.row:hover{background:var(--surface-2)}
 <header class="nav">
   <div class="nav-in">
     <button class="brand" id="brand" aria-label="60TDEL">
-      <svg viewBox="0 0 120 90" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <g fill="#16161a" stroke="#d94a4a" stroke-width="1.4" stroke-linejoin="round">
-          <rect x="20" y="26" width="80" height="52" rx="2" transform="rotate(-3 60 52)"/>
-          <rect x="22" y="24" width="80" height="52" rx="2" transform="rotate(-2 62 50)"/>
-          <rect x="24" y="22" width="80" height="52" rx="2" transform="rotate(-1 64 48)"/>
-          <rect x="26" y="20" width="80" height="52" rx="2"/>
+      <svg viewBox="0 0 120 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs>
+          <linearGradient id="paperGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#f4f4f6"/>
+            <stop offset="1" stop-color="#d8d8dc"/>
+          </linearGradient>
+          <linearGradient id="paperEdge" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#b8b8bc"/>
+            <stop offset="1" stop-color="#8a8a90"/>
+          </linearGradient>
+        </defs>
+        <!-- стопка бумаг снизу -->
+        <g>
+          <rect x="18" y="70" width="84" height="6" rx="1" fill="url(#paperEdge)"/>
+          <rect x="17" y="64" width="86" height="6" rx="1" fill="url(#paperGrad)" stroke="#8a8a90" stroke-width="0.5"/>
+          <rect x="19" y="58" width="82" height="6" rx="1" fill="url(#paperGrad)" stroke="#8a8a90" stroke-width="0.5"/>
+          <rect x="16" y="52" width="88" height="6" rx="1" fill="url(#paperGrad)" stroke="#8a8a90" stroke-width="0.5"/>
+          <rect x="18" y="46" width="84" height="6" rx="1" fill="url(#paperGrad)" stroke="#8a8a90" stroke-width="0.5"/>
+          <rect x="17" y="40" width="86" height="6" rx="1" fill="url(#paperGrad)" stroke="#8a8a90" stroke-width="0.5"/>
+          <rect x="19" y="34" width="82" height="6" rx="1" fill="url(#paperGrad)" stroke="#8a8a90" stroke-width="0.5"/>
         </g>
-        <text x="66" y="58" text-anchor="middle" font-family="Georgia,serif" font-size="42" fill="#d94a4a" font-style="italic">60</text>
+        <!-- верхний лист с загнутым уголком -->
+        <g>
+          <path d="M 22 30 L 98 30 L 98 70 Q 92 68 86 70 L 22 70 Z" fill="url(#paperGrad)" stroke="#8a8a90" stroke-width="0.8"/>
+          <path d="M 86 30 Q 88 36 98 38 L 98 30 Z" fill="#f4f4f6" stroke="#8a8a90" stroke-width="0.8"/>
+          <path d="M 86 30 Q 88 36 98 38" fill="none" stroke="#8a8a90" stroke-width="0.8"/>
+        </g>
+        <!-- цифра 60 -->
+        <text x="60" y="62" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="30" font-style="italic" fill="#1a1a20" font-weight="500">60</text>
       </svg>
     </button>
     <button class="link" id="nav-home"></button>
@@ -383,7 +403,7 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const auth = getAuth(app);
 
-/* SHA-256 (для fallback старых аккаунтов) */
+/* SHA-256 (fallback для старых аккаунтов) */
 function jsSha256(msg){
   const K=[0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2];
   const H0=[0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19];
@@ -751,7 +771,11 @@ function el(tag,attrs,kids){
     else if(k==='disabled'){ if(attrs[k]) e.setAttribute('disabled',''); }
     else e.setAttribute(k,attrs[k]);
   });
-  (kids||[]).forEach(c=>{ if(c==null) return; e.appendChild(typeof c==='string'?document.createTextNode(c):c); });
+  (kids||[]).forEach(c=>{
+    if(c==null) return;
+    if(typeof c==='string') e.appendChild(document.createTextNode(c));
+    else if(c instanceof Node) e.appendChild(c);
+  });
   return e;
 }
 function fmt(ts){ if(!ts) return '—'; return new Date(ts).toLocaleDateString(S.lang==='en'?'en-GB':'ru-RU',{day:'numeric',month:'short',year:'numeric'}).replace(' г.',''); }
@@ -764,21 +788,8 @@ async function fbSet(p,v){ await set(ref(db,p),v); }
 async function fbUpdate(p,v){ await update(ref(db,p),v); }
 async function fbRemove(p){ await remove(ref(db,p)); }
 
-/* ============================================================
-   АВТОРИЗАЦИЯ (Firebase Auth)
-   ============================================================
-   Правила:
-   1. Пароль вводится как есть (без суффиксов).
-   2. Email = nickToKey(nick) + '@60tdel.local' — это "виртуальный" email
-      для Firebase Auth, чтобы использовать ник вместо email.
-   3. Если юзер есть в базе, но не в Firebase Auth (старый аккаунт) —
-      при входе код создаст его в Firebase Auth автоматически.
-      Это работает для владельцев, админов, модераторов и всех остальных.
-   ============================================================ */
-
 const AUTH_DOMAIN='@60tdel.local';
 function authEmail(nick){ return nickToKey(nick)+AUTH_DOMAIN; }
-
 function myUid(){ return auth.currentUser?auth.currentUser.uid:null; }
 
 function authErr(ex){
@@ -815,7 +826,6 @@ async function findUserRecord(nick){
   return {key:nickToKey(raw),rec:null};
 }
 
-/* Пытается создать Firebase Auth аккаунт для юзера из базы, которого ещё нет в Auth */
 async function tryMigrateToAuth(nick, key, email, pass){
   let rec=null;
   try{ rec=await fbGet('users/'+key); }catch(e){}
@@ -827,26 +837,20 @@ async function tryMigrateToAuth(nick, key, email, pass){
     || rec.role==='admin'
     || rec.role==='moderator';
 
-  /* Для обычных юзеров — проверяем старый salt/hash, если он есть */
   if(!isStaff){
     if(!rec.salt||!rec.hash) return false;
     const check=await hashPass(pass,rec.salt);
     if(check!==rec.hash) return false;
   }
 
-  /* Пытаемся создать аккаунт в Firebase Auth */
   try{
     await createUserWithEmailAndPassword(auth,email,pass);
   }catch(e2){
     const c2=String(e2.code||'');
-    if(c2.includes('email-already-in-use')){
-      /* Email уже есть в Auth с другим паролем — не мигрируем */
-      return false;
-    }
+    if(c2.includes('email-already-in-use')) return false;
     throw authErr(e2);
   }
 
-  /* Обновляем запись: убираем старый salt/hash, привязываем uid */
   try{ await fbUpdate('users/'+key,{uid:auth.currentUser.uid,salt:null,hash:null}); }catch(e){}
   return true;
 }
@@ -862,7 +866,6 @@ async function register(nick,pass){
 
   const found=await findUserRecord(nick);
 
-  /* Если ник есть в базе — возможно, это старый аккаунт без Firebase Auth */
   if(found.rec){
     const recNick=found.rec.nick||nick;
     const isStaff=found.rec.owner===true
@@ -880,7 +883,6 @@ async function register(nick,pass){
     throw new Error(t('errNickTaken'));
   }
 
-  /* Новый аккаунт */
   try{ await createUserWithEmailAndPassword(auth,authEmail(nick),pass); }
   catch(ex){ throw authErr(ex); }
 
@@ -971,7 +973,6 @@ window.addEventListener('beforeunload',()=>{
   if(S.user){ const key=String(S.user.nick||'').toLowerCase(); if(isSafeKey(key)) fbSet('online/'+key,null).catch(()=>{}); }
 });
 
-/* Сессии */
 function deviceInfo(){
   const ua=navigator.userAgent||'';
   let os='Unknown', br='Unknown';
@@ -1010,7 +1011,6 @@ async function killAllOtherSessions(){
   }
 }
 
-/* Медиа */
 function compressImage(file,maxSide,maxBytes){
   return new Promise((resolve,reject)=>{
     const reader=new FileReader();
@@ -1086,7 +1086,6 @@ function packMedia(a){
   return p;
 }
 
-/* Публикация */
 async function publishThread({board,title,text,att}){
   if(!S.user){ S.view='auth'; S.authMode='login'; render(); return; }
   const id=safeRandomId('t');
@@ -1173,7 +1172,6 @@ async function deleteChatMessage(chatId,msgKey){
   render();
 }
 
-/* Чаты */
 async function createChat(name){
   if(!S.user) throw new Error(t('needLoginToSend'));
   name=String(name||'').trim();
@@ -1200,7 +1198,6 @@ async function postChatMessage(chatId,text,att){
   await fbSet(`chats/${chatId}/messages/m${count}`,msg);
 }
 
-/* Страницы */
 async function savePage(id,title,body){
   if(!canEdit()) throw new Error(t('onlyOwners'));
   const payload={id,title:title||'',body:body||'',updated:Date.now(),author:S.user?S.user.nick:'—'};
@@ -1492,7 +1489,6 @@ function avatarFor(name,size){
   return box;
 }
 
-/* Профиль */
 function profileView(){
   if(!S.user) return [el('section',{class:'auth anim-pop'},[
     el('h2',{text:t('profile')}),
@@ -1752,7 +1748,6 @@ function sessionsView(){
   ]);
 }
 
-/* Список тем */
 function filtered(){
   const q=S.q.trim().toLowerCase();
   return S.threads.filter(th=>{
@@ -1862,8 +1857,7 @@ function listView(){
   const slice=rest.slice((S.page-1)*PAGE,S.page*PAGE);
   const out=[];
   out.push(el('section',{class:'hero'},[
-    el('h1',{text:t('welcome')}),
-    el('div',{class:'sub',text:'60TDEL · community board'})
+    el('h1',{text:t('welcome')})
   ]));
   out.push(statsBlock());
   if(S.compose) out.push(composeBlock());
@@ -1920,11 +1914,11 @@ function postEl(p,i,threadId,postKey,isFirst){
     const cancel=el('button',{class:'btn small',type:'button',text:t('cancelEdit'),onclick:()=>{ delete S.editing['t_'+threadId+'_'+postKey]; render(); }});
     body.appendChild(metaEl);
     body.appendChild(el('div',{class:'edit-row'},[ta,el('div',{class:'actions'},[save,cancel]),err]));
-    body.appendChild(mediaNode(p));
+    const media=mediaNode(p); if(media) body.appendChild(media);
   } else {
     body.appendChild(metaEl);
     if(p.text) body.appendChild(el('p',{class:'text',text:p.text}));
-    body.appendChild(mediaNode(p));
+    const media=mediaNode(p); if(media) body.appendChild(media);
   }
   return el('article',{class:'post',style:'animation-delay:'+Math.min(i*40,300)+'ms'},[who,body]);
 }
@@ -2071,11 +2065,11 @@ function chatMsgEl(m,i,chatId,msgKey){
     const cancel=el('button',{class:'btn small',type:'button',text:t('cancelEdit'),onclick:()=>{ delete S.editing['c_'+chatId+'_'+msgKey]; render(); }});
     bub.appendChild(top);
     bub.appendChild(el('div',{class:'edit-row'},[ta,el('div',{class:'actions'},[save,cancel]),err]));
-    bub.appendChild(mediaNode(m));
+    const media=mediaNode(m); if(media) bub.appendChild(media);
   } else {
     bub.appendChild(top);
     if(m.text) bub.appendChild(el('p',{class:'txt',text:m.text}));
-    bub.appendChild(mediaNode(m));
+    const media=mediaNode(m); if(media) bub.appendChild(media);
   }
   return el('div',{class:'chatmsg'+(S.user&&m.author===S.user.nick?' self':''),style:'animation-delay:'+Math.min(i*15,200)+'ms'},[av,bub]);
 }
@@ -2114,11 +2108,9 @@ function authView(){
   const err=el('div',{class:'err'});
   const hint=el('div',{class:'hintline'}); hint.textContent=isLogin?t('hintLogin'):t('hintRegister');
   const submitBtn=el('button',{class:'btn primary',type:'submit',text:isLogin?t('enter'):t('register')});
-  const statusBox=el('div',{class:'hintline',style:'color:var(--accent);font-family:var(--font-mono)'});
   return [el('form',{class:'auth',onsubmit:async e=>{
     e.preventDefault(); if(S._busy) return;
-    err.textContent=''; statusBox.textContent='';
-    S._busy=true; submitBtn.disabled=true;
+    err.textContent=''; S._busy=true; submitBtn.disabled=true;
     try{
       if(isLogin) await login(nick.value,pass.value);
       else await register(nick.value,pass.value);
@@ -2132,7 +2124,7 @@ function authView(){
     el('h2',{text:isLogin?t('signIn'):t('signUp')}),
     el('label',null,[t('nick'),nick]),
     el('label',null,[t('password'),pass]),
-    hint, err, statusBox,
+    hint, err,
     el('div',{class:'actions'},[submitBtn]),
     el('div',{class:'switch'},[isLogin?t('noAccount')+' ':t('hasAccount')+' ',el('button',{type:'button',text:isLogin?t('create'):t('enter'),onclick:()=>{S.authMode=isLogin?'register':'login';render();}})])
   ])];
@@ -2141,7 +2133,6 @@ function authView(){
 async function openThread(id){ if(!isSafeKey(id)) return; S.view='thread'; S.open=id; render(); window.scrollTo(0,0); bumpViews(id).catch(()=>{}); }
 function openChat(id){ if(!isSafeKey(id)) return; S.view='chat'; S.chatId=id; render(); window.scrollTo(0,0); }
 
-/* RENDER */
 function captureFormState(){
   const state={focusId:null,selStart:null,selEnd:null,values:{}};
   const a=document.activeElement;
@@ -2187,7 +2178,7 @@ function render(){
     else if(S.view==='profile') nodes=profileView();
     else if(PAGES.some(p=>p.id===S.view)) nodes=pageView();
     else nodes=listView();
-    nodes.forEach(n=>{ if(n) appEl.appendChild(n); });
+    nodes.filter(n => n instanceof Node).forEach(n => appEl.appendChild(n));
     setNav();
     restoreFormState(formState);
     if(S.view==='chat'){
@@ -2248,7 +2239,6 @@ else S.lang=(navigator.language||'ru').toLowerCase().startsWith('en')?'en':'ru';
 storeRemove('f60_user');
 render();
 
-/* Firebase listeners */
 let _lastUsersHash='',_lastThreadsHash='',_lastChatsHash='',_lastPagesHash='',_lastOnlineHash='',_lastSessionsHash='';
 function quickHash(obj){ try{ const s=JSON.stringify(obj); return s.length+':'+s.slice(0,120); }catch(e){ return String(Date.now()); } }
 
