@@ -331,7 +331,6 @@ tr.row:hover{background:var(--surface-2)}
             <stop offset="1" stop-color="#8a8a90"/>
           </linearGradient>
         </defs>
-        <!-- стопка бумаг снизу -->
         <g>
           <rect x="18" y="70" width="84" height="6" rx="1" fill="url(#paperEdge)"/>
           <rect x="17" y="64" width="86" height="6" rx="1" fill="url(#paperGrad)" stroke="#8a8a90" stroke-width="0.5"/>
@@ -341,13 +340,11 @@ tr.row:hover{background:var(--surface-2)}
           <rect x="17" y="40" width="86" height="6" rx="1" fill="url(#paperGrad)" stroke="#8a8a90" stroke-width="0.5"/>
           <rect x="19" y="34" width="82" height="6" rx="1" fill="url(#paperGrad)" stroke="#8a8a90" stroke-width="0.5"/>
         </g>
-        <!-- верхний лист с загнутым уголком -->
         <g>
           <path d="M 22 30 L 98 30 L 98 70 Q 92 68 86 70 L 22 70 Z" fill="url(#paperGrad)" stroke="#8a8a90" stroke-width="0.8"/>
           <path d="M 86 30 Q 88 36 98 38 L 98 30 Z" fill="#f4f4f6" stroke="#8a8a90" stroke-width="0.8"/>
           <path d="M 86 30 Q 88 36 98 38" fill="none" stroke="#8a8a90" stroke-width="0.8"/>
         </g>
-        <!-- цифра 60 -->
         <text x="60" y="62" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="30" font-style="italic" fill="#1a1a20" font-weight="500">60</text>
       </svg>
     </button>
@@ -375,7 +372,6 @@ tr.row:hover{background:var(--surface-2)}
 </footer>
 
 <script type="module">
-/* XOR-обфускация конфига */
 const _k=[0x36,0x30,0x54,0x44,0x45,0x4c,0x53,0x45,0x43];
 function _xor(b){const a=typeof b==='string'?b.split(',').map(Number):b;let s='';for(let i=0;i<a.length;i++)s+=String.fromCharCode(a[i]^_k[i%_k.length]);return s;}
 
@@ -403,7 +399,6 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const auth = getAuth(app);
 
-/* SHA-256 (fallback для старых аккаунтов) */
 function jsSha256(msg){
   const K=[0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2];
   const H0=[0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19];
@@ -1321,10 +1316,14 @@ function attachmentsBlock(){
   }
   function renderPreview(){
     preview.replaceChildren();
-    if(state.imageData) preview.appendChild(el('img',{class:'thumb',src:state.imageData,alt:''}));
-    if(state.videoData) preview.appendChild(el('video',{class:'thumb-v',src:state.videoData,controls:'',preload:'metadata'}));
+    if(state.imageData){ const i=el('img',{class:'thumb',src:state.imageData,alt:''}); i.addEventListener('error',()=>i.remove()); preview.appendChild(i); }
+    if(state.videoData){ const v=el('video',{class:'thumb-v',src:state.videoData,controls:'',preload:'metadata'}); v.addEventListener('error',()=>v.remove()); preview.appendChild(v); }
     const safeLink=safeMediaUrl(state.linkUrl);
-    if(safeLink){ const isV=/\.(mp4|webm|ogg|mov)(\?|$)/i.test(safeLink); preview.appendChild(isV?el('video',{class:'thumb-v',src:safeLink,controls:'',preload:'metadata'}):el('img',{class:'thumb',src:safeLink,alt:''})); }
+    if(safeLink){
+      const isV=/\.(mp4|webm|ogg|mov)(\?|$)/i.test(safeLink);
+      if(isV){ const v=el('video',{class:'thumb-v',src:safeLink,controls:'',preload:'metadata'}); v.addEventListener('error',()=>v.remove()); preview.appendChild(v); }
+      else { const i=el('img',{class:'thumb',src:safeLink,alt:''}); i.addEventListener('error',()=>i.remove()); preview.appendChild(i); }
+    }
   }
   wrap.getData=()=>({imageData:state.imageData,videoData:state.videoData,linkUrl:safeMediaUrl(state.linkUrl)});
   return wrap;
@@ -1395,7 +1394,31 @@ function verifiedBadge(name){
   return s;
 }
 function setBusy(btn,label){ btn.replaceChildren(el('span',{class:'spinner'}),document.createTextNode(label)); }
-function safeMediaUrl(u){ if(!u) return ''; const s=String(u).trim(); if(/^(javascript|vbscript|data:text\/html|data:application)/i.test(s)) return ''; return /^(https?:|blob:|data:(image|video)\/)/i.test(s)?s:''; }
+
+function safeMediaUrl(u){
+  if(!u) return '';
+  const s=String(u).trim();
+  if(!s) return '';
+  if(/^(javascript|vbscript|data:text\/html|data:application|file:)/i.test(s)) return '';
+  if(/^https?:\/\//i.test(s)) return s;
+  if(/^blob:/i.test(s)) return s;
+  if(/^data:image\//i.test(s)){
+    const comma=s.indexOf(',');
+    if(comma<0) return '';
+    const payload=s.slice(comma+1);
+    if(payload.length<32) return '';
+    if(!/^[A-Za-z0-9+/=\s]+$/.test(payload)) return '';
+    return s;
+  }
+  if(/^data:video\//i.test(s)){
+    const comma=s.indexOf(',');
+    if(comma<0) return '';
+    const payload=s.slice(comma+1);
+    if(payload.length<32) return '';
+    return s;
+  }
+  return '';
+}
 function safeColor(v){ if(!v) return ''; const s=String(v).trim(); if(/^#[0-9a-fA-F]{3,8}$/.test(s)) return s; if(/^[a-zA-Z]+$/.test(s)) return s; return ''; }
 function storeSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
 function storeGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
@@ -1451,10 +1474,13 @@ function nickDisplay(name,opts){
     const isVid=/\.(mp4|webm|ogg|mov)(\?|$)/i.test(mediaUrl)||/^data:video\//i.test(mediaUrl);
     if(isVid){
       const v=el('span',{class:'nick-media-video'});
-      v.appendChild(el('video',{class:'nick-media',src:mediaUrl,autoplay:'',loop:'',muted:'',playsinline:'',preload:'auto'}));
+      const vid=el('video',{class:'nick-media',src:mediaUrl,autoplay:'',loop:'',muted:'',playsinline:'',preload:'auto'});
+      vid.addEventListener('error',()=>v.remove());
+      v.appendChild(vid);
       wrap.appendChild(v);
     } else {
       const img=el('img',{class:'nick-media',src:mediaUrl,alt:''});
+      img.addEventListener('error',()=>img.remove());
       img.addEventListener('click',()=>openLightbox(el('img',{src:mediaUrl,alt:''})));
       wrap.appendChild(img);
     }
@@ -1484,8 +1510,13 @@ function avatarFor(name,size){
   const box=document.createElement('div');
   box.className='avatar';
   if(size){ box.style.width=size+'px'; box.style.height=size+'px'; box.style.fontSize=Math.round(size*0.4)+'px'; }
-  if(avatar) box.appendChild(el('img',{src:avatar,alt:''}));
-  else box.textContent=String(name||'?').charAt(0);
+  if(avatar){
+    const img=el('img',{src:avatar,alt:''});
+    img.addEventListener('error',()=>{ img.remove(); box.textContent=String(name||'?').charAt(0); });
+    box.appendChild(img);
+  } else {
+    box.textContent=String(name||'?').charAt(0);
+  }
   return box;
 }
 
@@ -1506,11 +1537,20 @@ function profileView(){
   const out=[];
   const bannerUrl=safeMediaUrl(prof.banner);
   const banner=el('div',{class:'profile-banner'});
-  if(bannerUrl) banner.appendChild(el('img',{src:bannerUrl,alt:''}));
+  if(bannerUrl){
+    const bimg=el('img',{src:bannerUrl,alt:''});
+    bimg.addEventListener('error',()=>bimg.remove());
+    banner.appendChild(bimg);
+  }
   const avatarBox=el('div',{class:'profile-avatar'});
   const avatar=safeMediaUrl(prof.avatar);
-  if(avatar) avatarBox.appendChild(el('img',{src:avatar,alt:''}));
-  else avatarBox.textContent=String(targetName).charAt(0);
+  if(avatar){
+    const aimg=el('img',{src:avatar,alt:''});
+    aimg.addEventListener('error',()=>{ aimg.remove(); avatarBox.textContent=String(targetName).charAt(0); });
+    avatarBox.appendChild(aimg);
+  } else {
+    avatarBox.textContent=String(targetName).charAt(0);
+  }
   out.push(el('div',{class:'profile-head anim-fadeup'},[
     banner,
     el('div',{class:'profile-head-inner'},[
@@ -1555,7 +1595,17 @@ function profileEditor(){
   const draft=S.profileDraft;
   const err=el('div',{class:'err'});
   const avPreview=el('div',{class:'avatar-preview'});
-  function renderAvPreview(){ avPreview.replaceChildren(); if(draft.avatar) avPreview.appendChild(el('img',{src:draft.avatar,alt:''})); else avPreview.textContent=String(S.user.nick).charAt(0); }
+  function renderAvPreview(){
+    avPreview.replaceChildren();
+    const safe=safeMediaUrl(draft.avatar);
+    if(safe){
+      const img=el('img',{src:safe,alt:''});
+      img.addEventListener('error',()=>{ img.remove(); avPreview.textContent=String(S.user.nick).charAt(0); });
+      avPreview.appendChild(img);
+    } else {
+      avPreview.textContent=String(S.user.nick).charAt(0);
+    }
+  }
   renderAvPreview();
   const fileInput=el('input',{type:'file',accept:'image/*',style:'display:none'});
   fileInput.addEventListener('change',async()=>{ if(!fileInput.files[0]) return; try{ const dataUrl=await compressImage(fileInput.files[0],AVATAR_MAX_SIDE,AVATAR_MAX_BYTES); draft.avatar=dataUrl; renderAvPreview(); err.textContent=''; }catch(ex){ err.textContent=ex.message||t('avatarTooBig'); } });
@@ -1565,7 +1615,15 @@ function profileEditor(){
 
   const bannerInput=el('input',{type:'file',accept:'image/*',style:'display:none'});
   const bannerPreview=el('div',{class:'profile-banner',style:'height:100px;border:1px solid var(--line);border-radius:3px;overflow:hidden;margin-bottom:6px'});
-  function renderBannerPreview(){ bannerPreview.replaceChildren(); if(draft.banner) bannerPreview.appendChild(el('img',{src:draft.banner,alt:'',style:'width:100%;height:100%;object-fit:cover'})); }
+  function renderBannerPreview(){
+    bannerPreview.replaceChildren();
+    const safe=safeMediaUrl(draft.banner);
+    if(safe){
+      const img=el('img',{src:safe,alt:'',style:'width:100%;height:100%;object-fit:cover'});
+      img.addEventListener('error',()=>img.remove());
+      bannerPreview.appendChild(img);
+    }
+  }
   renderBannerPreview();
   bannerInput.addEventListener('change',async()=>{ if(!bannerInput.files[0]) return; try{ const dataUrl=await compressImage(bannerInput.files[0],BANNER_MAX_SIDE,BANNER_MAX_BYTES); draft.banner=dataUrl; renderBannerPreview(); err.textContent=''; }catch(ex){ err.textContent=ex.message||t('avatarTooBig'); } });
   const bUp=el('button',{class:'btn small',type:'button',onclick:()=>bannerInput.click()},[icon('image'),t('uploadBanner')]);
@@ -1874,9 +1932,32 @@ function listView(){
 }
 function mediaNode(p){
   const nodes=[];
-  if(p.media){ if(p.mediaType==='video'){ nodes.push(el('video',{src:p.media,controls:'',preload:'metadata'})); } else { const img=el('img',{src:p.media,alt:'',loading:'lazy'}); img.addEventListener('click',()=>openLightbox(el('img',{src:p.media,alt:''}))); nodes.push(img); } }
-  const safeLink=safeMediaUrl(p.link);
-  if(safeLink){ const isV=/\.(mp4|webm|ogg|mov)(\?|$)/i.test(safeLink); if(isV){ nodes.push(el('video',{src:safeLink,controls:'',preload:'metadata'})); } else { const img=el('img',{src:safeLink,alt:'',loading:'lazy'}); img.addEventListener('click',()=>openLightbox(el('img',{src:safeLink,alt:''}))); nodes.push(img); } }
+  const addImage=(src)=>{
+    const safe=safeMediaUrl(src);
+    if(!safe) return;
+    const img=el('img',{src:safe,alt:'',loading:'lazy'});
+    img.addEventListener('error',()=>img.remove());
+    img.addEventListener('click',()=>openLightbox(el('img',{src:safe,alt:''})));
+    nodes.push(img);
+  };
+  const addVideo=(src)=>{
+    const safe=safeMediaUrl(src);
+    if(!safe) return;
+    const v=el('video',{src:safe,controls:'',preload:'metadata'});
+    v.addEventListener('error',()=>v.remove());
+    nodes.push(v);
+  };
+  if(p.media){
+    if(p.mediaType==='video') addVideo(p.media);
+    else addImage(p.media);
+  }
+  if(p.link){
+    const safeLink=safeMediaUrl(p.link);
+    if(safeLink){
+      const isV=/\.(mp4|webm|ogg|mov)(\?|$)/i.test(safeLink);
+      if(isV) addVideo(safeLink); else addImage(safeLink);
+    }
+  }
   return nodes.length?el('div',{class:'attach'},nodes):null;
 }
 function canEditPost(p){
@@ -2045,8 +2126,13 @@ function chatMsgEl(m,i,chatId,msgKey){
   const av=el('div',{class:'av'});
   const rec=userRecord(m.author);
   const avatar=rec&&rec.profile?safeMediaUrl(rec.profile.avatar):'';
-  if(avatar) av.appendChild(el('img',{src:avatar,alt:''}));
-  else av.textContent=(m.author||'?').charAt(0);
+  if(avatar){
+    const img=el('img',{src:avatar,alt:''});
+    img.addEventListener('error',()=>{ img.remove(); av.textContent=(m.author||'?').charAt(0); });
+    av.appendChild(img);
+  } else {
+    av.textContent=(m.author||'?').charAt(0);
+  }
   av.addEventListener('click',()=>{ S.profileUser=m.author; S.view='profile'; S.profileEdit=false; S.profileTab='profile'; render(); window.scrollTo(0,0); });
   const top=el('div',{class:'top'},[
     nickDisplay(m.author,{clickable:true}),
