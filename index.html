@@ -61,6 +61,18 @@ button,input,select,textarea{font:inherit;color:inherit}
 .lang button{background:none;border:0;color:var(--nav-fg);padding:5px 9px;font-size:11px;font-family:var(--font-mono);cursor:pointer;opacity:.6}
 .lang button[aria-pressed="true"]{background:var(--accent);color:#fff;opacity:1}
 
+.nav-search{position:relative;margin-left:8px;margin-right:8px;min-width:220px;max-width:320px;flex:1}
+.nav-search input{width:100%;background:var(--bg-2);border:1px solid var(--nav-line);border-radius:var(--radius-sm);padding:7px 12px;color:var(--fg);font-size:13px}
+.nav-search input:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 3px rgba(224,74,74,.12)}
+.nav-search-results{position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:30;background:var(--surface);border:1px solid var(--line-2);border-radius:var(--radius);box-shadow:var(--shadow);max-height:420px;overflow-y:auto;padding:6px}
+.nav-search-results .gs-sec{font-size:10.5px;color:var(--muted-2);text-transform:uppercase;letter-spacing:.06em;padding:6px 8px 2px;font-family:var(--font-mono)}
+.nav-search-results .gs-item{display:flex;gap:8px;align-items:center;padding:6px 8px;border-radius:var(--radius-sm);cursor:pointer;color:var(--fg);text-decoration:none}
+.nav-search-results .gs-item:hover{background:var(--surface-2);text-decoration:none}
+.nav-search-results .gs-item .gs-ico{width:22px;height:22px;border-radius:4px;background:var(--surface-2);display:grid;place-items:center;flex:none;color:var(--accent);font-size:11px;font-family:var(--font-mono)}
+.nav-search-results .gs-item .gs-txt{min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}
+.nav-search-results .gs-item .gs-sub{font-size:11px;color:var(--muted);font-family:var(--font-mono)}
+.nav-search-results .gs-empty{padding:12px;color:var(--muted);text-align:center;font-size:13px}
+
 .wrap{max-width:1180px;margin-inline:auto;padding-inline:16px;padding-block:28px 64px;display:flex;flex-direction:column;gap:22px}
 h1,h2,h3{margin:0;font-weight:600;letter-spacing:-.015em}
 h2{font-size:17px;position:relative;padding-left:12px}
@@ -261,11 +273,24 @@ tr.row:hover{background:var(--surface-2)}
 .profile-edit{border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);padding:22px;display:flex;flex-direction:column;gap:16px;box-shadow:var(--shadow)}
 .profile-edit h2{font-size:18px}
 .profile-edit label{display:flex;flex-direction:column;gap:7px;font-size:12.5px;color:var(--muted);font-weight:500}
-.profile-edit input[type=text],.profile-edit input[type=email],.profile-edit input[type=password],.profile-edit select{background:var(--bg-2);border:1px solid var(--line);border-radius:var(--radius-sm);padding:10px 12px;color:var(--fg);width:100%}
+.profile-edit input[type=text],.profile-edit input[type=email],.profile-edit input[type=password],.profile-edit input[type=url],.profile-edit select{background:var(--bg-2);border:1px solid var(--line);border-radius:var(--radius-sm);padding:10px 12px;color:var(--fg);width:100%}
 .profile-edit input:focus,.profile-edit select:focus{border-color:var(--accent);outline:none}
 .avatar-upload{display:flex;align-items:center;gap:16px;flex-wrap:wrap;border:1px dashed var(--line-2);border-radius:var(--radius-sm);padding:14px;background:var(--bg-2)}
+.avatar-upload input[type=url]{margin-top:6px;font-family:var(--font-mono);font-size:12px}
+.avatar-upload .profile-banner{width:100%;height:120px;border:1px solid var(--line-2);border-radius:var(--radius-sm);overflow:hidden;display:grid;place-items:center;background:linear-gradient(135deg,#1a1a20,#2a1a1a)}
+.avatar-upload .profile-banner img{width:100%;height:100%;object-fit:cover;display:block}
 .avatar-preview{width:80px;height:80px;border-radius:50%;border:2px solid var(--line-2);overflow:hidden;display:grid;place-items:center;background:var(--surface-2);font-family:var(--font-mono);font-size:26px;color:var(--accent);text-transform:uppercase}
 .avatar-preview img{width:100%;height:100%;object-fit:cover;display:block}
+.color-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px}
+.color-opt{display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px;border:1px solid var(--line);border-radius:var(--radius-sm);cursor:pointer;background:var(--bg-2);font-size:12px;color:var(--muted)}
+.color-opt.selected{border-color:var(--accent);background:rgba(224,74,74,.08);color:var(--fg)}
+.color-dot{width:26px;height:26px;border-radius:50%;border:2px solid rgba(255,255,255,.12)}
+.emoji-picker{display:flex;flex-wrap:wrap;gap:4px;max-height:140px;overflow-y:auto;padding:8px;border:1px solid var(--line);border-radius:var(--radius-sm);background:var(--bg-2)}
+.emoji-btn{background:none;border:1px solid transparent;border-radius:var(--radius-sm);width:34px;height:34px;font-size:20px;cursor:pointer;display:grid;place-items:center}
+.emoji-btn:hover{transform:scale(1.15);background:var(--surface-2)}
+.emoji-btn.selected{background:rgba(224,74,74,.15);border-color:var(--accent)}
+.nick-preview-box{padding:14px;border:1px solid var(--line-2);border-radius:var(--radius-sm);background:var(--bg-2);display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:16px;min-height:56px}
+.sub-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;padding:4px 10px;border-radius:3px;background:linear-gradient(135deg,#f59e0b,#e04a4a);color:#fff;font-weight:600;letter-spacing:.05em;text-transform:uppercase}
 
 .sessions-list{display:flex;flex-direction:column;gap:8px}
 .session-item{border:1px solid var(--line);border-radius:var(--radius-sm);padding:12px 14px;background:var(--bg-2);display:flex;align-items:center;gap:14px;font-size:13px}
@@ -295,6 +320,9 @@ tr.row:hover{background:var(--surface-2)}
 .boot{padding:60px 20px;text-align:center;color:var(--muted);font-family:var(--font-mono);font-size:13px}
 .boot .err{color:var(--err);white-space:pre-wrap;text-align:left;max-width:760px;margin:16px auto 0;padding:12px;border:1px solid #5a2020;border-radius:4px;background:#180a0a;font-size:12px;min-height:auto}
 
+@media (max-width:980px){
+  .nav-search{min-width:0;max-width:none;order:99;width:100%;margin:6px 0 0;flex:1 1 100%}
+}
 @media (max-width:700px){
   .hide-s{display:none}
   .btn,.pager button,.nav button.link{min-height:42px}
@@ -356,6 +384,10 @@ tr.row:hover{background:var(--surface-2)}
     <button class="link" id="nav-new"></button>
     <button class="link" id="nav-members"></button>
     <button class="link" id="nav-admin" style="display:none"></button>
+    <div class="nav-search">
+      <input type="text" id="global-search" placeholder="Поиск: темы, чаты, люди…" autocomplete="off">
+      <div class="nav-search-results" id="global-search-results" hidden></div>
+    </div>
     <span class="who" id="who"></span>
     <div class="lang" role="group" aria-label="Language">
       <button type="button" id="lang-ru" title="Русский">RU</button>
@@ -380,21 +412,22 @@ tr.row:hover{background:var(--surface-2)}
 "use strict";
 
 /* ============================================================
-   60TDEL · финальный монолитный скрипт (без модулей)
+   60TDEL · монолитный скрипт, без модулей
+   nick = отображаемое имя, username = уникальный логин
    ============================================================ */
 
 function showFatal(prefix, err){
-  var boot=document.getElementById('boot') || document.getElementById('app');
-  var msg = prefix+': '+(err && err.stack ? err.stack : (err && err.message ? err.message : String(err)));
-  boot.className='boot';
-  boot.innerHTML = '<div style="color:#e05a5a;font-weight:600">Ошибка запуска</div>'+
-    '<div class="err">'+msg.replace(/[<>&]/g,function(c){ return {'<':'&lt;','>':'&gt;','&':'&amp;'}[c]; })+'</div>';
+  var boot = document.getElementById('boot') || document.getElementById('app');
+  var msg = prefix + ': ' + (err && err.stack ? err.stack : (err && err.message ? err.message : String(err)));
+  boot.className = 'boot';
+  boot.innerHTML = '<div style="color:#e05a5a;font-weight:600">Ошибка запуска</div>' +
+    '<div class="err">' + msg.replace(/[<>&]/g, function(c){ return {'<':'&lt;','>':'&gt;','&':'&amp;'}[c]; }) + '</div>';
 }
 window.addEventListener('error', function(e){ showFatal('JS error', e.error || e.message); });
 window.addEventListener('unhandledrejection', function(e){ showFatal('Promise', e.reason || e); });
 
 if(typeof firebase === 'undefined'){
-  showFatal('Firebase SDK','не загрузился. Проверьте доступ к gstatic.com');
+  showFatal('Firebase SDK', 'не загрузился. Проверьте доступ к gstatic.com');
 } else {
 
 var firebaseConfig = {
@@ -438,7 +471,7 @@ var IMG_MAX_SIDE = 1100, IMG_MAX_BYTES = 1.5*1024*1024;
 var BANNER_MAX_SIDE = 1200, BANNER_MAX_BYTES = 0.6*1024*1024;
 var VIDEO_MAX_SEC = 10, VIDEO_MAX_BYTES = 2.0*1024*1024, VIDEO_TARGET = 1.8*1024*1024;
 var MSG_MAX = 5000, POST_MAX = 10000;
-var CHAT_NAME_MAX = 60, CHAT_DESC_MAX = 200, BIO_MAX = 200;
+var CHAT_NAME_MAX = 60, CHAT_DESC_MAX = 200, BIO_MAX = 200, NICK_MAX = 30;
 var EDIT_WINDOW_MS = 15*60*1000;
 var DEFAULT_THREAD_COOLDOWN = 100;
 
@@ -559,8 +592,9 @@ var I18N = {
     tabProfile:'Профиль', tabAccount:'Аккаунт', tabSessions:'Сессии',
     adminPanel:'Админ-панель', adminPanelDesc:'Управление пользователями, темами и чатами',
     adminUsers:'Пользователи', adminThreads:'Темы', adminChats:'Чаты', adminPages:'Страницы',
-    adminUserNick:'Юзернейм', adminUserRole:'Роль', adminUserPremium:'Премиум',
-    adminUserOwner:'Владелец', adminUserCooldown:'Кулдаун тем (сек)', adminUserActions:'Действия',
+    adminUserNick:'Ник', adminUserUsername:'Юзернейм', adminUserRole:'Роль',
+    adminUserPremium:'Премиум', adminUserOwner:'Владелец',
+    adminUserCooldown:'Кулдаун тем (сек)', adminUserActions:'Действия',
     adminGrant:'Выдать', adminRevoke:'Снять', adminDelete:'Удалить',
     adminConfirmDeleteThread:'Удалить эту тему со всеми сообщениями?',
     adminNoThreads:'Нет тем.', adminNoChats:'Нет чатов.', adminNoUsers:'Нет пользователей.',
@@ -581,7 +615,15 @@ var I18N = {
     muteNoUser:'Пользователь не найден',
     muteOnlyOwner:'Только создатель чата или админ может мутить',
     muteSelf:'Нельзя замутить себя', muted:'Замучен',
-    cannotRemoveSelfOwner:'Нельзя снять владельца с себя'
+    cannotRemoveSelfOwner:'Нельзя снять владельца с себя',
+    displayName:'Отображаемое имя (ник)',
+    displayNameHint:'Это имя видят все. Может быть любым, не обязательно уникальным.',
+    usernameLabel:'Юзернейм (логин)',
+    usernameHint:'Это ваш логин. Только A-Za-z0-9_, 3–15 символов. Должен быть уникальным.',
+    changeUsername:'Сменить юзернейм',
+    changeNick:'Сохранить ник',
+    usernameChanged:'Юзернейм изменён на @',
+    nickChanged:'Ник изменён'
   }
 };
 function t(k){ return (I18N[S.lang] && I18N[S.lang][k]) || I18N.ru[k] || k; }
@@ -691,7 +733,9 @@ var ICON = {
   sparkle:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l3 3M15 15l3 3M18 6l-3 3M9 15l-3 3"/></svg>',
   shield:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/></svg>',
   key:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="12" r="4"/><path d="M12 12h9M17 12v3M20 12v2"/></svg>',
-  monitor:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="4" width="19" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg>'
+  monitor:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="4" width="19" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg>',
+  user:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>',
+  chat:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 01-8 8H7l-4 3v-6.5A8 8 0 0121 12z"/></svg>'
 };
 function icon(name){ var s = document.createElement('span'); s.className = 'ico'; s.innerHTML = ICON[name] || ''; return s; }
 
@@ -703,10 +747,35 @@ function fbRemove(p){ return db.ref(p).remove(); }
 function authEmail(u){ return usernameToKey(u) + AUTH_DOMAIN; }
 function myUid(){ return auth.currentUser ? auth.currentUser.uid : null; }
 
-/* ================= USER / AUTH ================= */
-function userRecord(nick){
-  if(!nick || !S.users) return null;
-  return S.users[usernameToKey(nick)] || null;
+/* ================= USER HELPERS ================= */
+/* userRecord принимает ЛЮБОЙ идентификатор: username-ключ, ник, отображаемое имя.
+   Возвращает объект пользователя. */
+function userRecord(id){
+  if(!id || !S.users) return null;
+  var k = usernameToKey(id);
+  if(S.users[k]) return S.users[k];
+  var keys = Object.keys(S.users);
+  for(var i=0;i<keys.length;i++){
+    var u = S.users[keys[i]];
+    if(!u) continue;
+    if(u.username && usernameToKey(u.username) === k) return u;
+    if(u.nick && usernameToKey(u.nick) === k) return u;
+    if(usernameToKey(keys[i]) === k) return u;
+  }
+  return null;
+}
+function userKeyOf(id){
+  if(!id || !S.users) return '';
+  var k = usernameToKey(id);
+  if(S.users[k]) return k;
+  var keys = Object.keys(S.users);
+  for(var i=0;i<keys.length;i++){
+    var u = S.users[keys[i]];
+    if(!u) continue;
+    if(u.username && usernameToKey(u.username) === k) return keys[i];
+    if(u.nick && usernameToKey(u.nick) === k) return keys[i];
+  }
+  return k;
 }
 function isOwnerUser(nick){
   if(isOwnerLegacy(nick)) return true;
@@ -756,11 +825,19 @@ function register(username, pass){
   }).then(function(cred){
     var uid = cred.user.uid;
     var profile = {color:'',prefix:'',prefixColor:'',emojis:[],mediaUrl:'',avatar:'',banner:'',bio:''};
-    var userRec = {nick:username, uid:uid, owner:false, role:'user', premium:false, created:Date.now(), profile:profile, threadCooldown:DEFAULT_THREAD_COOLDOWN};
+    var userRec = {
+      nick: username,           // отображаемое имя (по умолчанию = username)
+      username: username,       // уникальный логин
+      uid: uid,
+      owner: false, role:'user', premium:false,
+      created: Date.now(),
+      profile: profile,
+      threadCooldown: DEFAULT_THREAD_COOLDOWN
+    };
     return fbSet('users/' + key, userRec)
-      .then(function(){ return fbSet('usernames/' + key, {nick:username, uid:uid}); })
+      .then(function(){ return fbSet('usernames/' + key, {username: username, uid: uid}); })
       .then(function(){
-        S.user = {nick:username, owner:false, role:'user'};
+        S.user = {nick: username, owner:false, role:'user'};
         S.isAdmin = false; S.isOwnerFlag = false;
       });
   }).catch(function(ex){ throw authErr(ex); });
@@ -775,10 +852,11 @@ function login(username, pass){
   return auth.signInWithEmailAndPassword(authEmail(username), pass).then(function(){
     return fbGet('users/' + key);
   }).then(function(rec){
-    var realNick = (rec && rec.nick) || username;
-    S.isOwnerFlag = isOwnerLegacy(realNick) || isOwnerLegacy(key) || !!(rec && rec.owner === true);
+    var realUsername = (rec && rec.username) || key;
+    var realNick = (rec && rec.nick) || realUsername;
+    S.isOwnerFlag = isOwnerLegacy(realUsername) || isOwnerLegacy(key) || !!(rec && rec.owner === true);
     S.isAdmin = !!(rec && (rec.role === 'admin' || rec.role === 'moderator')) || S.isOwnerFlag;
-    S.user = {nick:realNick, owner:S.isOwnerFlag, role:(rec && rec.role) || 'user'};
+    S.user = {nick: realNick, owner: S.isOwnerFlag, role: (rec && rec.role) || 'user'};
   }).catch(function(ex){ throw authErr(ex); });
 }
 function logout(){
@@ -796,10 +874,11 @@ function restoreFromAuth(u){
   }
   var key = u.email.slice(0, -AUTH_DOMAIN.length);
   return fbGet('users/' + key).then(function(rec){
-    var realNick = (rec && rec.nick) || key;
-    S.isOwnerFlag = isOwnerLegacy(realNick) || isOwnerLegacy(key) || !!(rec && rec.owner === true);
+    var realUsername = (rec && rec.username) || key;
+    var realNick = (rec && rec.nick) || realUsername;
+    S.isOwnerFlag = isOwnerLegacy(realUsername) || isOwnerLegacy(key) || !!(rec && rec.owner === true);
     S.isAdmin = !!(rec && (rec.role === 'admin' || rec.role === 'moderator')) || S.isOwnerFlag;
-    S.user = {nick:realNick, owner:S.isOwnerFlag, role:(rec && rec.role) || 'user'};
+    S.user = {nick: realNick, owner: S.isOwnerFlag, role: (rec && rec.role) || 'user'};
     render(); heartbeat(); registerSession();
   });
 }
@@ -957,10 +1036,12 @@ function makeAvatarImg(url, onFail){
   return img;
 }
 
-/* ================= NICK / AVATAR ================= */
+/* ================= NICK DISPLAY ================= */
+/* name — любой идентификатор. Отображаем НИК, а не username. */
 function nickDisplay(name, opts){
   opts = opts || {};
   var rec = userRecord(name);
+  var displayName = (rec && rec.nick) || name;
   var prof = (rec && rec.profile) || {};
   var colorCls = '';
   for(var i=0;i<COLORS.length;i++){ if(COLORS[i].id === prof.color){ colorCls = COLORS[i].cls; break; } }
@@ -980,7 +1061,8 @@ function nickDisplay(name, opts){
     wrap.style.cursor = 'pointer';
     wrap.addEventListener('click', function(e){
       e.stopPropagation();
-      S.profileUser = name; S.profileEdit = false; S.profileTab = 'profile'; S.view = 'profile';
+      S.profileUser = (rec && rec.username) || name;
+      S.profileEdit = false; S.profileTab = 'profile'; S.view = 'profile';
       render(); window.scrollTo(0,0);
     });
   }
@@ -1011,7 +1093,7 @@ function nickDisplay(name, opts){
     pref.textContent = '[' + prefixLabel + ']';
     nickEl.appendChild(pref);
   }
-  nickEl.appendChild(document.createTextNode(name));
+  nickEl.appendChild(document.createTextNode(displayName));
   emojis.forEach(function(em){
     var s = document.createElement('span'); s.className = 'nick-emoji'; s.textContent = em;
     nickEl.appendChild(s);
@@ -1025,7 +1107,10 @@ function avatarFor(name, size){
   var avatar = safeMediaUrl(prof.avatar);
   var box = document.createElement('div'); box.className = 'avatar';
   if(size){ box.style.width = size+'px'; box.style.height = size+'px'; box.style.fontSize = Math.round(size*0.4)+'px'; }
-  var fallback = function(){ box.textContent = String(name || '?').charAt(0).toUpperCase(); };
+  var fallback = function(){
+    var n = (rec && rec.nick) || name || '?';
+    box.textContent = String(n).charAt(0).toUpperCase();
+  };
   if(avatar){
     fallback();
     verifyImageUrl(avatar).then(function(ok){
@@ -1049,7 +1134,9 @@ function getCooldown(nick){
   return Math.max(0, c | 0);
 }
 function lastThreadTime(nick){
-  return S.threads.filter(function(th){ return th.author === nick; }).reduce(function(m,th){ return Math.max(m, th.date || 0); }, 0);
+  var rec = userRecord(nick);
+  var name = rec ? rec.nick : nick;
+  return S.threads.filter(function(th){ return th.author === name || th.author === nick; }).reduce(function(m,th){ return Math.max(m, th.date || 0); }, 0);
 }
 function cooldownRemaining(nick){
   var cd = getCooldown(nick) * 1000;
@@ -1068,7 +1155,9 @@ function parseMuteDuration(str){
 }
 function isMuted(chat, c){
   if(!chat || !chat.mutes || !c) return 0;
-  var until = chat.mutes[usernameToKey(c)] || 0;
+  var rec = userRecord(c);
+  var key = rec && rec.username ? usernameToKey(rec.username) : usernameToKey(c);
+  var until = chat.mutes[key] || 0;
   return until > Date.now() ? until : 0;
 }
 
@@ -1191,8 +1280,10 @@ function muteUser(chatId, targetNick, durationMs){
   if(!(isStaff || isChatOwner)) throw new Error(t('muteOnlyOwner'));
   if(targetNick.toLowerCase() === S.user.nick.toLowerCase()) throw new Error(t('muteSelf'));
   var until = Date.now() + durationMs;
-  return fbSet('chats/' + chatId + '/mutes/' + usernameToKey(targetNick), until).then(function(){
-    var sysMsg = '[MUTE] ' + targetNick + ' → ' + fmtTime(until);
+  var rec = userRecord(targetNick);
+  var key = rec && rec.username ? usernameToKey(rec.username) : usernameToKey(targetNick);
+  return fbSet('chats/' + chatId + '/mutes/' + key, until).then(function(){
+    var sysMsg = '[MUTE] ' + ((rec && rec.nick) || targetNick) + ' → ' + fmtTime(until);
     var count = c.messages ? Object.keys(c.messages).length : 0;
     return fbSet('chats/' + chatId + '/messages/m' + count, {author:'system', text:sysMsg, date:Date.now(), system:true});
   }).then(function(){ render(); });
@@ -1203,7 +1294,9 @@ function unmuteUser(chatId, targetNick){
   var isStaff = isOwnerUser(S.user.nick) || isAdminUser(S.user.nick);
   var isChatOwner = c.uid && c.uid === myUid();
   if(!(isStaff || isChatOwner)) throw new Error(t('muteOnlyOwner'));
-  return fbRemove('chats/' + chatId + '/mutes/' + usernameToKey(targetNick)).then(function(){ render(); });
+  var rec = userRecord(targetNick);
+  var key = rec && rec.username ? usernameToKey(rec.username) : usernameToKey(targetNick);
+  return fbRemove('chats/' + chatId + '/mutes/' + key).then(function(){ render(); });
 }
 function setChatAvatar(chatId, dataUrl){
   if(!S.user) throw new Error(t('needLoginToSend'));
@@ -1234,10 +1327,12 @@ function openDmWith(target){
   if(target.toLowerCase() === S.user.nick.toLowerCase()) throw new Error(t('dmSelf'));
   var rec = userRecord(target);
   if(!rec) throw new Error(t('dmUserNotFound'));
-  var dmId = dmIdFor(S.user.nick, target);
+  var myUsername = (userRecord(S.user.nick) && userRecord(S.user.nick).username) || S.user.nick;
+  var otherUsername = rec.username || target;
+  var dmId = dmIdFor(myUsername, otherUsername);
   return fbGet('dms/' + dmId).then(function(existing){
     if(!existing){
-      var members = {}; members[usernameToKey(S.user.nick)] = true; members[usernameToKey(target)] = true;
+      var members = {}; members[usernameToKey(myUsername)] = true; members[usernameToKey(otherUsername)] = true;
       return fbSet('dms/' + dmId, {members:members, created:Date.now(), messages:{}});
     }
   }).then(function(){
@@ -1257,15 +1352,17 @@ function sendDm(text){
 }
 function deleteDmForMe(dmId){
   if(!S.user) throw new Error(t('needLoginToSend'));
-  var hidden = {}; hidden[usernameToKey(S.user.nick)] = Date.now();
+  var myUsername = (userRecord(S.user.nick) && userRecord(S.user.nick).username) || S.user.nick;
+  var hidden = {}; hidden[usernameToKey(myUsername)] = Date.now();
   return fbUpdate('dms/' + dmId + '/hidden', hidden);
 }
 function deleteDmForBoth(dmId){
   if(!S.user) throw new Error(t('needLoginToSend'));
   return fbGet('dms/' + dmId).then(function(d){
     if(!d) return;
+    var myUsername = (userRecord(S.user.nick) && userRecord(S.user.nick).username) || S.user.nick;
     var members = d.members || {};
-    var isMember = members[usernameToKey(S.user.nick)] === true;
+    var isMember = members[usernameToKey(myUsername)] === true;
     var isStaff = isOwnerUser(S.user.nick) || isAdminUser(S.user.nick);
     if(!isMember && !isStaff) throw new Error(t('errNoPerm'));
     return fbRemove('dms/' + dmId);
@@ -1683,7 +1780,12 @@ function mediaNode(p){
 }
 function postEl(p, i, threadId, postKey, isFirst){
   var av = avatarFor(p.author);
-  av.addEventListener('click', function(){ S.profileUser = p.author; S.view = 'profile'; S.profileEdit = false; S.profileTab = 'profile'; render(); window.scrollTo(0,0); });
+  av.addEventListener('click', function(){
+    var rec = userRecord(p.author);
+    S.profileUser = (rec && rec.username) || p.author;
+    S.view = 'profile'; S.profileEdit = false; S.profileTab = 'profile';
+    render(); window.scrollTo(0,0);
+  });
   var who = el('div', {class:'who'}, [av, el('div', {class:'name'}, [nickDisplay(p.author, {clickable:true})])]);
   var actions = [];
   if(canEditPost(p)){
@@ -1949,12 +2051,19 @@ function chatMsgEl(m, i, chatId, msgKey, chat){
   var av = el('div', {class:'av'});
   var rec = userRecord(m.author);
   var avatar = rec && rec.profile ? safeMediaUrl(rec.profile.avatar) : '';
-  var setLetterM = function(){ av.textContent = (m.author || '?').charAt(0).toUpperCase(); };
+  var setLetterM = function(){
+    var n = (rec && rec.nick) || m.author || '?';
+    av.textContent = String(n).charAt(0).toUpperCase();
+  };
   if(avatar){
     setLetterM();
     verifyImageUrl(avatar).then(function(ok){ if(!ok) return; av.replaceChildren(); av.appendChild(makeAvatarImg(avatar, setLetterM)); });
   } else setLetterM();
-  av.addEventListener('click', function(){ S.profileUser = m.author; S.view = 'profile'; S.profileEdit = false; S.profileTab = 'profile'; render(); window.scrollTo(0,0); });
+  av.addEventListener('click', function(){
+    S.profileUser = (rec && rec.username) || m.author;
+    S.view = 'profile'; S.profileEdit = false; S.profileTab = 'profile';
+    render(); window.scrollTo(0,0);
+  });
   var mutedUntil = isMuted(chat || {}, m.author);
   var top = el('div', {class:'top'}, [
     nickDisplay(m.author, {clickable:true}),
@@ -1998,7 +2107,8 @@ function dmListView(){
     e.preventDefault();
     openDmWith(inp.value).catch(function(ex){ alert(ex.message || t('errGeneric')); });
   }}, [inp, el('button', {class:'btn primary', type:'submit'}, [icon('send'), t('dmOpen')])]));
-  var me = usernameToKey(S.user.nick);
+  var myUsername = (userRecord(S.user.nick) && userRecord(S.user.nick).username) || usernameToKey(S.user.nick);
+  var me = usernameToKey(myUsername);
   var list = Object.keys(S.dms || {}).filter(function(id){
     var d = S.dms[id]; if(!d) return false;
     var members = d.members || {};
@@ -2041,7 +2151,8 @@ function dmListView(){
 function dmView(){
   var d = S.dms[S.dmId];
   if(!d) return [el('button', {class:'btn back', text:'← ' + t('dm'), onclick:function(){ S.view = 'dmList'; S.dmId = null; render(); }}), el('div', {class:'empty', text:'—'})];
-  var me = usernameToKey(S.user.nick);
+  var myUsername = (userRecord(S.user.nick) && userRecord(S.user.nick).username) || S.user.nick;
+  var me = usernameToKey(myUsername);
   var members = Object.keys(d.members || {});
   var other = members.filter(function(k){ return k !== me; })[0] || me;
   var rec = S.users[other];
@@ -2069,7 +2180,10 @@ function dmView(){
     var av = el('div', {class:'av'});
     var mrec = userRecord(m.author);
     var avatar = mrec && mrec.profile ? safeMediaUrl(mrec.profile.avatar) : '';
-    var setL = function(){ av.textContent = (m.author || '?').charAt(0).toUpperCase(); };
+    var setL = function(){
+      var n = (mrec && mrec.nick) || m.author || '?';
+      av.textContent = String(n).charAt(0).toUpperCase();
+    };
     if(avatar){ setL(); verifyImageUrl(avatar).then(function(ok){ if(!ok) return; av.replaceChildren(); av.appendChild(makeAvatarImg(avatar, setL)); }); } else setL();
     var top = el('div', {class:'top'}, [nickDisplay(m.author, {clickable:true}), el('span', {class:'time', text:fmtTime(m.date)})]);
     var bub = el('div', {class:'bub'});
@@ -2100,26 +2214,30 @@ function dmView(){
   ]));
   return out;
 }
+
+/* ================= PROFILE ================= */
 function profileView(){
   if(!S.user) return [el('section', {class:'auth'}, [
     el('h2', {text:t('profile')}),
     el('div', {class:'hintline', text:t('notLoggedIn')}),
     el('div', {class:'actions'}, [el('button', {class:'btn primary', type:'button', text:t('signIn'), onclick:function(){ S.view = 'auth'; S.authMode = 'login'; render(); }})])
   ])];
-  var targetName = S.profileUser || S.user.nick;
-  var isMe = targetName === S.user.nick;
-  var rec = userRecord(targetName) || {};
+  var targetId = S.profileUser || S.user.nick;
+  var rec = userRecord(targetId) || {};
+  var targetNick = rec.nick || targetId;
+  var targetUsername = rec.username || usernameToKey(targetId);
+  var isMe = targetUsername === ((userRecord(S.user.nick) && userRecord(S.user.nick).username) || S.user.nick);
   var prof = rec.profile || {};
   var created = rec.created ? fmt(rec.created) : '—';
   var postsCount = 0, topicsCount = 0;
   S.threads.forEach(function(th){
-    if(th.author === targetName) topicsCount++;
+    if(th.author === targetNick || th.author === targetUsername) topicsCount++;
     var ps = th.posts ? Object.values(th.posts) : [];
-    ps.forEach(function(p){ if(p.author === targetName) postsCount++; });
+    ps.forEach(function(p){ if(p.author === targetNick || p.author === targetUsername) postsCount++; });
   });
   Object.values(S.chats || {}).forEach(function(c){
     var ms = c.messages ? Object.values(c.messages) : [];
-    ms.forEach(function(m){ if(m.author === targetName) postsCount++; });
+    ms.forEach(function(m){ if(m.author === targetNick || m.author === targetUsername) postsCount++; });
   });
   var out = [];
   var bannerUrl = safeMediaUrl(prof.banner);
@@ -2129,7 +2247,7 @@ function profileView(){
   }
   var avatarBox = el('div', {class:'profile-avatar'});
   var avatar = safeMediaUrl(prof.avatar);
-  var setLetterP = function(){ avatarBox.textContent = String(targetName).charAt(0).toUpperCase(); };
+  var setLetterP = function(){ avatarBox.textContent = String(targetNick).charAt(0).toUpperCase(); };
   if(avatar){
     setLetterP();
     verifyImageUrl(avatar).then(function(ok){ if(!ok) return; avatarBox.replaceChildren(); avatarBox.appendChild(makeAvatarImg(avatar, setLetterP)); });
@@ -2139,13 +2257,14 @@ function profileView(){
     el('div', {class:'profile-head-inner'}, [
       avatarBox,
       el('div', {class:'profile-info'}, [
-        el('div', {class:'profile-name'}, [nickDisplay(targetName)]),
+        el('div', {class:'profile-name'}, [nickDisplay(targetNick)]),
+        el('div', {class:'profile-meta', text:'@' + targetUsername}),
         el('div', {class:'profile-meta', text:t('memberSince') + ': ' + created}),
         prof.bio ? el('div', {class:'profile-meta', text:prof.bio, style:'margin-top:6px;color:var(--fg-dim);font-family:var(--font-body);font-size:13px;max-width:520px'}) : null,
         el('div', {class:'profile-tags'}, [
           el('span', {class:'badge', text:t('topicsCount') + ': ' + topicsCount}),
           el('span', {class:'badge', text:t('postsCount') + ': ' + postsCount}),
-          isPremiumUser(targetName) ? el('span', {class:'sub-badge'}, [icon('crown'), t('premium')]) : null
+          isPremiumUser(targetNick) ? el('span', {class:'sub-badge'}, [icon('crown'), t('premium')]) : null
         ].filter(Boolean))
       ])
     ])
@@ -2160,7 +2279,18 @@ function profileView(){
       out.push(el('div', {class:'actions'}, [
         el('button', {class:'btn primary', type:'button', onclick:function(){
           S.profileEdit = !S.profileEdit;
-          S.profileDraft = {avatar:prof.avatar||'', banner:prof.banner||'', color:prof.color||'', prefix:prof.prefix||'', prefixColor:prof.prefixColor||'', emojis:Array.isArray(prof.emojis)?prof.emojis.slice(0,1):[], mediaUrl:prof.mediaUrl||'', bio:prof.bio||''};
+          S.profileDraft = {
+            nick: rec.nick || S.user.nick,
+            username: rec.username || usernameToKey(S.user.nick),
+            avatar: prof.avatar || '',
+            banner: prof.banner || '',
+            color: prof.color || '',
+            prefix: prof.prefix || '',
+            prefixColor: prof.prefixColor || '',
+            emojis: Array.isArray(prof.emojis) ? prof.emojis.slice(0,1) : [],
+            mediaUrl: prof.mediaUrl || '',
+            bio: prof.bio || ''
+          };
           render();
         }}, [icon('edit'), S.profileEdit ? t('cancel') : t('editProfile')])
       ]));
@@ -2176,31 +2306,235 @@ function profileView(){
 function profileEditor(){
   var draft = S.profileDraft;
   var err = el('div', {class:'err'});
-  var avPreview = el('div', {class:'avatar-preview'});
-  function renderAvPreview(){
-    avPreview.replaceChildren();
-    var safe = safeMediaUrl(draft.avatar);
-    var setLetterA = function(){ avPreview.textContent = String(S.user.nick).charAt(0).toUpperCase(); };
-    if(safe){
-      setLetterA();
-      verifyImageUrl(safe).then(function(ok){ if(!ok) return; avPreview.replaceChildren(); avPreview.appendChild(makeAvatarImg(safe, setLetterA)); });
-    } else setLetterA();
+  var okBox = el('div', {class:'badge ok'});
+  var isPrem = hasPrivilege(S.user.nick);
+  var isAdm = isAdminUser(S.user.nick);
+
+  /* --- универсальная картинка: галерея + ссылка --- */
+  function makeImageField(key, maxSide, maxBytes, previewClass){
+    var wrap = el('div', {class:'avatar-upload'});
+    var preview = el('div', {class: previewClass || 'avatar-preview'});
+    function render(){
+      preview.replaceChildren();
+      var safe = safeMediaUrl(draft[key]);
+      var setLetter = function(){ preview.textContent = String(draft.nick || S.user.nick || '?').charAt(0).toUpperCase(); };
+      if(safe){
+        setLetter();
+        verifyImageUrl(safe).then(function(ok){
+          if(!ok) return;
+          preview.replaceChildren();
+          preview.appendChild(makeAvatarImg(safe, setLetter));
+        });
+      } else setLetter();
+    }
+    render();
+    var fileInput = el('input', {type:'file', accept:'image/*', style:'display:none'});
+    fileInput.addEventListener('change', function(){
+      if(!fileInput.files[0]) return;
+      err.textContent = '';
+      compressImage(fileInput.files[0], maxSide, maxBytes)
+        .then(function(dataUrl){ draft[key] = dataUrl; render(); })
+        .catch(function(ex){ err.textContent = ex.message; });
+    });
+    var upBtn = el('button', {class:'btn small', type:'button', onclick:function(){ fileInput.click(); }}, [icon('image'), 'Из галереи']);
+    var remBtn = el('button', {class:'btn small', type:'button', onclick:function(){ draft[key] = ''; render(); }}, [icon('trash'), 'Убрать']);
+    var urlInput = el('input', {type:'url', placeholder:'https://… (ссылка)', value: /^https?:\/\//i.test(draft[key] || '') ? draft[key] : ''});
+    urlInput.addEventListener('input', function(){
+      var v = urlInput.value.trim();
+      if(!v) return;
+      draft[key] = safeMediaUrl(v);
+      render();
+    });
+    wrap.appendChild(preview);
+    wrap.appendChild(el('div', {class:'actions'}, [upBtn, remBtn]));
+    wrap.appendChild(fileInput);
+    wrap.appendChild(urlInput);
+    return wrap;
   }
-  renderAvPreview();
-  var fileInput = el('input', {type:'file', accept:'image/*', style:'display:none'});
-  fileInput.addEventListener('change', function(){
-    if(!fileInput.files[0]) return; err.textContent = '';
-    compressImage(fileInput.files[0], AVATAR_MAX_SIDE, AVATAR_MAX_BYTES).then(function(dataUrl){ draft.avatar = dataUrl; renderAvPreview(); })
-      .catch(function(ex){ err.textContent = ex.message; });
+
+  /* --- цвет ника --- */
+  var colorGrid = el('div', {class:'color-grid'});
+  COLORS.forEach(function(c){
+    var opt = el('div', {class:'color-opt' + (draft.color === c.id ? ' selected' : '')}, [
+      el('div', {class:'color-dot', style:'background:' + c.dot}),
+      el('span', {text: S.lang === 'en' ? c.en : c.ru})
+    ]);
+    opt.addEventListener('click', function(){
+      if(!isPrem && c.id !== ''){ err.textContent = t('needPremium'); return; }
+      draft.color = c.id; err.textContent = ''; render();
+    });
+    colorGrid.appendChild(opt);
   });
-  var upBtn = el('button', {class:'btn small', type:'button', onclick:function(){ fileInput.click(); }}, [icon('image'), t('uploadAvatar')]);
-  var remBtn = el('button', {class:'btn small', type:'button', onclick:function(){ draft.avatar = ''; renderAvPreview(); }}, [icon('trash'), t('removeAvatar')]);
-  var uploadWrap = el('div', {class:'avatar-upload'}, [avPreview, el('div', {class:'actions'}, [upBtn, remBtn]), fileInput]);
-  var bioInput = el('textarea', {maxlength:String(BIO_MAX), placeholder:t('bioPlaceholder'), value:draft.bio||'', style:'background:var(--bg-2);border:1px solid var(--line);border-radius:3px;padding:10px;color:var(--fg);width:100%;min-height:80px;resize:vertical;font-family:inherit'});
+
+  /* --- префикс --- */
+  var prefixInput = el('input', {type:'text', maxlength:'12', placeholder:t('prefixPlaceholder'), value:draft.prefix || ''});
+  var prefixColorInput = el('input', {type:'color', value:draft.prefixColor || '#e04a4a', style:'width:60px;height:38px;padding:2px;background:var(--bg-2);border:1px solid var(--line);border-radius:3px;cursor:pointer'});
+  prefixColorInput.addEventListener('input', function(){ draft.prefixColor = prefixColorInput.value; renderPrefixPreview(); });
+  var prefixPreview = el('div', {class:'nick-preview-box', style:'min-height:44px;font-size:16px'});
+  function renderPrefixPreview(){
+    prefixPreview.replaceChildren();
+    var v = String(draft.prefix || '').trim();
+    if(!v){
+      prefixPreview.appendChild(el('span', {class:'muted', style:'font-size:13px', text:t('prefixNone')}));
+    } else {
+      var bad = !isAdm && isForbiddenPrefix(v);
+      var span = el('span', {class:'nick-prefix ' + (bad ? '' : 'prefix-custom'), text:'[' + v + ']'});
+      if(bad) span.style.color = '#e05a5a';
+      else if(draft.prefixColor) span.style.color = safeColor(draft.prefixColor);
+      prefixPreview.appendChild(span);
+      prefixPreview.appendChild(document.createTextNode(' '));
+    }
+    var nickEl = document.createElement('span');
+    nickEl.className = 'nick-glow ' + ((COLORS.filter(function(x){ return x.id === draft.color; })[0] || {}).cls || '');
+    nickEl.textContent = draft.nick || S.user.nick;
+    var em = draft.emojis[0];
+    if(em){ var s = document.createElement('span'); s.className = 'nick-emoji'; s.textContent = em; nickEl.appendChild(s); }
+    prefixPreview.appendChild(nickEl);
+  }
+  prefixInput.addEventListener('input', function(){
+    var v = prefixInput.value;
+    if(!isPrem){ err.textContent = t('needPremium'); prefixInput.value = ''; draft.prefix = ''; renderPrefixPreview(); return; }
+    if(!isAdm && isForbiddenPrefix(v)){ err.textContent = t('prefixForbidden'); prefixInput.style.borderColor = '#e05a5a'; draft.prefix = ''; }
+    else { err.textContent = ''; prefixInput.style.borderColor = ''; draft.prefix = v; }
+    renderPrefixPreview();
+  });
+  renderPrefixPreview();
+
+  /* --- эмодзи --- */
+  var emojiGrid = el('div', {class:'emoji-picker'});
+  EMOJIS.forEach(function(em){
+    var b = el('button', {type:'button', class:'emoji-btn' + (draft.emojis[0] === em ? ' selected' : ''), text:em});
+    b.addEventListener('click', function(){
+      if(!isPrem){ err.textContent = t('needPremium'); return; }
+      draft.emojis = draft.emojis[0] === em ? [] : [em];
+      err.textContent = ''; render();
+    });
+    emojiGrid.appendChild(b);
+  });
+
+  /* --- фото в ник --- */
+  var mediaWrap = el('div', {class:'avatar-upload'});
+  var mediaPreview = el('div', {class:'avatar-preview', style:'border-radius:6px'});
+  function renderMediaPreview(){
+    mediaPreview.replaceChildren();
+    var safe = safeMediaUrl(draft.mediaUrl);
+    if(safe){
+      var isVid = /\.(mp4|webm|ogg|mov)(\?|$)/i.test(safe) || /^data:video\//i.test(safe);
+      if(isVid){
+        mediaPreview.appendChild(el('video', {src:safe, controls:'', preload:'metadata', style:'width:100%;height:100%;object-fit:cover'}));
+      } else {
+        verifyImageUrl(safe).then(function(ok){
+          if(!ok) return;
+          mediaPreview.appendChild(el('img', {src:safe, alt:'', style:'width:100%;height:100%;object-fit:cover'}));
+        });
+      }
+    } else { mediaPreview.textContent = '—'; }
+  }
+  renderMediaPreview();
+  var mediaInput = el('input', {type:'file', accept:'image/*,video/*', style:'display:none'});
+  mediaInput.addEventListener('change', function(){
+    if(!mediaInput.files[0]) return;
+    var f = mediaInput.files[0];
+    if(f.type.indexOf('video/') === 0){
+      err.textContent = t('videoChecking');
+      videoDuration(f).then(function(dur){
+        if(dur > VIDEO_MAX_SEC + 0.3){ err.textContent = t('videoTooLong') + dur.toFixed(1) + t('videoTooLongTail'); return; }
+        if(f.size > VIDEO_MAX_BYTES){ err.textContent = t('videoToBaseTooBig'); return; }
+        return readAsDataURL(f);
+      }).then(function(dataUrl){
+        if(!dataUrl) return;
+        draft.mediaUrl = dataUrl; err.textContent = ''; renderMediaPreview();
+      }).catch(function(ex){ err.textContent = ex.message; });
+    } else {
+      compressImage(f, AVATAR_MAX_SIDE, AVATAR_MAX_BYTES)
+        .then(function(dataUrl){ draft.mediaUrl = dataUrl; err.textContent = ''; renderMediaPreview(); })
+        .catch(function(ex){ err.textContent = ex.message; });
+    }
+  });
+  var mediaGalleryBtn = el('button', {class:'btn small', type:'button', onclick:function(){ mediaInput.click(); }}, [icon('image'), 'Из галереи']);
+  var mediaRemBtn = el('button', {class:'btn small', type:'button', onclick:function(){ draft.mediaUrl = ''; renderMediaPreview(); }}, [icon('trash'), 'Убрать']);
+  var mediaUrlInput = el('input', {type:'url', placeholder:'https://… (ссылка на фото/видео)', value: /^https?:\/\//i.test(draft.mediaUrl || '') ? draft.mediaUrl : ''});
+  mediaUrlInput.addEventListener('input', function(){
+    var v = mediaUrlInput.value.trim();
+    if(!v) return;
+    draft.mediaUrl = safeMediaUrl(v);
+    renderMediaPreview();
+  });
+  mediaWrap.appendChild(mediaPreview);
+  mediaWrap.appendChild(el('div', {class:'actions'}, [mediaGalleryBtn, mediaRemBtn]));
+  mediaWrap.appendChild(mediaInput);
+  mediaWrap.appendChild(mediaUrlInput);
+
+  /* --- ник (отображаемое имя) --- */
+  var nickInput = el('input', {type:'text', maxlength:String(NICK_MAX), placeholder:'Отображаемое имя', value: draft.nick || ''});
+  nickInput.addEventListener('input', function(){ draft.nick = nickInput.value; renderPrefixPreview(); });
+  var nickErr = el('div', {class:'err'});
+  var nickOk = el('div', {class:'badge ok'});
+  var saveNickBtn = el('button', {class:'btn primary', type:'button'}, [icon('save'), 'Сохранить ник']);
+  saveNickBtn.addEventListener('click', function(){
+    nickErr.textContent = ''; nickOk.textContent = '';
+    var newNick = String(nickInput.value || '').trim().slice(0, NICK_MAX);
+    if(!newNick){ nickErr.textContent = 'Ник не может быть пустым'; return; }
+    var key = safePathKey(usernameToKey(S.user.nick));
+    saveNickBtn.disabled = true;
+    fbUpdate('users/' + key, {nick: newNick})
+      .then(function(){
+        S.user.nick = newNick;
+        if(S.profileDraft) S.profileDraft.nick = newNick;
+        nickOk.textContent = t('nickChanged');
+        render();
+      })
+      .catch(function(ex){ nickErr.textContent = ex.message || t('errGeneric'); })
+      .then(function(){ saveNickBtn.disabled = false; });
+  });
+
+  /* --- юзернейм (логин) --- */
+  var usernameInput = el('input', {type:'text', maxlength:'15', placeholder:'username (3–15: A-Za-z0-9_)', value: draft.username || '', style:'background:var(--bg-2);border:1px solid var(--line);border-radius:3px;padding:10px 12px;color:var(--fg);width:100%;font-family:var(--font-mono)'});
+  var uErr = el('div', {class:'err'});
+  var uOk = el('div', {class:'badge ok'});
+  var saveUsernameBtn = el('button', {class:'btn primary', type:'button'}, [icon('save'), t('changeUsername')]);
+  saveUsernameBtn.addEventListener('click', function(){
+    uErr.textContent = ''; uOk.textContent = '';
+    var newU = normalizeUsername(usernameInput.value);
+    var oldU = draft.username || usernameToKey(S.user.nick);
+    if(newU === oldU){ uErr.textContent = 'Это ваш текущий юзернейм'; return; }
+    if(!isValidUsername(newU)){ uErr.textContent = t('errUsernameFormat'); return; }
+    var newKey = usernameToKey(newU);
+    var oldKey = usernameToKey(S.user.nick);
+    if(!isSafeKey(newKey)){ uErr.textContent = t('errUsernameFormat'); return; }
+    if(OWNERS.indexOf(newKey) >= 0){ uErr.textContent = t('errUsernameTaken'); return; }
+    saveUsernameBtn.disabled = true;
+    usernameTaken(newU).then(function(taken){
+      if(taken) throw new Error(t('errUsernameTaken'));
+      var oldRec = S.users[oldKey] || {};
+      var newRec = Object.assign({}, oldRec, {
+        nick: oldRec.nick || S.user.nick,
+        username: newU,
+        uid: myUid()
+      });
+      return fbSet('users/' + newKey, newRec)
+        .then(function(){ return fbSet('usernames/' + newKey, {username:newU, uid:myUid()}); })
+        .then(function(){ return fbRemove('users/' + oldKey); })
+        .then(function(){ return fbRemove('usernames/' + oldKey); })
+        .then(function(){ return auth.currentUser.updateEmail(authEmail(newU)); })
+        .then(function(){
+          S.user.nick = newRec.nick;
+          draft.username = newU;
+          uOk.textContent = t('usernameChanged') + newU;
+          render();
+        });
+    }).catch(function(ex){ uErr.textContent = ex.message || t('errGeneric'); })
+      .then(function(){ saveUsernameBtn.disabled = false; });
+  });
+
+  /* --- bio --- */
+  var bioInput = el('textarea', {maxlength:String(BIO_MAX), placeholder:t('bioPlaceholder'), value:draft.bio || '', style:'background:var(--bg-2);border:1px solid var(--line);border-radius:3px;padding:10px;color:var(--fg);width:100%;min-height:80px;resize:vertical;font-family:inherit'});
   bioInput.addEventListener('input', function(){ draft.bio = bioInput.value; });
+
+  /* --- сохранить --- */
   var saveBtn = el('button', {class:'btn primary', type:'button'}, [icon('save'), t('saveProfile')]);
   saveBtn.addEventListener('click', function(){
-    saveBtn.disabled = true; err.textContent = '';
+    saveBtn.disabled = true; err.textContent = ''; okBox.textContent = '';
     var key = safePathKey(usernameToKey(S.user.nick));
     var oldRec = S.users[key] || {};
     var oldProf = oldRec.profile || {};
@@ -2214,16 +2548,42 @@ function profileEditor(){
       mediaUrl: safeMediaUrl(draft.mediaUrl) || '',
       bio: String(draft.bio || '').slice(0, BIO_MAX)
     });
-    fbUpdate('users/' + key, {profile}).then(function(){ S.profileEdit = false; render(); })
+    fbUpdate('users/' + key, {nick: draft.nick || oldRec.nick || S.user.nick, profile: profile})
+      .then(function(){ okBox.textContent = t('saved'); S.profileEdit = false; render(); })
       .catch(function(ex){ err.textContent = ex.message || t('errGeneric'); })
       .then(function(){ saveBtn.disabled = false; });
   });
   var cancelBtn = el('button', {class:'btn', type:'button', text:t('cancel'), onclick:function(){ S.profileEdit = false; render(); }});
+
   return el('section', {class:'profile-edit'}, [
     el('h2', {text:t('editProfile')}),
-    el('label', null, [t('avatar'), uploadWrap]),
+
+    el('label', null, [t('displayName'), nickInput]),
+    el('div', {class:'actions'}, [saveNickBtn]),
+    el('span', {class:'hint', text:t('displayNameHint')}),
+    nickErr, nickOk,
+
+    el('label', null, [t('usernameLabel'), usernameInput]),
+    el('div', {class:'actions'}, [saveUsernameBtn]),
+    el('span', {class:'hint', text:t('usernameHint')}),
+    uErr, uOk,
+
+    el('label', null, ['Аватар', makeImageField('avatar', AVATAR_MAX_SIDE, AVATAR_MAX_BYTES, 'avatar-preview')]),
+    el('label', null, ['Баннер', makeImageField('banner', BANNER_MAX_SIDE, BANNER_MAX_BYTES, 'profile-banner')]),
     el('label', null, [t('profileBio'), bioInput]),
-    err,
+
+    el('label', null, [t('nickColor') + (isPrem ? '' : ' (премиум)'), colorGrid]),
+    el('label', null, [
+      t('nickPrefix') + (isPrem ? '' : ' (премиум)'),
+      prefixInput,
+      el('div', {style:'display:flex;gap:8px;align-items:center;margin-top:6px'}, [prefixColorInput, el('span', {class:'hint', text:t('prefixColor')})]),
+      prefixPreview,
+      el('span', {class:'hint', text:t('prefixHint')})
+    ]),
+    el('label', null, [t('nickEmoji') + (isPrem ? '' : ' (премиум)'), emojiGrid, el('span', {class:'hint', text:t('emojiHint')})]),
+    el('label', null, [t('nickMedia') + (isPrem ? '' : ' (премиум)'), mediaWrap, el('span', {class:'hint', text:t('mediaHint')})]),
+
+    err, okBox,
     el('div', {class:'actions'}, [saveBtn, cancelBtn])
   ]);
 }
@@ -2294,6 +2654,8 @@ function sessionsView(){
   var killAllBtn = el('button', {class:'btn danger', type:'button', onclick:function(){ killAllOtherSessions(); }}, [icon('shield'), t('sessionKillAll')]);
   return el('section', {class:'profile-edit'}, [el('h2', {text:t('sessionsTitle')}), list, el('div', {class:'actions'}, [killAllBtn])]);
 }
+
+/* ================= ADMIN ================= */
 function adminView(){
   if(!(S.isAdmin || isOwnerUser(S.user && S.user.nick))) return [el('div', {class:'empty', text:t('errNoPerm')})];
   var out = [];
@@ -2315,6 +2677,7 @@ function adminUsers(){
   var box = el('div', {class:'admin-panel'});
   var head = el('thead', null, [el('tr', null, [
     el('th', {text:t('adminUserNick')}),
+    el('th', {text:t('adminUserUsername')}),
     el('th', {text:t('adminUserRole')}),
     el('th', {text:t('adminUserPremium')}),
     el('th', {text:t('adminUserOwner')}),
@@ -2322,18 +2685,24 @@ function adminUsers(){
     el('th', {text:t('adminUserActions')})
   ])]);
   var body = el('tbody');
-  var keys = Object.keys(S.users || {}).sort(function(a,b){ return String(S.users[a].nick || a).localeCompare(String(S.users[b].nick || b)); });
-  if(!keys.length) body.appendChild(el('tr', null, [el('td', {class:'empty', colspan:'6', text:t('adminNoUsers')})]));
+  var keys = Object.keys(S.users || {}).sort(function(a,b){
+    var na = (S.users[a] && (S.users[a].nick || S.users[a].username)) || a;
+    var nb = (S.users[b] && (S.users[b].nick || S.users[b].username)) || b;
+    return String(na).localeCompare(String(nb));
+  });
+  if(!keys.length) body.appendChild(el('tr', null, [el('td', {class:'empty', colspan:'7', text:t('adminNoUsers')})]));
   var iAmOwner = isOwnerUser(S.user && S.user.nick);
   keys.forEach(function(k){
     var u = S.users[k] || {};
     var nick = u.nick || k;
+    var username = u.username || k;
     var role = u.role || 'user';
     var isPrem = u.premium === true;
-    var isOwn = !!u.owner || isOwnerLegacy(nick);
+    var isOwn = !!u.owner || isOwnerLegacy(username);
     var cd = typeof u.threadCooldown === 'number' ? u.threadCooldown : DEFAULT_THREAD_COOLDOWN;
     var tr = el('tr');
     tr.appendChild(el('td', null, [nickDisplay(nick)]));
+    tr.appendChild(el('td', {class:'mono', text:'@' + username}));
     var roleTd = el('td');
     var roleSel = el('select', {style:'background:var(--bg-2);border:1px solid var(--line);border-radius:3px;padding:4px 8px;color:var(--fg);font-size:12px'}, [
       el('option', {value:'user', text:t('adminRoleUser'), selected: role === 'user' ? 'selected' : null}),
@@ -2522,7 +2891,7 @@ function privilegePage(){
 function membersView(){
   var m = {};
   Object.keys(S.users || {}).forEach(function(k){
-    var u = S.users[k]; if(u && u.nick){ m[u.nick] = m[u.nick] || {n:u.nick, topics:0, msgs:0, last:0}; }
+    var u = S.users[k]; if(u && (u.nick || u.username)){ var n = u.nick || u.username; m[n] = m[n] || {n:n, username:u.username || k, topics:0, msgs:0, last:0}; }
   });
   S.threads.forEach(function(th){
     m[th.author] = m[th.author] || {n:th.author, topics:0, msgs:0, last:0};
@@ -2547,15 +2916,17 @@ function membersView(){
   var rows = Object.keys(m).map(function(k){ return m[k]; }).sort(function(a,b){ return b.msgs - a.msgs; });
   var head = el('thead', null, [el('tr', null, [
     el('th', {text:t('member')}),
+    el('th', {text:t('adminUserUsername')}),
     el('th', {class:'num', text:t('topicsWord')}),
     el('th', {class:'num', text:t('messages')}),
     el('th', {class:'date', text:t('last')})
   ])]);
   var body = el('tbody');
-  if(!rows.length) body.appendChild(el('tr', null, [el('td', {class:'empty', colspan:'4', text:t('noMembers')})]));
-  rows.forEach(function(r, i){
-    var tr = el('tr', {style:'animation-delay:' + Math.min(i*25, 300) + 'ms'});
+  if(!rows.length) body.appendChild(el('tr', null, [el('td', {class:'empty', colspan:'5', text:t('noMembers')})]));
+  rows.forEach(function(r){
+    var tr = el('tr');
     var td = el('td'); td.appendChild(nickDisplay(r.n, {clickable:true})); tr.appendChild(td);
+    tr.appendChild(el('td', {class:'mono', text: r.username ? '@' + r.username : '—'}));
     tr.appendChild(el('td', {class:'num mono', text:String(r.topics)}));
     tr.appendChild(el('td', {class:'num mono', text:String(r.msgs)}));
     tr.appendChild(el('td', {class:'date mono', text: r.last ? fmt(r.last) : '—'}));
@@ -2658,6 +3029,102 @@ function scheduleRender(){
 document.addEventListener('focusout', function(){
   setTimeout(function(){ if(_pendingRender && !isUserTyping()){ _pendingRender = false; render(); } }, 200);
 });
+
+/* ================= GLOBAL SEARCH ================= */
+(function(){
+  var input = document.getElementById('global-search');
+  var box = document.getElementById('global-search-results');
+  if(!input || !box) return;
+
+  function closeBox(){ box.hidden = true; box.replaceChildren(); }
+  function openBox(){ box.hidden = false; }
+
+  function renderResults(q){
+    q = q.trim().toLowerCase();
+    box.replaceChildren();
+    if(!q){ closeBox(); return; }
+    openBox();
+
+    var threads = S.threads.filter(function(th){
+      return (th.title || '').toLowerCase().indexOf(q) >= 0;
+    }).slice(0,5);
+
+    var chats = Object.keys(S.chats || {}).map(function(id){
+      var c = S.chats[id]; if(!c) return null;
+      return {id:id, name:c.name || '', description:c.description || '', author:c.author || ''};
+    }).filter(function(c){
+      if(!c) return false;
+      return c.name.toLowerCase().indexOf(q) >= 0 || c.description.toLowerCase().indexOf(q) >= 0;
+    }).slice(0,5);
+
+    var users = Object.keys(S.users || {}).map(function(k){
+      var u = S.users[k] || {};
+      return { key:k, nick: u.nick || k, username: u.username || k };
+    }).filter(function(u){
+      return u.nick.toLowerCase().indexOf(q) >= 0 || u.username.toLowerCase().indexOf(q) >= 0;
+    }).slice(0,5);
+
+    if(!threads.length && !chats.length && !users.length){
+      box.appendChild(el('div', {class:'gs-empty', text:'Ничего не найдено'}));
+      return;
+    }
+
+    if(threads.length){
+      box.appendChild(el('div', {class:'gs-sec', text:'Темы'}));
+      threads.forEach(function(th){
+        box.appendChild(el('div', {class:'gs-item', onclick:function(){
+          S.view = 'thread'; S.open = th.id; closeBox(); input.value = ''; render(); window.scrollTo(0,0);
+        }}, [
+          el('div', {class:'gs-ico', text:'T'}),
+          el('div', {class:'gs-txt'}, [
+            el('div', {text:th.title}),
+            el('div', {class:'gs-sub', text: boardName(th.board) + ' · ' + (th.author || '—')})
+          ])
+        ]));
+      });
+    }
+
+    if(chats.length){
+      box.appendChild(el('div', {class:'gs-sec', text:'Чаты'}));
+      chats.forEach(function(c){
+        box.appendChild(el('div', {class:'gs-item', onclick:function(){
+          S.view = 'chat'; S.chatId = c.id; closeBox(); input.value = ''; render(); window.scrollTo(0,0);
+        }}, [
+          el('div', {class:'gs-ico', text:'#'}),
+          el('div', {class:'gs-txt'}, [
+            el('div', {text:c.name || '—'}),
+            el('div', {class:'gs-sub', text: c.author || '—'})
+          ])
+        ]));
+      });
+    }
+
+    if(users.length){
+      box.appendChild(el('div', {class:'gs-sec', text:'Люди'}));
+      users.forEach(function(u){
+        box.appendChild(el('div', {class:'gs-item', onclick:function(){
+          S.profileUser = u.username; S.view = 'profile'; S.profileEdit = false; S.profileTab = 'profile';
+          closeBox(); input.value = ''; render(); window.scrollTo(0,0);
+        }}, [
+          el('div', {class:'gs-ico', text:(u.nick || '?').charAt(0).toUpperCase()}),
+          el('div', {class:'gs-txt'}, [
+            el('div', {text:u.nick}),
+            el('div', {class:'gs-sub', text:'@' + u.username})
+          ])
+        ]));
+      });
+    }
+  }
+
+  input.addEventListener('input', function(){ renderResults(input.value); });
+  input.addEventListener('focus', function(){ if(input.value.trim()) renderResults(input.value); });
+  document.addEventListener('click', function(e){
+    if(!box.contains(e.target) && e.target !== input) closeBox();
+  });
+  input.addEventListener('keydown', function(e){
+    if(e.key === 'Escape'){ closeBox(); input.blur(); }
+  });
+})();
 
 /* ================= EVENTS ================= */
 $('brand').addEventListener('click', home);
