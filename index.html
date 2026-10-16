@@ -1583,21 +1583,40 @@ function openDmWith(target){
   if(!S.user) throw new Error(t('needLoginToSend'));
   target = normalizeUsername(target);
   if(!isValidUsername(target)) throw new Error(t('dmUserNotFound'));
+
   var myRec = userRecord(S.user.nick);
   var myUsername = (myRec && myRec.username) || S.user.nick;
   if(target.toLowerCase() === myUsername.toLowerCase()) throw new Error(t('dmSelf'));
+
   var rec = userRecord(target);
   if(!rec) throw new Error(t('dmUserNotFound'));
+
   var otherUsername = rec.username || target;
   var dmId = dmIdFor(myUsername, otherUsername);
+
   return fbGet('dms/' + dmId).then(function(existing){
     if(!existing){
-      var members = {}; members[usernameToKey(myUsername)] = true; members[usernameToKey(otherUsername)] = true;
+      var members = {};
+      members[usernameToKey(myUsername)] = true;
+      members[usernameToKey(otherUsername)] = true;
       return fbSet('dms/' + dmId, {members:members, created:Date.now(), messages:{}});
     }
   }).then(function(){
-    S.dmId = dmId; S.view = 'dm'; S.dmTarget = rec.nick || target;
-    render(); window.scrollTo(0,0);
+    return fbGet('dms/' + dmId);
+  }).then(function(dmData){
+    if(dmData){
+      if(!S.dms) S.dms = {};
+      S.dms[dmId] = dmData;
+    }
+    S.dmId = dmId;
+    S.view = 'dm';
+    S.dmTarget = rec.nick || target;
+    render();
+    window.scrollTo(0,0);
+  }).catch(function(ex){
+    console.error('[DM] error:', ex);
+    alert('DM error: ' + (ex && (ex.message || ex.code)) || ex);
+    throw ex;
   });
 }
 function sendDm(text){
