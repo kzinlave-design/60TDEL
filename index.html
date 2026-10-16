@@ -502,24 +502,34 @@ tr.row:hover .rowbtn{color:var(--accent-2)}
 "use strict";
 
 /* ============================================================
-   60TDEL · монолитный скрипт
-   nick = отображаемое имя, username = уникальный логин
-   Смена username НЕ трогает Firebase Auth (обходим
-   auth/operation-not-allowed через usernames/<key>.authEmail)
+   60TDEL · исправленная монолитная версия
+   - el(): selected/value через property, null пропускается
+   - stripPremiumFields(): снятие прем-полей при потере статуса
+   - nickDisplay/profileView проверяют hasPrivilege()
+   - S.isAdmin/S.isOwnerFlag обновляются в реальном времени
+   - смена username переносит sessions/online
+   - регистрация откатывает Firebase Auth при провале
+   - safeColor: только #hex или известные CSS-имена
+   - bumpViews: дебаунс
    ============================================================ */
 
 function showFatal(prefix, err){
   var boot = document.getElementById('boot') || document.getElementById('app');
-  var msg = prefix + ': ' + (err && err.stack ? err.stack : (err && err.message ? err.message : String(err)));
+  if(err && err.stack) console.error(prefix, err.stack);
+  else console.error(prefix, err);
+  var msg = (err && err.message) ? err.message : String(err || 'unknown error');
   boot.className = 'boot';
-  boot.innerHTML = '<div style="color:#ff5a5a;font-weight:700;font-size:16px">Ошибка запуска</div>' +
-    '<div class="err">' + msg.replace(/[<>&]/g, function(c){ return {'<':'&lt;','>':'&gt;','&':'&amp;'}[c]; }) + '</div>';
+  var box = document.createElement('div');
+  box.innerHTML = '<div style="color:#ff5a5a;font-weight:700;font-size:16px">Ошибка запуска</div>' +
+    '<div class="err"></div>';
+  box.querySelector('.err').textContent = msg;
+  boot.replaceChildren(box);
 }
 window.addEventListener('error', function(e){ showFatal('JS error', e.error || e.message); });
 window.addEventListener('unhandledrejection', function(e){ showFatal('Promise', e.reason || e); });
 
 if(typeof firebase === 'undefined'){
-  showFatal('Firebase SDK', 'не загрузился. Проверьте доступ к gstatic.com');
+  showFatal('Firebase SDK', new Error('не загрузился. Проверьте доступ к gstatic.com'));
 } else {
 
 var firebaseConfig = {
@@ -550,7 +560,7 @@ var S = {
   profileUser:null, profileEdit:false, profileDraft:null, profileTab:'profile',
   sessions:{}, editing:{}, isAdmin:false, isOwnerFlag:false,
   adminTab:'users',
-  _busy:false, _sessionId:null
+  _busy:false, _sessionId:null, _viewedThreads:{}
 };
 
 /* ================= CONSTANTS ================= */
@@ -566,6 +576,7 @@ var MSG_MAX = 5000, POST_MAX = 10000;
 var CHAT_NAME_MAX = 60, CHAT_DESC_MAX = 200, BIO_MAX = 200, NICK_MAX = 30;
 var EDIT_WINDOW_MS = 15*60*1000;
 var DEFAULT_THREAD_COOLDOWN = 100;
+var VIEW_DEBOUNCE_MS = 60*60*1000;
 
 var BOARDS = [
   {id:'general', ru:'Общее', en:'General', desc_ru:'Общие обсуждения', en_desc:'General discussions'},
@@ -597,6 +608,8 @@ var COLORS = [
 var EMOJIS = ['😀','😎','🔥','⚡','💀','👑','🎯','🚀','💎','🌙','⭐','❤️','💚','💙','🧡','💜','🖤','🤍','🐉','🦅','🎮','🎧','🍀','☄️','✨','🏆','🗡️','🛡️','🧿','🔮','🍕','🍔','🎸','🎬','📸','💻','🕹️','🌊','🍁','🌸','❄️','☀️','🌪️','🔱','⚔️','🦾','🤖','👾','👽','🐺'];
 
 var FORBIDDEN_PREFIX_WORDS = ['admin','administrator','админ','администратор','mod','moder','moderator','мод','модер','модератор','owner','владелец','влад','хозяин','root','system','sys','support','саппорт','хелп','help','official','официальный','60tdel','60t','del'];
+
+var CSS_NAMED_COLORS = ['red','blue','green','yellow','orange','purple','pink','gold','silver','white','black','cyan','magenta','lime','navy','teal','violet','indigo','coral','salmon','tomato','crimson','khaki','plum','orchid','turquoise','azure','beige','ivory'];
 
 /* ================= I18N ================= */
 var I18N = {
@@ -720,7 +733,9 @@ var I18N = {
     usernameBusy:'занят',
     usernameChecking:'проверяю…',
     writeMessage:'Написать',
-    writeMessageHint:'Открыть личные сообщения'
+    writeMessageHint:'Открыть личные сообщения',
+    loading:'Загрузка…', noResults:'Ничего не найдено',
+    people:'Люди', topicsLabel:'Темы', chatsLabel:'Чаты'
   },
   en: {
     home:'Home', chat:'General Chat', dm:'DMs', newTopic:'New Topic', members:'Members',
@@ -842,7 +857,9 @@ var I18N = {
     usernameBusy:'taken',
     usernameChecking:'checking…',
     writeMessage:'Message',
-    writeMessageHint:'Open direct messages'
+    writeMessageHint:'Open direct messages',
+    loading:'Loading…', noResults:'Nothing found',
+    people:'People', topicsLabel:'Topics', chatsLabel:'Chats'
   }
 };
 function t(k){ return (I18N[S.lang] && I18N[S.lang][k]) || I18N.ru[k] || k; }
@@ -851,15 +868,21 @@ function t(k){ return (I18N[S.lang] && I18N[S.lang][k]) || I18N.ru[k] || k; }
 function $(id){ return document.getElementById(id); }
 var appEl = $('app');
 
+/* ИСПРАВЛЕНО: selected/value через property, null пропускается */
 function el(tag, attrs, kids){
   var e = document.createElement(tag);
   if(attrs) Object.keys(attrs).forEach(function(k){
-    if(k === 'class') e.className = attrs[k];
-    else if(k === 'text') e.textContent = attrs[k];
-    else if(k === 'html') e.innerHTML = attrs[k];
-    else if(k.indexOf('on') === 0) e.addEventListener(k.slice(2), attrs[k]);
-    else if(k === 'disabled'){ if(attrs[k]) e.setAttribute('disabled',''); }
-    else e.setAttribute(k, attrs[k]);
+    var v = attrs[k];
+    if(v == null) return;
+    if(k === 'class') e.className = v;
+    else if(k === 'text') e.textContent = v;
+    else if(k === 'html') e.innerHTML = v;
+    else if(k.indexOf('on') === 0 && typeof v === 'function') e.addEventListener(k.slice(2), v);
+    else if(k === 'disabled'){ if(v) e.setAttribute('disabled',''); }
+    else if(k === 'selected'){ if(v) e.setAttribute('selected',''); }
+    else if(k === 'checked'){ if(v) e.setAttribute('checked',''); }
+    else if(k === 'value'){ e.value = v; }
+    else e.setAttribute(k, v);
   });
   (kids || []).forEach(function(c){
     if(c == null) return;
@@ -887,19 +910,43 @@ function safeRandomId(prefix){
 }
 function isSafeKey(k){ return typeof k === 'string' && k.length > 0 && k.length < 80 && /^[A-Za-z0-9_\-]+$/.test(k); }
 function safePathKey(k){ if(!isSafeKey(k)) throw new Error('Invalid key'); return k; }
+
+/* ИСПРАВЛЕНО: safeMediaUrl строже — запрещает javascript:, data:text/html, file: */
 function safeMediaUrl(u){
   if(!u) return '';
   var s = String(u).trim();
   if(!s) return '';
-  if(/^(javascript|vbscript|data:text\/html|data:application|file:)/i.test(s)) return '';
+  if(/^(javascript|vbscript|file):/i.test(s)) return '';
+  if(/^data:text\/html/i.test(s)) return '';
+  if(/^data:application/i.test(s)) return '';
   if(/^data:image\/svg/i.test(s)) return '';
   if(/^https?:\/\//i.test(s)) return s;
   if(/^blob:/i.test(s)) return s;
-  if(/^data:image\//i.test(s)){ var c = s.indexOf(','); if(c<0) return ''; if(s.slice(c+1).length < 32) return ''; return s; }
-  if(/^data:video\//i.test(s)){ var c2 = s.indexOf(','); if(c2<0) return ''; if(s.slice(c2+1).length < 32) return ''; return s; }
+  if(/^data:image\//i.test(s)){
+    var c = s.indexOf(',');
+    if(c < 0) return '';
+    if(s.slice(c+1).length < 32) return '';
+    return s;
+  }
+  if(/^data:video\//i.test(s)){
+    var c2 = s.indexOf(',');
+    if(c2 < 0) return '';
+    if(s.slice(c2+1).length < 32) return '';
+    return s;
+  }
   return '';
 }
-function safeColor(v){ if(!v) return ''; var s = String(v).trim(); if(/^#[0-9a-fA-F]{3,8}$/.test(s)) return s; if(/^[a-zA-Z]+$/.test(s)) return s; return ''; }
+
+/* ИСПРАВЛЕНО: safeColor — только #hex или известные CSS-имена */
+function safeColor(v){
+  if(!v) return '';
+  var s = String(v).trim().toLowerCase();
+  if(/^#[0-9a-f]{3}$/.test(s)) return s;
+  if(/^#[0-9a-f]{6}$/.test(s)) return s;
+  if(/^#[0-9a-f]{8}$/.test(s)) return s;
+  if(CSS_NAMED_COLORS.indexOf(s) >= 0) return s;
+  return '';
+}
 function storeSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
 function storeGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
 function storeRemove(k){ try{ localStorage.removeItem(k); }catch(e){} }
@@ -979,7 +1026,6 @@ function userRecord(id){
     if(!u) continue;
     if(u.username && usernameToKey(u.username) === k) return u;
     if(u.nick && usernameToKey(u.nick) === k) return u;
-    if(usernameToKey(keys[i]) === k) return u;
   }
   return null;
 }
@@ -1011,6 +1057,19 @@ function isPremiumUser(nick){
 }
 function hasPrivilege(nick){ return isAdminUser(nick) || isPremiumUser(nick) || isOwnerUser(nick); }
 
+/* ИСПРАВЛЕНО: снятие прем-полей при потере привилегии */
+function stripPremiumFields(profile){
+  if(!profile) return profile;
+  return Object.assign({}, profile, {
+    color:'',
+    prefix:'',
+    prefixColor:'',
+    emojis:[],
+    mediaUrl:'',
+    banner:''
+  });
+}
+
 function authErr(ex){
   var c = String((ex && ex.code) || '');
   if(c.indexOf('wrong-password') >= 0 || c.indexOf('invalid-credential') >= 0) return new Error(t('errWrongPass'));
@@ -1030,7 +1089,7 @@ function usernameTaken(u){
   }).then(function(r){ return !!r; }).catch(function(){ return false; });
 }
 
-/* ===== Register: username (логин) + nick (отображаемое имя) ===== */
+/* ===== Register: откат Auth при провале ===== */
 function register(username, pass, nick){
   username = normalizeUsername(username);
   pass = String(pass || '');
@@ -1044,33 +1103,40 @@ function register(username, pass, nick){
   if(OWNERS.indexOf(key) >= 0) return Promise.reject(new Error(t('errUsernameTaken')));
 
   var initialAuthEmail = authEmail(username);
+  var createdUid = null;
 
   return usernameTaken(username).then(function(taken){
     if(taken) throw new Error(t('errUsernameTaken'));
     return auth.createUserWithEmailAndPassword(initialAuthEmail, pass);
   }).then(function(cred){
-    var uid = cred.user.uid;
+    createdUid = cred.user.uid;
     var profile = {color:'',prefix:'',prefixColor:'',emojis:[],mediaUrl:'',avatar:'',banner:'',bio:''};
     var userRec = {
       nick: nick,
       username: username,
       authEmail: initialAuthEmail,
-      uid: uid,
+      uid: createdUid,
       owner: false, role:'user', premium:false,
       created: Date.now(),
       profile: profile,
       threadCooldown: DEFAULT_THREAD_COOLDOWN
     };
     return fbSet('users/' + key, userRec)
-      .then(function(){ return fbSet('usernames/' + key, {username: username, uid: uid, authEmail: initialAuthEmail}); })
+      .then(function(){ return fbSet('usernames/' + key, {username: username, uid: createdUid, authEmail: initialAuthEmail}); })
       .then(function(){
         S.user = {nick: nick, owner:false, role:'user'};
         S.isAdmin = false; S.isOwnerFlag = false;
       });
-  }).catch(function(ex){ throw authErr(ex); });
+  }).catch(function(ex){
+    // если Auth создался, но запись не удалась — откат
+    if(createdUid && auth.currentUser && auth.currentUser.uid === createdUid){
+      auth.currentUser.delete().catch(function(){});
+    }
+    throw authErr(ex);
+  });
 }
 
-/* ===== Login: ищем authEmail в usernames/<key> ===== */
+/* ===== Login ===== */
 function login(username, pass){
   username = normalizeUsername(username);
   pass = String(pass || '');
@@ -1094,15 +1160,21 @@ function login(username, pass){
 }
 
 function logout(){
-  if(S.user){ fbSet('online/' + usernameToKey(S.user.nick), null).catch(function(){}); }
-  if(S._sessionId && S.user){ fbRemove('sessions/' + usernameToKey(S.user.nick) + '/' + S._sessionId).catch(function(){}); }
+  if(S.user){
+    var key = usernameToKey(S.user.nick);
+    if(isSafeKey(key)){
+      fbSet('online/' + key, null).catch(function(){});
+      if(S._sessionId) fbRemove('sessions/' + key + '/' + S._sessionId).catch(function(){});
+    }
+  }
   S.user = null; S.isAdmin = false; S.isOwnerFlag = false;
+  S._sessionId = null;
   storeRemove('f60_user');
   auth.signOut().catch(function(){});
   render();
 }
 
-/* ===== Восстановление сессии: ищем пользователя по uid, а не по email ===== */
+/* ===== Восстановление сессии по uid ===== */
 function restoreFromAuth(u){
   if(!u){
     if(S.user){ S.user = null; S.isAdmin = false; S.isOwnerFlag = false; render(); }
@@ -1120,7 +1192,9 @@ function restoreFromAuth(u){
     return null;
   }).then(function(found){
     if(!found){
-      S.user = null; S.isAdmin = false; S.isOwnerFlag = false; render();
+      S.user = null; S.isAdmin = false; S.isOwnerFlag = false;
+      auth.signOut().catch(function(){});
+      render();
       return;
     }
     var rec = found.rec;
@@ -1164,15 +1238,19 @@ function deviceInfo(){
 function registerSession(){
   if(!S.user) return;
   var key = usernameToKey(S.user.nick);
+  if(!isSafeKey(key)) return;
   S._sessionId = safeRandomId('s');
   fbSet('sessions/' + key + '/' + S._sessionId, {device:deviceInfo(), ua:navigator.userAgent||'', ts:Date.now(), created:Date.now()}).catch(function(){});
 }
 function killSession(sid){
   if(!S.user || !sid) return;
   var key = usernameToKey(S.user.nick);
+  var isCurrent = sid === S._sessionId;
   fbRemove('sessions/' + key + '/' + sid).then(function(){
-    if(sid === S._sessionId) return auth.signOut();
-  }).then(function(){ S.user = null; render(); }).catch(function(){});
+    if(isCurrent){
+      return fbSet('online/' + key, null).catch(function(){}).then(function(){ return auth.signOut(); });
+    }
+  }).then(function(){ if(isCurrent){ S.user = null; render(); } }).catch(function(){});
 }
 function killAllOtherSessions(){
   if(!S.user) return;
@@ -1288,11 +1366,15 @@ function makeAvatarImg(url, onFail){
 }
 
 /* ================= NICK DISPLAY ================= */
+/* ИСПРАВЛЕНО: прем-поля рендерятся только если у юзера есть привилегия */
 function nickDisplay(name, opts){
   opts = opts || {};
   var rec = userRecord(name);
   var displayName = (rec && rec.nick) || name;
   var prof = (rec && rec.profile) || {};
+  var canPrem = isAdminUser(name) || isPremiumUser(name) || isOwnerUser(name);
+  if(!canPrem) prof = Object.assign({}, prof, {color:'',prefix:'',prefixColor:'',emojis:[],mediaUrl:''});
+
   var colorCls = '';
   for(var i=0;i<COLORS.length;i++){ if(COLORS[i].id === prof.color){ colorCls = COLORS[i].cls; break; } }
   var prefixLabel = prof.prefix || '';
@@ -1318,7 +1400,7 @@ function nickDisplay(name, opts){
     var isVid = /\.(mp4|webm|ogg|mov)(\?|$)/i.test(mediaUrl) || /^data:video\//i.test(mediaUrl);
     if(isVid){
       var vspan = el('span', {class:'nick-media-video'});
-      var vid = el('video', {class:'nick-media', src:mediaUrl, autoplay:'', loop:'', muted:'', playsinline:'', preload:'auto'});
+      var vid = el('video', {class:'nick-media', src:mediaUrl, loop:'', muted:'', playsinline:'', preload:'metadata'});
       vid.addEventListener('error', function(){ vspan.remove(); });
       vspan.appendChild(vid); wrap.appendChild(vspan);
     } else {
@@ -1371,11 +1453,9 @@ function avatarFor(name, size){
 }
 function openLightbox(node){
   var lb = el('div', {class:'lightbox'}, [node]);
-  lb.addEventListener('click', function(){ document.body.removeChild(lb); });
+  lb.addEventListener('click', function(){ if(lb.parentNode) lb.parentNode.removeChild(lb); });
   document.body.appendChild(lb);
 }
-
-/* ===== Клик по юзеру → открыть профиль ===== */
 function openProfileOf(name){
   var rec = userRecord(name);
   S.profileUser = (rec && rec.username) || name;
@@ -1394,8 +1474,12 @@ function getCooldown(nick){
 }
 function lastThreadTime(nick){
   var rec = userRecord(nick);
+  var uid = rec && rec.uid;
   var name = rec ? rec.nick : nick;
-  return S.threads.filter(function(th){ return th.author === name || th.author === nick; }).reduce(function(m,th){ return Math.max(m, th.date || 0); }, 0);
+  return S.threads.filter(function(th){
+    if(uid && th.uid) return th.uid === uid;
+    return th.author === name || th.author === nick;
+  }).reduce(function(m,th){ return Math.max(m, th.date || 0); }, 0);
 }
 function cooldownRemaining(nick){
   var cd = getCooldown(nick) * 1000;
@@ -1427,7 +1511,7 @@ function publishThread(opts){
   if(rem > 0) return Promise.reject(new Error(t('cooldownWait').replace('{s}', Math.ceil(rem/1000))));
   var id = safeRandomId('t');
   var now = Date.now();
-  var post = Object.assign({author:S.user.nick, text:opts.text, date:now}, packMedia(opts.att));
+  var post = Object.assign({author:S.user.nick, uid:myUid(), text:opts.text, date:now}, packMedia(opts.att));
   return fbSet('threads/' + safePathKey(id), {board:opts.board, title:opts.title, author:S.user.nick, uid:myUid(), date:now, views:0, pin:false, posts:{p0:post}})
     .then(function(){
       S.compose = false; S.board = null; S.q = ''; S.page = 1; S.view = 'list'; S.open = id;
@@ -1437,16 +1521,25 @@ function publishThread(opts){
 function replyThread(threadId, text, att){
   if(!S.user){ S.view='auth'; S.authMode='login'; render(); return Promise.resolve(); }
   var now = Date.now();
-  var post = Object.assign({author:S.user.nick, text:text, date:now}, packMedia(att));
-  var th = null; for(var i=0;i<S.threads.length;i++){ if(S.threads[i].id === threadId){ th = S.threads[i]; break; } }
-  var count = th && th.posts ? Object.keys(th.posts).length : 0;
-  return fbSet('threads/' + threadId + '/posts/p' + count, post).then(function(){ render(); });
+  var post = Object.assign({author:S.user.nick, uid:myUid(), text:text, date:now}, packMedia(att));
+  var ref = db.ref('threads/' + threadId + '/posts');
+  return ref.transaction(function(posts){
+    posts = posts || {};
+    var count = Object.keys(posts).length;
+    posts['p' + count + '_' + now] = post;
+    return posts;
+  }).then(function(){ render(); });
 }
+/* ИСПРАВЛЕНО: дебаунс просмотров */
 function bumpViews(id){
+  if(!S.user) return Promise.resolve();
+  var key = usernameToKey(S.user.nick) + ':' + id;
+  var last = S._viewedThreads[key] || 0;
+  if(Date.now() - last < VIEW_DEBOUNCE_MS) return Promise.resolve();
+  S._viewedThreads[key] = Date.now();
   var th = null; for(var i=0;i<S.threads.length;i++){ if(S.threads[i].id === id){ th = S.threads[i]; break; } }
   if(!th) return Promise.resolve();
-  var v = (th.views || 0) + 1; th.views = v;
-  return fbUpdate('threads/' + id, {views:v});
+  return db.ref('threads/' + id + '/views').transaction(function(v){ return (v || 0) + 1; }).then(function(){});
 }
 function canEditPost(p){
   if(!S.user) return false;
@@ -1474,14 +1567,19 @@ function deleteThreadPost(threadId, postKey){
   var th = null; for(var i=0;i<S.threads.length;i++){ if(S.threads[i].id === threadId){ th = S.threads[i]; break; } }
   if(!th) throw new Error(t('topicNotFound'));
   var p = th.posts && th.posts[postKey]; if(!p) throw new Error(t('errGeneric'));
-  var keys = Object.keys(th.posts);
+  var keys = Object.keys(th.posts).sort(function(a,b){ return (th.posts[a].date||0) - (th.posts[b].date||0); });
   var isFirst = keys[0] === postKey;
   if(!canDeletePost(p, isFirst)) throw new Error(t('errNoPerm'));
   return fbRemove('threads/' + threadId + '/posts/' + postKey).then(function(){ render(); });
 }
+/* ИСПРАВЛЕНО: автор тоже может удалить свою тему */
 function deleteThread(threadId){
   if(!S.user) throw new Error(t('needLoginToSend'));
-  if(!(isOwnerUser(S.user.nick) || isAdminUser(S.user.nick))) throw new Error(t('errNoPerm'));
+  var th = null; for(var i=0;i<S.threads.length;i++){ if(S.threads[i].id === threadId){ th = S.threads[i]; break; } }
+  if(!th) throw new Error(t('topicNotFound'));
+  var isStaff = isOwnerUser(S.user.nick) || isAdminUser(S.user.nick);
+  var isAuthor = th.author === S.user.nick || (th.uid && th.uid === myUid());
+  if(!isStaff && !isAuthor) throw new Error(t('errNoPerm'));
   return fbRemove('threads/' + threadId).then(function(){
     if(S.open === threadId){ S.open = null; S.view = 'list'; }
     render();
@@ -1509,9 +1607,14 @@ function postChatMessage(chatId, text, att){
   var mutedUntil = isMuted(c, S.user.nick);
   if(mutedUntil){ throw new Error(t('youAreMuted') + ' ' + fmtTime(mutedUntil)); }
   var now = Date.now();
-  var msg = Object.assign({author:S.user.nick, text:text, date:now}, packMedia(att));
-  var count = c.messages ? Object.keys(c.messages).length : 0;
-  return fbSet('chats/' + chatId + '/messages/m' + count, msg);
+  var msg = Object.assign({author:S.user.nick, uid:myUid(), text:text, date:now}, packMedia(att));
+  var ref = db.ref('chats/' + chatId + '/messages');
+  return ref.transaction(function(msgs){
+    msgs = msgs || {};
+    var count = Object.keys(msgs).length;
+    msgs['m' + count + '_' + now] = msg;
+    return msgs;
+  });
 }
 function editChatMessage(chatId, msgKey, text){
   if(!S.user) throw new Error(t('needLoginToSend'));
@@ -1543,8 +1646,13 @@ function muteUser(chatId, targetNick, durationMs){
   var key = rec && rec.username ? usernameToKey(rec.username) : usernameToKey(targetNick);
   return fbSet('chats/' + chatId + '/mutes/' + key, until).then(function(){
     var sysMsg = '[MUTE] ' + ((rec && rec.nick) || targetNick) + ' → ' + fmtTime(until);
-    var count = c.messages ? Object.keys(c.messages).length : 0;
-    return fbSet('chats/' + chatId + '/messages/m' + count, {author:'system', text:sysMsg, date:Date.now(), system:true});
+    var ref = db.ref('chats/' + chatId + '/messages');
+    return ref.transaction(function(msgs){
+      msgs = msgs || {};
+      var count = Object.keys(msgs).length;
+      msgs['m' + count + '_' + Date.now()] = {author:'system', text:sysMsg, date:Date.now(), system:true};
+      return msgs;
+    });
   }).then(function(){ render(); });
 }
 function unmuteUser(chatId, targetNick){
@@ -1575,8 +1683,11 @@ function setChatDescription(chatId, desc){
 }
 
 /* ================= DMs ================= */
+/* ИСПРАВЛЕНО: dmId по uid (стабильно при смене username) */
 function dmIdFor(a, b){
-  var ka = usernameToKey(a), kb = usernameToKey(b);
+  var ra = userRecord(a), rb = userRecord(b);
+  var ka = (ra && ra.uid) ? ra.uid : usernameToKey(a);
+  var kb = (rb && rb.uid) ? rb.uid : usernameToKey(b);
   return ka < kb ? ka + '_' + kb : kb + '_' + ka;
 }
 function openDmWith(target){
@@ -1586,20 +1697,22 @@ function openDmWith(target){
 
   var myRec = userRecord(S.user.nick);
   var myUsername = (myRec && myRec.username) || S.user.nick;
+  var myUidV = (myRec && myRec.uid) || myUid();
   if(target.toLowerCase() === myUsername.toLowerCase()) throw new Error(t('dmSelf'));
 
   var rec = userRecord(target);
   if(!rec) throw new Error(t('dmUserNotFound'));
 
   var otherUsername = rec.username || target;
+  var otherUid = rec.uid || usernameToKey(otherUsername);
   var dmId = dmIdFor(myUsername, otherUsername);
 
   return fbGet('dms/' + dmId).then(function(existing){
     if(!existing){
       var members = {};
-      members[usernameToKey(myUsername)] = true;
-      members[usernameToKey(otherUsername)] = true;
-      return fbSet('dms/' + dmId, {members:members, created:Date.now(), messages:{}});
+      members[myUidV] = true;
+      members[otherUid] = true;
+      return fbSet('dms/' + dmId, {members:members, created:Date.now(), messages:{}, uids:[myUidV, otherUid]});
     }
   }).then(function(){
     return fbGet('dms/' + dmId);
@@ -1613,10 +1726,6 @@ function openDmWith(target){
     S.dmTarget = rec.nick || target;
     render();
     window.scrollTo(0,0);
-  }).catch(function(ex){
-    console.error('[DM] error:', ex);
-    alert('DM error: ' + (ex && (ex.message || ex.code)) || ex);
-    throw ex;
   });
 }
 function sendDm(text){
@@ -1624,24 +1733,30 @@ function sendDm(text){
   if(!S.dmId) throw new Error(t('errGeneric'));
   if(!text || !text.trim()) throw new Error(t('errMsgEmpty'));
   if(text.length > MSG_MAX) throw new Error(t('errMsgLong'));
-  return fbGet('dms/' + S.dmId).then(function(existing){
-    var count = existing && existing.messages ? Object.keys(existing.messages).length : 0;
-    return fbSet('dms/' + S.dmId + '/messages/m' + count, {author:S.user.nick, text:text.trim(), date:Date.now()});
+  var now = Date.now();
+  var ref = db.ref('dms/' + S.dmId + '/messages');
+  return ref.transaction(function(msgs){
+    msgs = msgs || {};
+    var count = Object.keys(msgs).length;
+    msgs['m' + count + '_' + now] = {author:S.user.nick, uid:myUid(), text:text.trim(), date:now};
+    return msgs;
   });
 }
 function deleteDmForMe(dmId){
   if(!S.user) throw new Error(t('needLoginToSend'));
-  var myUsername = (userRecord(S.user.nick) && userRecord(S.user.nick).username) || S.user.nick;
-  var hidden = {}; hidden[usernameToKey(myUsername)] = Date.now();
+  var myRec = userRecord(S.user.nick);
+  var myUidV = (myRec && myRec.uid) || myUid();
+  var hidden = {}; hidden[myUidV] = Date.now();
   return fbUpdate('dms/' + dmId + '/hidden', hidden);
 }
 function deleteDmForBoth(dmId){
   if(!S.user) throw new Error(t('needLoginToSend'));
   return fbGet('dms/' + dmId).then(function(d){
     if(!d) return;
-    var myUsername = (userRecord(S.user.nick) && userRecord(S.user.nick).username) || S.user.nick;
+    var myRec = userRecord(S.user.nick);
+    var myUidV = (myRec && myRec.uid) || myUid();
     var members = d.members || {};
-    var isMember = members[usernameToKey(myUsername)] === true;
+    var isMember = members[myUidV] === true;
     var isStaff = isOwnerUser(S.user.nick) || isAdminUser(S.user.nick);
     if(!isMember && !isStaff) throw new Error(t('errNoPerm'));
     return fbRemove('dms/' + dmId);
@@ -1737,9 +1852,9 @@ function authView(){
   var err = el('div', {class:'err'});
   var hint = el('div', {class:'hintline'});
 
-  var usernameInput = el('input', {id:'a-username', type:'text', autocomplete:'username', required:'required', placeholder:'username (3–15: A-Za-z0-9_)', maxlength:'15', spellcheck:'false', autocapitalize:'off', style:'font-family:var(--font-mono)'});
-  var nickInput = el('input', {id:'a-nick', type:'text', autocomplete:'nickname', required:'required', placeholder:'Ник (отображается всем)', maxlength:'30', spellcheck:'false'});
-  var passInput = el('input', {id:'a-pass', type:'password', autocomplete: isLogin ? 'current-password' : 'new-password', required:'required', placeholder:t('password'), maxlength:'128'});
+  var usernameInput = el('input', {id:'a-username', type:'text', autocomplete:'username', placeholder:'username (3–15: A-Za-z0-9_)', maxlength:'15', spellcheck:'false', autocapitalize:'off', style:'font-family:var(--font-mono)'});
+  var nickInput = el('input', {id:'a-nick', type:'text', autocomplete:'nickname', placeholder:'Ник (отображается всем)', maxlength:'30', spellcheck:'false'});
+  var passInput = el('input', {id:'a-pass', type:'password', autocomplete: isLogin ? 'current-password' : 'new-password', placeholder:t('password'), maxlength:'128'});
 
   var submitBtn = el('button', {class:'btn primary', type:'submit', text: isLogin ? t('enter') : t('register')});
 
@@ -1934,14 +2049,14 @@ function go(p){ S.page = p; render(); }
 
 function composeBlock(){
   var cd = cooldownRemaining(S.user.nick);
-  var title = el('input', {id:'c-title', type:'text', maxlength:'120', required:'required', placeholder:t('title')});
+  var title = el('input', {id:'c-title', type:'text', maxlength:'120', placeholder:t('title')});
   var sel = el('select', {id:'c-board'});
   BOARDS.forEach(function(b){
     var o = el('option', {value:b.id, text:boardTitle(b)});
-    if(S.board === b.id) o.selected = true;
     sel.appendChild(o);
   });
-  var txt = el('textarea', {id:'c-text', required:'required', maxlength:String(POST_MAX)});
+  if(S.board) sel.value = S.board;
+  var txt = el('textarea', {id:'c-text', maxlength:String(POST_MAX)});
   txt.addEventListener('keydown', function(e){
     if(e.key === 'Enter' && (e.ctrlKey || e.metaKey)){ e.preventDefault(); e.target.form.requestSubmit(); }
   });
@@ -1980,6 +2095,7 @@ function attachmentsBlock(opts){
   imgInput.addEventListener('change', function(){ if(imgInput.files[0]) handleImage(imgInput.files[0]); });
   var vidInput = el('input', {type:'file', accept:'video/*', style:'display:none'});
   vidInput.addEventListener('change', function(){ if(vidInput.files[0]) handleVideo(vidInput.files[0]); });
+  var linkInput = null;
   if(allowMedia){
     var imgBtn = el('button', {type:'button', class:'btn small'}, [icon('image'), t('photo')]);
     imgBtn.addEventListener('click', function(){ imgInput.click(); });
@@ -2011,7 +2127,7 @@ function attachmentsBlock(opts){
   } else {
     wrap.appendChild(el('div', {class:'hint', text:'⚠ Медиа в личных сообщениях отключено'}));
   }
-  var linkInput = el('input', {type:'url', placeholder:t('linkPlaceholder')});
+  linkInput = el('input', {type:'url', placeholder:t('linkPlaceholder')});
   linkInput.addEventListener('input', function(){ state.linkUrl = linkInput.value.trim(); renderPreview(); });
   wrap.appendChild(linkInput);
   wrap.appendChild(progWrap); wrap.appendChild(info); wrap.appendChild(preview);
@@ -2181,7 +2297,8 @@ function threadView(){
   var posts = el('section');
   keys.forEach(function(k, i){ posts.appendChild(postEl(th.posts[k], i, th.id, k, i === 0)); });
   out.push(posts);
-  var txt = el('textarea', {id:'r-text', required:'required', maxlength:String(POST_MAX)});
+  if(!S.user){ out.push(el('div', {class:'chat-hint', text:t('needLoginToSend')})); return out; }
+  var txt = el('textarea', {id:'r-text', maxlength:String(POST_MAX)});
   txt.addEventListener('keydown', function(e){
     if(e.key === 'Enter' && (e.ctrlKey || e.metaKey)){ e.preventDefault(); e.target.form.requestSubmit(); }
   });
@@ -2241,7 +2358,7 @@ function chatListView(){
       var btn = el('button', {class:'btn primary', type:'submit', text:t('createChat')});
       out.push(el('form', {class:'chatform', style:'grid-template-columns:1fr;gap:10px', onsubmit:function(e){
         e.preventDefault(); err.textContent = ''; btn.disabled = true;
-        createChat(inp.value, desc.value).then(function(id){
+        Promise.resolve().then(function(){ return createChat(inp.value, desc.value); }).then(function(id){
           S.chatCreating = false; S.chatId = id; S.view = 'chat'; render(); window.scrollTo(0,0);
         }).catch(function(ex){ err.textContent = ex.message || t('errGeneric'); })
           .then(function(){ btn.disabled = false; });
@@ -2357,7 +2474,7 @@ function chatView(){
     el('button', {class:'btn', text:t('backToChats'), onclick:function(){ S.view = 'chatList'; S.chatId = null; render(); }}),
     canManage ? el('button', {class:'btn danger', type:'button', onclick:function(){
       if(!confirm(t('confirmDeleteChat'))) return;
-      deleteChat(S.chatId).then(function(){ S.view = 'chatList'; S.chatId = null; render(); })
+      Promise.resolve().then(function(){ return deleteChat(S.chatId); }).then(function(){ S.view = 'chatList'; S.chatId = null; render(); })
         .catch(function(ex){ alert(ex.message || t('errGeneric')); });
     }}, [icon('trash'), t('deleteChat')]) : null
   ]));
@@ -2398,7 +2515,7 @@ function chatView(){
   if(!S.user){ out.push(el('div', {class:'chat-hint', text:t('needLoginToSend')})); return out; }
   var mutedUntil = isMuted(chat, S.user.nick);
   if(mutedUntil) out.push(el('div', {class:'badge warn', text:t('youAreMuted') + ' ' + fmtTime(mutedUntil), style:'margin-bottom:8px'}));
-  var txt = el('textarea', {id:'chat-text', required:'required', maxlength:String(MSG_MAX), placeholder:t('yourMsg'), style:'min-height:70px'});
+  var txt = el('textarea', {id:'chat-text', maxlength:String(MSG_MAX), placeholder:t('yourMsg'), style:'min-height:70px'});
   txt.addEventListener('keydown', function(e){
     if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); e.target.form.requestSubmit(); }
   });
@@ -2416,19 +2533,19 @@ function chatView(){
       var target = muteMatch[1]; var dur = parseMuteDuration(muteMatch[2]);
       if(!dur){ err.textContent = t('muteInvalid'); return; }
       var r = userRecord(target); if(!r){ err.textContent = t('muteNoUser'); return; }
-      muteUser(S.chatId, target, dur).then(function(){ txt.value = ''; })
+      Promise.resolve().then(function(){ return muteUser(S.chatId, target, dur); }).then(function(){ txt.value = ''; })
         .catch(function(ex){ err.textContent = ex.message || t('errGeneric'); });
       return;
     }
     if(canManage && unmuteMatch){
       var target2 = unmuteMatch[1];
-      unmuteUser(S.chatId, target2).then(function(){ txt.value = ''; })
+      Promise.resolve().then(function(){ return unmuteUser(S.chatId, target2); }).then(function(){ txt.value = ''; })
         .catch(function(ex){ err.textContent = ex.message || t('errGeneric'); });
       return;
     }
     if(!text && !data.imageData && !data.videoData && !data.linkUrl){ err.textContent = t('errMsgEmpty'); return; }
     sendBtn.disabled = true; setBusy(sendBtn, t('sending'));
-    postChatMessage(S.chatId, text, data).then(function(){ txt.value = ''; })
+    Promise.resolve().then(function(){ return postChatMessage(S.chatId, text, data); }).then(function(){ txt.value = ''; })
       .catch(function(ex){ err.textContent = ex.message || t('errGeneric'); })
       .then(function(){
         if(!mutedUntil) sendBtn.disabled = false;
@@ -2452,15 +2569,15 @@ function dmListView(){
   var inp = el('input', {type:'text', placeholder:t('dmSearch'), maxlength:'15'});
   out.push(el('form', {class:'chatform', style:'grid-template-columns:1fr auto', onsubmit:function(e){
     e.preventDefault();
-    openDmWith(inp.value).catch(function(ex){ alert(ex.message || t('errGeneric')); });
+    Promise.resolve().then(function(){ return openDmWith(inp.value); }).catch(function(ex){ alert(ex.message || t('errGeneric')); });
   }}, [inp, el('button', {class:'btn primary', type:'submit'}, [icon('send'), t('dmOpen')])]));
-  var myUsername = (userRecord(S.user.nick) && userRecord(S.user.nick).username) || usernameToKey(S.user.nick);
-  var me = usernameToKey(myUsername);
+  var myRec = userRecord(S.user.nick);
+  var myUidV = (myRec && myRec.uid) || myUid();
   var list = Object.keys(S.dms || {}).filter(function(id){
     var d = S.dms[id]; if(!d) return false;
     var members = d.members || {};
-    if(members[me] !== true) return false;
-    var hidden = (d.hidden && d.hidden[me]) || 0;
+    if(members[myUidV] !== true) return false;
+    var hidden = (d.hidden && d.hidden[myUidV]) || 0;
     return !hidden;
   }).map(function(id){
     var o = {id:id}; var d = S.dms[id]; for(var k in d) o[k] = d[k]; return o;
@@ -2473,9 +2590,10 @@ function dmListView(){
   var box = el('div', {class:'dm-list'});
   list.forEach(function(d){
     var members = Object.keys(d.members || {});
-    var other = members.filter(function(k){ return k !== me; })[0] || me;
-    var rec = S.users[other];
-    var name = rec && rec.nick ? rec.nick : other;
+    var otherUid = members.filter(function(k){ return k !== myUidV; })[0] || myUidV;
+    var rec = null;
+    Object.keys(S.users || {}).forEach(function(k){ if(S.users[k] && S.users[k].uid === otherUid) rec = S.users[k]; });
+    var name = rec && rec.nick ? rec.nick : otherUid;
     var msgs = d.messages ? Object.values(d.messages) : [];
     var last = msgs.reduce(function(m,x){ return Math.max(m, x.date||0); }, 0);
     var lastMsg = msgs.length ? msgs.reduce(function(a,b){ return (a.date||0) > (b.date||0) ? a : b; }) : null;
@@ -2499,23 +2617,24 @@ function dmListView(){
 function dmView(){
   var d = S.dms[S.dmId];
   if(!d) return [el('button', {class:'btn back', text:'← ' + t('dm'), onclick:function(){ S.view = 'dmList'; S.dmId = null; render(); }}), el('div', {class:'empty', text:'—'})];
-  var myUsername = (userRecord(S.user.nick) && userRecord(S.user.nick).username) || S.user.nick;
-  var me = usernameToKey(myUsername);
+  var myRec = userRecord(S.user.nick);
+  var myUidV = (myRec && myRec.uid) || myUid();
   var members = Object.keys(d.members || {});
-  var other = members.filter(function(k){ return k !== me; })[0] || me;
-  var rec = S.users[other];
-  var name = rec && rec.nick ? rec.nick : other;
+  var otherUid = members.filter(function(k){ return k !== myUidV; })[0] || myUidV;
+  var rec = null;
+  Object.keys(S.users || {}).forEach(function(k){ if(S.users[k] && S.users[k].uid === otherUid) rec = S.users[k]; });
+  var name = rec && rec.nick ? rec.nick : otherUid;
   var out = [];
   out.push(el('div', {class:'chatbar'}, [
     el('button', {class:'btn', text:'← ' + t('dm'), onclick:function(){ S.view = 'dmList'; S.dmId = null; render(); }}),
     el('button', {class:'btn danger', type:'button', onclick:function(){
       if(!confirm(t('dmConfirmDeleteSelf'))) return;
-      deleteDmForMe(S.dmId).then(function(){ S.view = 'dmList'; S.dmId = null; render(); })
+      Promise.resolve().then(function(){ return deleteDmForMe(S.dmId); }).then(function(){ S.view = 'dmList'; S.dmId = null; render(); })
         .catch(function(ex){ alert(ex.message || t('errGeneric')); });
     }}, [icon('trash'), t('dmDeleteSelf')]),
     el('button', {class:'btn danger', type:'button', onclick:function(){
       if(!confirm(t('dmConfirmDeleteBoth'))) return;
-      deleteDmForBoth(S.dmId).then(function(){ S.view = 'dmList'; S.dmId = null; render(); })
+      Promise.resolve().then(function(){ return deleteDmForBoth(S.dmId); }).then(function(){ S.view = 'dmList'; S.dmId = null; render(); })
         .catch(function(ex){ alert(ex.message || t('errGeneric')); });
     }}, [icon('trash'), t('dmDeleteBoth')])
   ]));
@@ -2528,7 +2647,7 @@ function dmView(){
   head.appendChild(avH);
   var infoH = el('div', {class:'info'});
   infoH.appendChild(el('h1', null, [nickDisplay(name, {clickable:true})]));
-  infoH.appendChild(el('div', {class:'desc', text:'@' + (rec && rec.username ? rec.username : other)}));
+  infoH.appendChild(el('div', {class:'desc', text:'@' + (rec && rec.username ? rec.username : otherUid)}));
   head.appendChild(infoH);
   var profBtn = el('button', {class:'btn small', type:'button', onclick:function(){ openProfileOf(name); }}, [icon('user'), t('profile')]);
   head.appendChild(profBtn);
@@ -2554,7 +2673,7 @@ function dmView(){
     win.appendChild(el('div', {class:'chatmsg' + (m.author === S.user.nick ? ' self' : ''), style:'animation-delay:' + Math.min(i*20, 250) + 'ms'}, [av, bub]));
   });
   out.push(win);
-  var txt = el('textarea', {id:'dm-text', required:'required', maxlength:String(MSG_MAX), placeholder:t('yourMsg'), style:'min-height:70px'});
+  var txt = el('textarea', {id:'dm-text', maxlength:String(MSG_MAX), placeholder:t('yourMsg'), style:'min-height:70px'});
   txt.addEventListener('keydown', function(e){
     if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); e.target.form.requestSubmit(); }
   });
@@ -2565,7 +2684,7 @@ function dmView(){
     var text = txt.value.trim();
     if(!text){ err.textContent = t('errMsgEmpty'); return; }
     sendBtn.disabled = true; setBusy(sendBtn, t('sending'));
-    sendDm(text).then(function(){ txt.value = ''; })
+    Promise.resolve().then(function(){ return sendDm(text); }).then(function(){ txt.value = ''; })
       .catch(function(ex){ err.textContent = ex.message || t('errGeneric'); })
       .then(function(){ sendBtn.disabled = false; sendBtn.replaceChildren(icon('send'), document.createTextNode(t('send'))); });
   }}, [
@@ -2588,9 +2707,13 @@ function profileView(){
   var rec = userRecord(targetId) || {};
   var targetNick = rec.nick || targetId;
   var targetUsername = rec.username || usernameToKey(targetId);
-  var myUsername = (userRecord(S.user.nick) && userRecord(S.user.nick).username) || S.user.nick;
+  var myRec = userRecord(S.user.nick);
+  var myUsername = (myRec && myRec.username) || S.user.nick;
   var isMe = targetUsername === myUsername;
   var prof = rec.profile || {};
+  var canPrem = isAdminUser(targetNick) || isPremiumUser(targetNick) || isOwnerUser(targetNick);
+  if(!canPrem) prof = Object.assign({}, prof, {color:'',prefix:'',prefixColor:'',emojis:[],mediaUrl:'',banner:''});
+
   var created = rec.created ? fmt(rec.created) : '—';
   var postsCount = 0, topicsCount = 0;
   S.threads.forEach(function(th){
@@ -2633,15 +2756,13 @@ function profileView(){
     el('div', {class:'profile-head-inner'}, [avatarBox, infoBlock])
   ]));
 
-  /* ===== Кнопки под профилем ===== */
   var profileActions = [];
   if(!isMe){
-    // Кнопка "Написать" — открыть ЛС
     var writeBtn = el('button', {class:'btn primary', type:'button'}, [icon('mailSend'), t('writeMessage')]);
     writeBtn.title = t('writeMessageHint');
     writeBtn.addEventListener('click', function(){
       if(!S.user){ S.view = 'auth'; S.authMode = 'login'; render(); return; }
-      openDmWith(targetUsername).catch(function(ex){ alert(ex.message || t('errGeneric')); });
+      Promise.resolve().then(function(){ return openDmWith(targetUsername); }).catch(function(ex){ alert(ex.message || t('errGeneric')); });
     });
     profileActions.push(writeBtn);
   }
@@ -2660,14 +2781,14 @@ function profileView(){
           S.profileDraft = {
             nick: rec.nick || S.user.nick,
             username: rec.username || usernameToKey(S.user.nick),
-            avatar: prof.avatar || '',
-            banner: prof.banner || '',
-            color: prof.color || '',
-            prefix: prof.prefix || '',
-            prefixColor: prof.prefixColor || '',
-            emojis: Array.isArray(prof.emojis) ? prof.emojis.slice(0,1) : [],
-            mediaUrl: prof.mediaUrl || '',
-            bio: prof.bio || ''
+            avatar: (rec.profile && rec.profile.avatar) || '',
+            banner: (rec.profile && rec.profile.banner) || '',
+            color: (rec.profile && rec.profile.color) || '',
+            prefix: (rec.profile && rec.profile.prefix) || '',
+            prefixColor: (rec.profile && rec.profile.prefixColor) || '',
+            emojis: Array.isArray(rec.profile && rec.profile.emojis) ? rec.profile.emojis.slice(0,1) : [],
+            mediaUrl: (rec.profile && rec.profile.mediaUrl) || '',
+            bio: (rec.profile && rec.profile.bio) || ''
           };
           render();
         }}, [icon('edit'), S.profileEdit ? t('cancel') : t('editProfile')])
@@ -2839,7 +2960,6 @@ function profileEditor(){
   mediaWrap.appendChild(mediaInput);
   mediaWrap.appendChild(mediaUrlInput);
 
-  /* ===== НИК ===== */
   var nickInput = el('input', {type:'text', maxlength:String(NICK_MAX), placeholder:'Отображаемое имя', value: draft.nick || ''});
   nickInput.addEventListener('input', function(){ draft.nick = nickInput.value; renderPrefixPreview(); });
   var nickErr = el('div', {class:'err'});
@@ -2862,13 +2982,12 @@ function profileEditor(){
       .then(function(){ saveNickBtn.disabled = false; });
   });
 
-  /* ===== ЮЗЕРНЕЙМ (без пароля, без ошибок Firebase Auth) ===== */
   var usernameInput = el('input', {type:'text', maxlength:'15', placeholder:'username (3–15: A-Za-z0-9_)', value: draft.username || '', style:'background:var(--bg-2);border:1px solid var(--line);border-radius:4px;padding:11px 13px;color:var(--fg);width:100%;font-family:var(--font-mono)'});
   var uErr = el('div', {class:'err'});
   var uOk = el('div', {class:'badge ok'});
-
   var saveUsernameBtn = el('button', {class:'btn primary', type:'button'}, [icon('save'), t('changeUsername')]);
 
+  /* ИСПРАВЛЕНО: переносим sessions/online при смене username */
   saveUsernameBtn.addEventListener('click', function(){
     uErr.textContent = ''; uOk.textContent = '';
     var newU = normalizeUsername(usernameInput.value);
@@ -2885,31 +3004,32 @@ function profileEditor(){
 
     usernameTaken(newU).then(function(taken){
       if(taken) throw new Error(t('errUsernameTaken'));
-
       var oldRec = S.users[oldKey] || {};
       var myAuthEmail = oldRec.authEmail || (auth.currentUser && auth.currentUser.email) || authEmail(oldKey);
-
-      // Новая запись users/newKey — с тем же uid и старым authEmail
       var newRec = Object.assign({}, oldRec, {
         nick: oldRec.nick || S.user.nick,
         username: newU,
         authEmail: myAuthEmail,
         uid: myUid()
       });
-
       return fbSet('users/' + newKey, newRec)
+        .then(function(){ return fbSet('usernames/' + newKey, {username: newU, uid: myUid(), authEmail: myAuthEmail}); })
+        .then(function(){ return fbRemove('users/' + oldKey); })
+        .then(function(){ return fbRemove('usernames/' + oldKey); })
         .then(function(){
-          return fbSet('usernames/' + newKey, {
-            username: newU,
-            uid: myUid(),
-            authEmail: myAuthEmail
+          // переносим sessions
+          return fbGet('sessions/' + oldKey).then(function(sess){
+            if(sess) return fbSet('sessions/' + newKey, sess).then(function(){ return fbRemove('sessions/' + oldKey); });
           });
         })
-        .then(function(){ return fbRemove('users/' + oldKey); })
-        .then(function(){ return fbRemove('usernames/' + oldKey); });
+        .then(function(){
+          // переносим online
+          return fbGet('online/' + oldKey).then(function(on){
+            if(on) return fbSet('online/' + newKey, on).then(function(){ return fbRemove('online/' + oldKey); });
+          });
+        });
     }).then(function(){
-      var freshRec = S.users[usernameToKey(newU)];
-      S.user.nick = (freshRec && freshRec.nick) || S.user.nick;
+      S.user.nick = S.user.nick;
       draft.username = newU;
       uOk.textContent = t('usernameChanged') + newU;
       uErr.textContent = '';
@@ -3048,6 +3168,8 @@ function adminView(){
   else if(S.adminTab === 'pages') out.push(adminPages());
   return out;
 }
+
+/* ИСПРАВЛЕНО: role select через .value, снятие прем-полей */
 function adminUsers(){
   var box = el('div', {class:'admin-panel'});
   var head = el('thead', null, [el('tr', null, [
@@ -3071,37 +3193,61 @@ function adminUsers(){
     var u = S.users[k] || {};
     var nick = u.nick || k;
     var username = u.username || k;
-    var role = u.role || 'user';
+    var role = (u.role === 'admin' || u.role === 'moderator') ? u.role : 'user';
     var isPrem = u.premium === true;
     var isOwn = !!u.owner || isOwnerLegacy(username);
     var cd = typeof u.threadCooldown === 'number' ? u.threadCooldown : DEFAULT_THREAD_COOLDOWN;
     var tr = el('tr');
     tr.appendChild(el('td', null, [nickDisplay(nick)]));
     tr.appendChild(el('td', {class:'mono', text:'@' + username}));
+
     var roleTd = el('td');
     var roleSel = el('select', {style:'background:var(--bg-2);border:1px solid var(--line);border-radius:4px;padding:5px 9px;color:var(--fg);font-size:12px'}, [
-      el('option', {value:'user', text:t('adminRoleUser'), selected: role === 'user' ? 'selected' : null}),
-      el('option', {value:'moderator', text:t('adminRoleMod'), selected: role === 'moderator' ? 'selected' : null}),
-      el('option', {value:'admin', text:t('adminRoleAdmin'), selected: role === 'admin' ? 'selected' : null})
+      el('option', {value:'user', text:t('adminRoleUser')}),
+      el('option', {value:'moderator', text:t('adminRoleMod')}),
+      el('option', {value:'admin', text:t('adminRoleAdmin')})
     ]);
-    roleSel.addEventListener('change', function(){ fbUpdate('users/' + k, {role:roleSel.value}); });
+    roleSel.value = role;
+    roleSel.addEventListener('change', function(){
+      var newRole = roleSel.value;
+      var upd = {role:newRole};
+      if(newRole === 'user' && !isPrem && !isOwn){
+        upd.profile = stripPremiumFields(u.profile || {});
+      }
+      fbUpdate('users/' + k, upd).catch(function(e){ alert(e.message); });
+    });
     roleTd.appendChild(roleSel); tr.appendChild(roleTd);
+
     var premTd = el('td');
     var premBtn = el('button', {class:'btn small ' + (isPrem ? '' : 'primary'), type:'button', text: isPrem ? t('adminRevoke') : t('adminGrant')}, [icon('crown')]);
-    premBtn.addEventListener('click', function(){ fbUpdate('users/' + k, {premium:!isPrem}); });
+    premBtn.addEventListener('click', function(){
+      var newPrem = !isPrem;
+      var upd = {premium:newPrem};
+      if(!newPrem && !isOwn && role === 'user'){
+        upd.profile = stripPremiumFields(u.profile || {});
+      }
+      fbUpdate('users/' + k, upd).catch(function(e){ alert(e.message); });
+    });
     premTd.appendChild(premBtn); tr.appendChild(premTd);
+
     var ownTd = el('td');
     if(iAmOwner){
       var ownBtn = el('button', {class:'btn small ' + (isOwn ? 'danger' : 'primary'), type:'button', text: isOwn ? t('adminRevoke') : t('adminGrant')}, [icon('crown')]);
       ownBtn.addEventListener('click', function(){
         if(isOwn && k === usernameToKey(S.user.nick)){ alert(t('cannotRemoveSelfOwner')); return; }
-        fbUpdate('users/' + k, {owner:!isOwn});
+        var newOwn = !isOwn;
+        var upd = {owner:newOwn};
+        if(!newOwn && !isPrem && role === 'user'){
+          upd.profile = stripPremiumFields(u.profile || {});
+        }
+        fbUpdate('users/' + k, upd).catch(function(e){ alert(e.message); });
       });
       ownTd.appendChild(ownBtn);
     } else {
       ownTd.appendChild(el('span', {class:'badge' + (isOwn ? ' ok' : ''), text: isOwn ? 'Да' : 'Нет'}));
     }
     tr.appendChild(ownTd);
+
     var cdTd = el('td');
     var cdInput = el('input', {type:'number', min:'0', value:String(cd), style:'background:var(--bg-2);border:1px solid var(--line);border-radius:4px;padding:5px 9px;color:var(--fg);width:84px;font-family:var(--font-mono)'});
     cdInput.addEventListener('change', function(){
@@ -3109,6 +3255,7 @@ function adminUsers(){
       fbUpdate('users/' + k, {threadCooldown:v});
     });
     cdTd.appendChild(cdInput); tr.appendChild(cdTd);
+
     var actTd = el('td');
     var delBtn = el('button', {class:'btn small danger', type:'button', text:t('adminDelete')}, [icon('trash')]);
     delBtn.addEventListener('click', function(){
@@ -3141,7 +3288,7 @@ function adminThreads(){
     var del = el('button', {class:'btn small danger', type:'button', text:t('adminDelete')}, [icon('trash')]);
     del.addEventListener('click', function(){
       if(!confirm(t('adminConfirmDeleteThread'))) return;
-      deleteThread(th.id).catch(function(e){ alert(e.message); });
+      Promise.resolve().then(function(){ return deleteThread(th.id); }).catch(function(e){ alert(e.message); });
     });
     act.appendChild(del); tr.appendChild(act);
     body.appendChild(tr);
@@ -3209,7 +3356,7 @@ function pageView(){
     var saveBtn = el('button', {class:'btn primary', type:'button'}, [icon('save'), t('save')]);
     saveBtn.addEventListener('click', function(){
       saveBtn.disabled = true;
-      savePage(meta.id, tInput.value.trim(), bArea.value).catch(function(ex){ errBox.textContent = ex.message || t('errGeneric'); })
+      Promise.resolve().then(function(){ return savePage(meta.id, tInput.value.trim(), bArea.value); }).catch(function(ex){ errBox.textContent = ex.message || t('errGeneric'); })
         .then(function(){ saveBtn.disabled = false; });
     });
     var cancelBtn = el('button', {class:'btn', type:'button', text:t('cancel'), onclick:function(){ S.pageEdit = null; render(); }});
@@ -3436,12 +3583,12 @@ document.addEventListener('focusout', function(){
     }).slice(0,5);
 
     if(!threads.length && !chats.length && !users.length){
-      box.appendChild(el('div', {class:'gs-empty', text:'Ничего не найдено'}));
+      box.appendChild(el('div', {class:'gs-empty', text:t('noResults')}));
       return;
     }
 
     if(threads.length){
-      box.appendChild(el('div', {class:'gs-sec', text:'Темы'}));
+      box.appendChild(el('div', {class:'gs-sec', text:t('topicsLabel')}));
       threads.forEach(function(th){
         box.appendChild(el('div', {class:'gs-item', onclick:function(){
           S.view = 'thread'; S.open = th.id; closeBox(); input.value = ''; render(); window.scrollTo(0,0);
@@ -3456,7 +3603,7 @@ document.addEventListener('focusout', function(){
     }
 
     if(chats.length){
-      box.appendChild(el('div', {class:'gs-sec', text:'Чаты'}));
+      box.appendChild(el('div', {class:'gs-sec', text:t('chatsLabel')}));
       chats.forEach(function(c){
         box.appendChild(el('div', {class:'gs-item', onclick:function(){
           S.view = 'chat'; S.chatId = c.id; closeBox(); input.value = ''; render(); window.scrollTo(0,0);
@@ -3468,7 +3615,7 @@ document.addEventListener('focusout', function(){
     }
 
     if(users.length){
-      box.appendChild(el('div', {class:'gs-sec', text:'Люди'}));
+      box.appendChild(el('div', {class:'gs-sec', text:t('people')}));
       users.forEach(function(u){
         box.appendChild(el('div', {class:'gs-item', onclick:function(){
           S.profileUser = u.username; S.view = 'profile'; S.profileEdit = false; S.profileTab = 'profile';
@@ -3536,10 +3683,32 @@ db.ref('threads').on('value', function(snap){
   S.threads = arr; scheduleRender();
 }, function(err){ console.error('threads:', err); });
 
+/* ИСПРАВЛЕНО: обновляем S.isAdmin/S.isOwnerFlag в реальном времени */
 db.ref('users').on('value', function(snap){
   var data = snap.val() || {};
   var h = quickHash(data); if(h === _lastUsersHash) return; _lastUsersHash = h;
-  S.users = data; scheduleRender();
+  S.users = data;
+  if(S.user){
+    var key = usernameToKey(S.user.nick);
+    var rec = data[key];
+    if(!rec && myUid()){
+      Object.keys(data).forEach(function(k){
+        if(data[k] && data[k].uid === myUid()){ rec = data[k]; key = k; }
+      });
+    }
+    if(rec){
+      S.user.nick = rec.nick || S.user.nick;
+      S.isOwnerFlag = isOwnerLegacy(rec.username || key) || isOwnerLegacy(key) || rec.owner === true;
+      S.isAdmin = !!(rec.role === 'admin' || rec.role === 'moderator') || S.isOwnerFlag;
+      S.user.owner = S.isOwnerFlag;
+      S.user.role = rec.role || 'user';
+    } else {
+      // запись исчезла — выходим
+      S.user = null; S.isAdmin = false; S.isOwnerFlag = false;
+      auth.signOut().catch(function(){});
+    }
+  }
+  scheduleRender();
 }, function(err){ console.error('users:', err); });
 
 db.ref('online').on('value', function(snap){
@@ -3593,8 +3762,8 @@ render();
     intro.classList.add('done');
     setTimeout(function(){ if(intro.parentNode) intro.parentNode.removeChild(intro); }, 700);
   }
-  var t = setTimeout(dismiss, 2200);
-  intro.addEventListener('click', function(){ clearTimeout(t); dismiss(); });
+  var tmr = setTimeout(dismiss, 2200);
+  intro.addEventListener('click', function(){ clearTimeout(tmr); dismiss(); });
 })();
 
 } /* end if firebase !== undefined */
