@@ -46,7 +46,6 @@ button,input,select,textarea{font:inherit;color:inherit}
 ::-webkit-scrollbar-thumb{background:var(--line-2);border-radius:5px;border:2px solid var(--bg-2)}
 ::-webkit-scrollbar-thumb:hover{background:var(--line-3)}
 
-/* ===== KEYFRAMES ===== */
 @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 @keyframes scaleIn{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:scale(1)}}
@@ -54,8 +53,6 @@ button,input,select,textarea{font:inherit;color:inherit}
 @keyframes spin{to{transform:rotate(360deg)}}
 @keyframes emojiPulse{0%,100%{transform:scale(1) rotate(0)}50%{transform:scale(1.18) rotate(6deg)}}
 @keyframes shimmer{0%{background-position:-200% center}100%{background-position:200% center}}
-@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
-@keyframes glowPulse{0%,100%{box-shadow:0 0 0 0 rgba(224,69,63,.4)}50%{box-shadow:0 0 0 10px rgba(224,69,63,0)}}
 @keyframes introPaper{
   0%{opacity:0;transform:translateY(40px) rotateX(50deg) scale(.85)}
   60%{opacity:1}
@@ -65,27 +62,19 @@ button,input,select,textarea{font:inherit;color:inherit}
   0%{opacity:0;letter-spacing:.4em;filter:blur(8px)}
   100%{opacity:1;letter-spacing:.06em;filter:blur(0)}
 }
-@keyframes introBar{
-  0%{transform:scaleX(0);transform-origin:left}
-  100%{transform:scaleX(1);transform-origin:left}
-}
 @keyframes introOut{
   0%{opacity:1;transform:scale(1)}
   100%{opacity:0;transform:scale(1.08);visibility:hidden}
 }
-@keyframes ripple{0%{transform:scale(0);opacity:.55}100%{transform:scale(3);opacity:0}}
 @keyframes barLoad{0%{width:0%}100%{width:100%}}
 @keyframes popIn{0%{opacity:0;transform:scale(.8) translateY(10px)}70%{transform:scale(1.03)}100%{opacity:1;transform:scale(1) translateY(0)}}
-@keyframes borderGlow{0%,100%{border-color:var(--line)}50%{border-color:var(--accent-dim)}}
 
 .spinner{width:15px;height:15px;border:2px solid var(--line-2);border-top-color:var(--accent-2);border-radius:50%;animation:spin .65s linear infinite;display:inline-block;vertical-align:-2px;margin-right:7px}
 
-/* ===== ICONS ===== */
 .ico{display:inline-flex;align-items:center;justify-content:center;vertical-align:-3px;margin-right:6px;flex:none;transition:transform .25s var(--ease)}
 .ico svg{display:block;width:16px;height:16px}
 .btn:hover .ico,.nav button.link:hover .ico{transform:scale(1.12)}
 
-/* ===== INTRO OVERLAY ===== */
 #intro{position:fixed;inset:0;z-index:9999;background:radial-gradient(circle at 50% 45%,#141418 0%,#08080a 70%);
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:32px;
   perspective:800px;overflow:hidden}
@@ -106,7 +95,6 @@ button,input,select,textarea{font:inherit;color:inherit}
 #intro.done{animation:introOut .6s var(--ease-out) forwards;pointer-events:none}
 #intro.done .intro-logo,#intro.done .intro-title,#intro.done .intro-sub,#intro.done .intro-bar{opacity:0;transition:opacity .3s}
 
-/* ===== NAV ===== */
 .nav{background:var(--nav-bg);border-bottom:1px solid var(--nav-line);padding-inline:16px;position:sticky;top:0;z-index:20;backdrop-filter:saturate(180%) blur(16px);transition:box-shadow .3s var(--ease)}
 .nav.scrolled{box-shadow:0 8px 32px rgba(0,0,0,.4)}
 .nav-in{max-width:1280px;margin-inline:auto;display:flex;align-items:center;gap:2px;min-height:64px;flex-wrap:wrap;padding-block:6px}
@@ -137,7 +125,6 @@ button,input,select,textarea{font:inherit;color:inherit}
 .nav-search-results .gs-item .gs-sub{font-size:11px;color:var(--muted);font-family:var(--font-mono)}
 .nav-search-results .gs-empty{padding:16px;color:var(--muted);text-align:center;font-size:13px}
 
-/* ===== LAYOUT ===== */
 .wrap{max-width:1220px;margin-inline:auto;padding-inline:16px;padding-block:32px 72px;display:flex;flex-direction:column;gap:24px}
 h1,h2,h3{margin:0;font-weight:600;letter-spacing:-.02em}
 h2{font-size:17px;position:relative;padding-left:14px}
@@ -145,12 +132,10 @@ h2::before{content:"";position:absolute;left:0;top:4px;bottom:4px;width:3px;back
 .muted{color:var(--muted)}
 .mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
 
-/* ===== HERO ===== */
 .hero{padding:26px 0 8px;display:flex;flex-direction:column;gap:8px;border-bottom:1px solid var(--line);padding-bottom:20px;animation:fadeUp .6s var(--ease-out) both}
 .hero h1{font-size:32px;font-weight:800;background:linear-gradient(180deg,#fff,#a8a8b8);-webkit-background-clip:text;background-clip:text;color:transparent;letter-spacing:-.03em}
 .hero .sub{font-size:12.5px;color:var(--muted);font-family:var(--font-mono);letter-spacing:.08em;text-transform:uppercase}
 
-/* ===== STATS ===== */
 .stats{border:1px solid var(--line);border-radius:var(--radius-lg);background:linear-gradient(180deg,var(--surface),var(--bg-2));overflow:hidden;box-shadow:var(--shadow);animation:fadeUp .6s var(--ease-out) .1s both}
 .stats .grid{display:grid;grid-template-columns:repeat(4,1fr)}
 .stats .cell{padding:18px 20px;border-right:1px solid var(--line);display:flex;flex-direction:column;gap:5px;transition:background .25s var(--ease)}
@@ -160,7 +145,6 @@ h2::before{content:"";position:absolute;left:0;top:4px;bottom:4px;width:3px;back
 .stats .cell .v{font-size:26px;font-weight:700;font-family:var(--font-mono);letter-spacing:-.02em}
 .stats .cell .v.accent{background:linear-gradient(180deg,var(--accent-2),var(--accent));-webkit-background-clip:text;background-clip:text;color:transparent}
 
-/* ===== SEARCH ===== */
 .search{display:flex;flex-direction:column;gap:14px;padding:18px;border:1px solid var(--line);border-radius:var(--radius-lg);background:var(--surface);box-shadow:var(--shadow);animation:fadeUp .6s var(--ease-out) .15s both}
 .search .cap{font-weight:700;color:var(--fg-dim);font-size:11px;text-transform:uppercase;letter-spacing:.12em}
 .modes{display:flex;gap:20px;flex-wrap:wrap;color:var(--muted);font-size:13px}
@@ -183,7 +167,6 @@ h2::before{content:"";position:absolute;left:0;top:4px;bottom:4px;width:3px;back
 .btn:disabled{opacity:.45;cursor:default;transform:none;box-shadow:none}
 .count{font-size:12.5px;color:var(--muted);font-family:var(--font-mono)}
 
-/* ===== PAGER ===== */
 .pager{display:inline-flex;border:1px solid var(--line);border-radius:var(--radius-sm);overflow:hidden;background:var(--surface);box-shadow:var(--shadow)}
 .pager button{background:none;border:0;border-right:1px solid var(--line);padding:7px 14px;min-width:38px;cursor:pointer;font-size:13px;color:var(--fg);font-family:var(--font-mono);transition:all .2s var(--ease)}
 .pager button:last-child{border-right:0}
@@ -191,7 +174,6 @@ h2::before{content:"";position:absolute;left:0;top:4px;bottom:4px;width:3px;back
 .pager button[aria-current="true"]{background:linear-gradient(180deg,var(--accent-2),var(--accent));color:#fff}
 .pager button:disabled{opacity:.3;cursor:default}
 
-/* ===== TABLE ===== */
 .tablebox{overflow-x:auto;border:1px solid var(--line);border-radius:var(--radius-lg);background:var(--surface);box-shadow:var(--shadow);animation:fadeUp .5s var(--ease-out) both}
 table{width:100%;border-collapse:collapse;min-width:0}
 th,td{padding:12px 16px;text-align:left;border-bottom:1px solid var(--line);vertical-align:middle}
@@ -213,7 +195,6 @@ tr.row:hover .rowbtn{color:var(--accent-2)}
 .empty{padding:48px 12px;text-align:center;color:var(--muted);font-size:14px}
 .sechead{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}
 
-/* ===== COMPOSE ===== */
 .compose{border:1px solid var(--line);border-radius:var(--radius-lg);background:var(--surface);padding:20px;display:flex;flex-direction:column;gap:14px;box-shadow:var(--shadow);animation:scaleIn .4s var(--ease-out) both}
 .compose label{display:flex;flex-direction:column;gap:6px;font-size:12.5px;color:var(--muted);font-weight:500}
 .compose input,.compose select,.compose textarea{background:var(--bg-2);border:1px solid var(--line);border-radius:var(--radius-sm);padding:10px 13px;color:var(--fg);width:100%;transition:all .25s var(--ease)}
@@ -223,7 +204,6 @@ tr.row:hover .rowbtn{color:var(--accent-2)}
 .actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .hint{font-size:11.5px;color:var(--muted-2)}
 
-/* ===== DROP ===== */
 .drop{border:1px dashed var(--line-2);border-radius:var(--radius);padding:14px;background:var(--bg-2);display:flex;flex-direction:column;gap:11px;align-items:flex-start;transition:all .25s var(--ease)}
 .drop.dragover{border-color:var(--accent);background:rgba(224,69,63,.08);transform:scale(1.01)}
 .drop .droprow{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
@@ -236,8 +216,7 @@ tr.row:hover .rowbtn{color:var(--accent-2)}
 .progress{height:4px;width:100%;background:var(--surface-2);border-radius:2px;overflow:hidden}
 .progress i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-2));width:0%;transition:width .2s var(--ease);box-shadow:0 0 8px rgba(255,95,87,.5)}
 
-/* ===== AUTH ===== */
-.auth{max-width:440px;margin:0 auto;border:1px solid var(--line);border-radius:var(--radius-lg);background:var(--surface);padding:28px;display:flex;flex-direction:column;gap:16px;box-shadow:var(--shadow-lg);animation:scaleIn .5s var(--ease-out) both}
+.auth{max-width:460px;margin:0 auto;border:1px solid var(--line);border-radius:var(--radius-lg);background:var(--surface);padding:28px;display:flex;flex-direction:column;gap:16px;box-shadow:var(--shadow-lg);animation:scaleIn .5s var(--ease-out) both}
 .auth h2{font-size:21px;padding-left:14px}
 .auth label{display:flex;flex-direction:column;gap:6px;font-size:12.5px;color:var(--muted);font-weight:500}
 .auth input{background:var(--bg-2);border:1px solid var(--line);border-radius:var(--radius-sm);padding:11px 13px;color:var(--fg);width:100%;transition:all .25s var(--ease)}
@@ -248,7 +227,6 @@ tr.row:hover .rowbtn{color:var(--accent-2)}
 .auth .hintline{font-size:12px;color:var(--muted-2);line-height:1.55}
 .err{color:var(--err);font-size:12.5px;min-height:16px;font-weight:500}
 
-/* ===== POSTS ===== */
 .post{display:grid;grid-template-columns:160px minmax(0,1fr);border:1px solid var(--line);border-radius:var(--radius-lg);background:var(--surface);box-shadow:var(--shadow);overflow:hidden;transition:border-color .3s var(--ease),transform .3s var(--ease);animation:fadeUp .4s var(--ease-out) both}
 .post:hover{border-color:var(--line-2)}
 .post+.post{margin-top:12px}
@@ -279,7 +257,6 @@ tr.row:hover .rowbtn{color:var(--accent-2)}
 .titlebar{display:flex;flex-direction:column;gap:8px;animation:slideRight .4s var(--ease-out) both}
 .titlebar h1{font-size:26px;font-weight:700;letter-spacing:-.025em}
 
-/* ===== PAGE ===== */
 .page{border:1px solid var(--line);border-radius:var(--radius-lg);background:var(--surface);padding:26px;display:flex;flex-direction:column;gap:16px;box-shadow:var(--shadow);animation:fadeUp .5s var(--ease-out) both}
 .page h1{font-size:28px;font-weight:800;background:linear-gradient(180deg,#fff,#b0b0c0);-webkit-background-clip:text;background-clip:text;color:transparent;letter-spacing:-.03em}
 .page .body{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.75;font-size:15px;color:var(--fg-dim)}
@@ -291,12 +268,10 @@ tr.row:hover .rowbtn{color:var(--accent-2)}
 .page input[type=text]{background:var(--bg-2);border:1px solid var(--line);border-radius:var(--radius-sm);padding:11px 13px;color:var(--fg);font-size:16px;font-weight:500;width:100%;transition:all .25s var(--ease)}
 .page input[type=text]:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 3px rgba(224,69,63,.12)}
 
-/* ===== FOOTER ===== */
 .footer{border-top:1px solid var(--nav-line);padding:26px 16px;text-align:center;color:var(--muted-2);font-family:var(--font-mono);font-size:12px;background:rgba(8,8,10,.7)}
 .footer b{color:var(--accent-2);font-weight:700;letter-spacing:.08em}
 .footer .sep{opacity:.4;margin:0 12px}
 
-/* ===== CHAT ===== */
 .chatbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:space-between}
 .chatform{border:1px solid var(--line);border-radius:var(--radius-lg);background:var(--surface);padding:16px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px;align-items:end;box-shadow:var(--shadow)}
 .chatform input{background:var(--bg-2);border:1px solid var(--line);border-radius:var(--radius-sm);padding:11px 13px;color:var(--fg);width:100%;transition:all .25s var(--ease)}
@@ -317,7 +292,6 @@ tr.row:hover .rowbtn{color:var(--accent-2)}
 .chat-empty{color:var(--muted);text-align:center;padding:48px 12px;font-size:14px}
 .chat-hint{font-size:12px;color:var(--muted);text-align:center}
 
-/* ===== DM ===== */
 .dm-list{display:flex;flex-direction:column;gap:8px}
 .dm-item{border:1px solid var(--line);border-radius:var(--radius);padding:12px 16px;background:var(--bg-2);display:flex;align-items:center;gap:14px;cursor:pointer;transition:all .25s var(--ease);animation:fadeUp .35s var(--ease-out) both}
 .dm-item:hover{border-color:var(--accent-dim);background:var(--surface-2);transform:translateX(4px)}
@@ -335,7 +309,6 @@ tr.row:hover .rowbtn{color:var(--accent-2)}
 .chat-head .info h1{font-size:22px;font-weight:700}
 .chat-head .info .desc{font-size:13px;color:var(--muted);margin-top:4px}
 
-/* ===== PROFILE ===== */
 .profile-head{border:1px solid var(--line);border-radius:var(--radius-lg);background:var(--surface);overflow:hidden;position:relative;box-shadow:var(--shadow);animation:fadeUp .5s var(--ease-out) both}
 .profile-banner{height:180px;background:linear-gradient(135deg,#181820,#2a1818);position:relative;overflow:hidden}
 .profile-banner img{width:100%;height:100%;object-fit:cover;display:block;animation:fadeIn .5s var(--ease-out)}
@@ -348,7 +321,6 @@ tr.row:hover .rowbtn{color:var(--accent-2)}
 .profile-meta{font-size:12px;color:var(--muted);font-family:var(--font-mono)}
 .profile-tags{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}
 
-/* ===== NICK ===== */
 .nick-wrap{display:inline-flex;align-items:center;flex-wrap:wrap;gap:3px}
 .nick-glow{position:relative;display:inline-flex;align-items:center;gap:2px;font-weight:600;padding:0 2px;transition:filter .3s var(--ease)}
 .nick-glow.glow-red{color:#ff5252;text-shadow:0 0 8px rgba(255,82,82,.8)}
@@ -369,7 +341,6 @@ tr.row:hover .rowbtn{color:var(--accent-2)}
 .nick-media-video{position:relative;display:inline-block;vertical-align:-5px;margin-right:5px}
 .nick-media-video video{width:28px;height:22px;border-radius:4px;border:1px solid var(--line);object-fit:cover}
 
-/* ===== PROFILE EDIT ===== */
 .profile-edit{border:1px solid var(--line);border-radius:var(--radius-lg);background:var(--surface);padding:26px;display:flex;flex-direction:column;gap:20px;box-shadow:var(--shadow);animation:scaleIn .4s var(--ease-out) both}
 .profile-edit h2{font-size:19px}
 .profile-edit label{display:flex;flex-direction:column;gap:8px;font-size:12.5px;color:var(--muted);font-weight:500}
@@ -395,7 +366,6 @@ tr.row:hover .rowbtn{color:var(--accent-2)}
 .nick-preview-box{padding:16px;border:1px solid var(--line-2);border-radius:var(--radius);background:var(--bg-2);display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:17px;min-height:60px}
 .sub-badge{display:inline-flex;align-items:center;gap:6px;font-size:11px;padding:5px 11px;border-radius:4px;background:linear-gradient(135deg,#f59e0b,#e0453f);color:#fff;font-weight:700;letter-spacing:.06em;text-transform:uppercase;box-shadow:0 4px 14px rgba(224,69,63,.3)}
 
-/* ===== SESSIONS ===== */
 .sessions-list{display:flex;flex-direction:column;gap:9px}
 .session-item{border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;background:var(--bg-2);display:flex;align-items:center;gap:16px;font-size:13px;transition:all .25s var(--ease);animation:fadeUp .35s var(--ease-out) both}
 .session-item:hover{border-color:var(--line-3);transform:translateX(4px)}
@@ -405,13 +375,11 @@ tr.row:hover .rowbtn{color:var(--accent-2)}
 .session-item .s-body .s-meta{font-size:11px;color:var(--muted-2);font-family:var(--font-mono)}
 .session-item.current{border-color:var(--accent-dim);background:linear-gradient(180deg,var(--bg-2),#1c1212)}
 
-/* ===== TABS ===== */
 .tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);margin-bottom:6px;flex-wrap:wrap}
 .tabs button{background:none;border:0;color:var(--muted);padding:11px 18px;cursor:pointer;font-size:13.5px;border-bottom:2px solid transparent;font-weight:500;transition:all .25s var(--ease)}
 .tabs button:hover{color:var(--fg)}
 .tabs button[aria-selected="true"]{color:var(--accent-2);border-bottom-color:var(--accent)}
 
-/* ===== ADMIN ===== */
 .admin-panel{border:1px solid var(--line);border-radius:var(--radius-lg);background:var(--surface);padding:26px;display:flex;flex-direction:column;gap:18px;box-shadow:var(--shadow);animation:fadeUp .4s var(--ease-out) both}
 .admin-panel h2{font-size:20px}
 .admin-tabs{display:flex;gap:4px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:3px}
@@ -425,11 +393,9 @@ tr.row:hover .rowbtn{color:var(--accent-2)}
 .admin-table tr{transition:background .2s var(--ease)}
 .admin-table tr:hover td{background:var(--surface-2)}
 
-/* ===== BOOT ===== */
 .boot{padding:80px 20px;text-align:center;color:var(--muted);font-family:var(--font-mono);font-size:13px}
 .boot .err{color:var(--err);white-space:pre-wrap;text-align:left;max-width:760px;margin:16px auto 0;padding:14px;border:1px solid #5a2020;border-radius:var(--radius);background:#180a0a;font-size:12px;min-height:auto}
 
-/* ===== RESPONSIVE ===== */
 @media (max-width:980px){
   .nav-search{min-width:0;max-width:none;order:99;width:100%;margin:8px 0 0;flex:1 1 100%}
 }
@@ -462,7 +428,6 @@ tr.row:hover .rowbtn{color:var(--accent-2)}
 </head>
 <body>
 
-<!-- INTRO ANIMATION -->
 <div id="intro">
   <div class="intro-logo">
     <svg viewBox="0 0 120 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -555,11 +520,6 @@ tr.row:hover .rowbtn{color:var(--accent-2)}
 <script>
 "use strict";
 
-/* ============================================================
-   60TDEL · монолитный скрипт, без модулей
-   nick = отображаемое имя, username = уникальный логин
-   ============================================================ */
-
 function showFatal(prefix, err){
   var boot = document.getElementById('boot') || document.getElementById('app');
   var msg = prefix + ': ' + (err && err.stack ? err.stack : (err && err.message ? err.message : String(err)));
@@ -591,7 +551,6 @@ try {
   auth = firebase.auth();
 } catch(e){ showFatal('Firebase init', e); throw e; }
 
-/* ================= STATE ================= */
 var S = {
   lang:'ru', view:'list', authMode:'login', board:null, q:'', mode:'title',
   page:1, open:null, compose:false, threads:[], user:null,
@@ -605,7 +564,6 @@ var S = {
   _busy:false, _sessionId:null
 };
 
-/* ================= CONSTANTS ================= */
 var OWNERS = ['m4lm0v','crollow','himical'];
 var USERNAME_RE = /^[A-Za-z0-9_]{3,15}$/;
 var AUTH_DOMAIN = '@60tdel.local';
@@ -650,7 +608,6 @@ var EMOJIS = ['😀','😎','🔥','⚡','💀','👑','🎯','🚀','💎','�
 
 var FORBIDDEN_PREFIX_WORDS = ['admin','administrator','админ','администратор','mod','moder','moderator','мод','модер','модератор','owner','владелец','влад','хозяин','root','system','sys','support','саппорт','хелп','help','official','официальный','60tdel','60t','del'];
 
-/* ================= I18N ================= */
 var I18N = {
   ru: {
     home:'Главная', chat:'Общий чат', dm:'Личные', newTopic:'Новая тема', members:'Участники',
@@ -705,7 +662,7 @@ var I18N = {
     chatCreated:'Чат создан', chatDeleted:'Чат удалён', errNoPerm:'Недостаточно прав',
     loginFailed:'Не удалось войти. Проверьте юзернейм и пароль.',
     hintLogin:'Введите юзернейм и пароль, указанные при регистрации.',
-    hintRegister:'3–15 символов: латиница, цифры, _. Пароль минимум 6 символов.',
+    hintRegister:'Юзернейм — это логин (A-Za-z0-9_). Ник — отображаемое имя, может быть любым. Пароль минимум 6 символов.',
     profile:'Профиль', editProfile:'Редактировать профиль',
     avatar:'Аватар', uploadAvatar:'Загрузить аватар', removeAvatar:'Убрать аватар',
     banner:'Баннер', uploadBanner:'Загрузить баннер', removeBanner:'Убрать баннер',
@@ -767,7 +724,11 @@ var I18N = {
     changeUsername:'Сменить юзернейм',
     changeNick:'Сохранить ник',
     usernameChanged:'Юзернейм изменён на @',
-    nickChanged:'Ник изменён'
+    nickChanged:'Ник изменён',
+    needPassToChange:'Введите пароль, чтобы подтвердить смену логина.',
+    usernameFree:'свободен',
+    usernameBusy:'занят',
+    usernameChecking:'проверяю…'
   },
   en: {
     home:'Home', chat:'General Chat', dm:'DMs', newTopic:'New Topic', members:'Members',
@@ -822,7 +783,7 @@ var I18N = {
     chatCreated:'Chat created', chatDeleted:'Chat deleted', errNoPerm:'Insufficient permissions',
     loginFailed:'Login failed. Check your username and password.',
     hintLogin:'Enter the username and password you used during registration.',
-    hintRegister:'3–15 chars: A-Za-z0-9_. Password at least 6 characters.',
+    hintRegister:'Username is your login (A-Za-z0-9_). Nick is a display name, can be anything. Password at least 6 characters.',
     profile:'Profile', editProfile:'Edit profile',
     avatar:'Avatar', uploadAvatar:'Upload avatar', removeAvatar:'Remove avatar',
     banner:'Banner', uploadBanner:'Upload banner', removeBanner:'Remove banner',
@@ -884,12 +845,15 @@ var I18N = {
     changeUsername:'Change username',
     changeNick:'Save nick',
     usernameChanged:'Username changed to @',
-    nickChanged:'Nick changed'
+    nickChanged:'Nick changed',
+    needPassToChange:'Enter your password to confirm the login change.',
+    usernameFree:'available',
+    usernameBusy:'taken',
+    usernameChecking:'checking…'
   }
 };
 function t(k){ return (I18N[S.lang] && I18N[S.lang][k]) || I18N.ru[k] || k; }
 
-/* ================= UTILS ================= */
 function $(id){ return document.getElementById(id); }
 var appEl = $('app');
 
@@ -976,7 +940,6 @@ function isForbiddenPrefix(v){
   return false;
 }
 
-/* ================= ICONS ================= */
 var ICON = {
   image:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2.5"/><circle cx="8.5" cy="8.5" r="1.8"/><path d="M3.5 17.5l4.5-4.5 4 4 3-3 5.5 5.5"/></svg>',
   video:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="13" height="12" rx="2.5"/><path d="M15.5 10.5l6-3.5v10l-6-3.5z"/></svg>',
@@ -996,17 +959,10 @@ var ICON = {
   key:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="12" r="4"/><path d="M12 12h9M17 12v3M20 12v2"/></svg>',
   monitor:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="4" width="19" height="13" rx="2.5"/><path d="M8 21h8M12 17v4"/></svg>',
   user:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>',
-  chat:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 01-8 8H7l-4 3v-6.5A8 8 0 0121 12z"/></svg>',
-  settings:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>',
-  logout:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>',
-  pin:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5M5 10l7-7 7 7M5 10h14"/></svg>',
-  eye:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>',
-  reply:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 17l-5-5 5-5M4 12h11a4 4 0 014 4v4"/></svg>',
-  external:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg>'
+  chat:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 01-8 8H7l-4 3v-6.5A8 8 0 0121 12z"/></svg>'
 };
 function icon(name){ var s = document.createElement('span'); s.className = 'ico'; s.innerHTML = ICON[name] || ''; return s; }
 
-/* ================= FIREBASE HELPERS ================= */
 function fbGet(p){ return db.ref(p).once('value').then(function(s){ return s.exists() ? s.val() : null; }); }
 function fbSet(p,v){ return db.ref(p).set(v); }
 function fbUpdate(p,v){ return db.ref(p).update(v); }
@@ -1014,7 +970,6 @@ function fbRemove(p){ return db.ref(p).remove(); }
 function authEmail(u){ return usernameToKey(u) + AUTH_DOMAIN; }
 function myUid(){ return auth.currentUser ? auth.currentUser.uid : null; }
 
-/* ================= USER HELPERS ================= */
 function userRecord(id){
   if(!id || !S.users) return null;
   var k = usernameToKey(id);
@@ -1076,14 +1031,20 @@ function usernameTaken(u){
     return fbGet('users/' + key);
   }).then(function(r){ return !!r; }).catch(function(){ return false; });
 }
-function register(username, pass){
+
+/* Регистрация: username — логин, nick — отображаемое имя */
+function register(username, pass, nick){
   username = normalizeUsername(username);
   pass = String(pass || '');
+  nick = String(nick || '').trim().slice(0, NICK_MAX);
+  if(!nick) nick = username;
+
   if(!isValidUsername(username)) return Promise.reject(new Error(t('errUsernameFormat')));
   if(pass.length < 6) return Promise.reject(new Error(t('errPassShort')));
   var key = usernameToKey(username);
   if(!isSafeKey(key)) return Promise.reject(new Error(t('errUsernameFormat')));
   if(OWNERS.indexOf(key) >= 0) return Promise.reject(new Error(t('errUsernameTaken')));
+
   return usernameTaken(username).then(function(taken){
     if(taken) throw new Error(t('errUsernameTaken'));
     return auth.createUserWithEmailAndPassword(authEmail(username), pass);
@@ -1091,7 +1052,7 @@ function register(username, pass){
     var uid = cred.user.uid;
     var profile = {color:'',prefix:'',prefixColor:'',emojis:[],mediaUrl:'',avatar:'',banner:'',bio:''};
     var userRec = {
-      nick: username,
+      nick: nick,
       username: username,
       uid: uid,
       owner: false, role:'user', premium:false,
@@ -1102,7 +1063,7 @@ function register(username, pass){
     return fbSet('users/' + key, userRec)
       .then(function(){ return fbSet('usernames/' + key, {username: username, uid: uid}); })
       .then(function(){
-        S.user = {nick: username, owner:false, role:'user'};
+        S.user = {nick: nick, owner:false, role:'user'};
         S.isAdmin = false; S.isOwnerFlag = false;
       });
   }).catch(function(ex){ throw authErr(ex); });
@@ -1197,7 +1158,6 @@ function killAllOtherSessions(){
   });
 }
 
-/* ================= MEDIA ================= */
 function compressImage(file, maxSide, maxBytes){
   return new Promise(function(resolve, reject){
     var reader = new FileReader();
@@ -1301,7 +1261,6 @@ function makeAvatarImg(url, onFail){
   return img;
 }
 
-/* ================= NICK DISPLAY ================= */
 function nickDisplay(name, opts){
   opts = opts || {};
   var rec = userRecord(name);
@@ -1391,7 +1350,6 @@ function openLightbox(node){
   document.body.appendChild(lb);
 }
 
-/* ================= COOLDOWN / MUTE ================= */
 function getCooldown(nick){
   var r = userRecord(nick);
   var c = r && typeof r.threadCooldown === 'number' ? r.threadCooldown : DEFAULT_THREAD_COOLDOWN;
@@ -1425,7 +1383,6 @@ function isMuted(chat, c){
   return until > Date.now() ? until : 0;
 }
 
-/* ================= PUBLISH ================= */
 function publishThread(opts){
   if(!S.user){ S.view='auth'; S.authMode='login'; render(); return Promise.resolve(); }
   var rem = cooldownRemaining(S.user.nick);
@@ -1493,7 +1450,6 @@ function deleteThread(threadId){
   });
 }
 
-/* ================= CHATS ================= */
 function createChat(name, description){
   if(!S.user) throw new Error(t('needLoginToSend'));
   name = String(name || '').trim();
@@ -1579,7 +1535,6 @@ function setChatDescription(chatId, desc){
   return fbUpdate('chats/' + chatId, {description:String(desc||'').slice(0, CHAT_DESC_MAX)});
 }
 
-/* ================= DMs ================= */
 function dmIdFor(a, b){
   var ka = usernameToKey(a), kb = usernameToKey(b);
   return ka < kb ? ka + '_' + kb : kb + '_' + ka;
@@ -1633,7 +1588,6 @@ function deleteDmForBoth(dmId){
   });
 }
 
-/* ================= PAGES ================= */
 function savePage(id, title, body){
   if(!(S.isAdmin || isOwnerUser(S.user && S.user.nick))) throw new Error(t('onlyOwners'));
   var payload = {id:id, title:title||'', body:body||'', updated:Date.now(), author:S.user ? S.user.nick : '—'};
@@ -1642,7 +1596,6 @@ function savePage(id, title, body){
   });
 }
 
-/* ================= STATS ================= */
 function computeStats(){
   var posts = 0, threads = 0, bytes = 0;
   S.threads.forEach(function(th){
@@ -1674,7 +1627,6 @@ function statsBlock(){
   ]);
 }
 
-/* ================= NAV ================= */
 function setNav(){
   $('nav-home').textContent = t('home');
   $('nav-dm').textContent = t('dm');
@@ -1716,35 +1668,100 @@ function setNav(){
 }
 function setBusy(btn, label){ btn.replaceChildren(el('span', {class:'spinner'}), document.createTextNode(label)); }
 
-/* ================= VIEWS ================= */
+/* ================= AUTH VIEW ================= */
 function authView(){
   var isLogin = S.authMode === 'login';
-  var nick = el('input', {id:'a-nick', type:'text', autocomplete:'username', required:'required', placeholder:t('username'), maxlength:'15', spellcheck:'false', autocapitalize:'off'});
-  var pass = el('input', {id:'a-pass', type:'password', autocomplete: isLogin ? 'current-password' : 'new-password', required:'required', placeholder:t('password'), maxlength:'128'});
   var err = el('div', {class:'err'});
-  var hint = el('div', {class:'hintline'}); hint.textContent = isLogin ? t('hintLogin') : t('hintRegister');
+  var hint = el('div', {class:'hintline'});
+
+  var usernameInput = el('input', {id:'a-username', type:'text', autocomplete:'username', required:'required', placeholder:'username (3–15: A-Za-z0-9_)', maxlength:'15', spellcheck:'false', autocapitalize:'off', style:'font-family:var(--font-mono)'});
+  var nickInput = el('input', {id:'a-nick', type:'text', autocomplete:'nickname', required:'required', placeholder:'Ник (отображается всем)', maxlength:'30', spellcheck:'false'});
+  var passInput = el('input', {id:'a-pass', type:'password', autocomplete: isLogin ? 'current-password' : 'new-password', required:'required', placeholder:t('password'), maxlength:'128'});
+
   var submitBtn = el('button', {class:'btn primary', type:'submit', text: isLogin ? t('enter') : t('register')});
-  return [el('form', {class:'auth', onsubmit: function(e){
-    e.preventDefault(); if(S._busy) return;
+
+  // Живая проверка юзернейма
+  var usernameStatus = el('div', {class:'hint', style:'min-height:16px;font-family:var(--font-mono);font-size:11px'});
+  var checkTimer = null;
+  usernameInput.addEventListener('input', function(){
+    var v = normalizeUsername(usernameInput.value);
+    usernameStatus.textContent = '';
+    usernameStatus.style.color = 'var(--muted-2)';
+    if(!v) return;
+    if(!isValidUsername(v)){
+      usernameStatus.style.color = 'var(--err)';
+      usernameStatus.textContent = '3–15 символов: A-Za-z0-9_';
+      return;
+    }
+    usernameStatus.style.color = 'var(--muted)';
+    usernameStatus.textContent = t('usernameChecking');
+    if(checkTimer) clearTimeout(checkTimer);
+    checkTimer = setTimeout(function(){
+      usernameTaken(v).then(function(taken){
+        if(usernameInput.value.trim() !== v) return;
+        if(taken){
+          usernameStatus.style.color = 'var(--err)';
+          usernameStatus.textContent = '✗ ' + t('usernameBusy');
+        } else {
+          usernameStatus.style.color = 'var(--ok)';
+          usernameStatus.textContent = '✓ ' + t('usernameFree');
+        }
+      }).catch(function(){});
+    }, 400);
+  });
+
+  var switchBtn = el('button', {type:'button', text: isLogin ? t('create') : t('enter'), onclick: function(){
+    S.authMode = isLogin ? 'register' : 'login';
+    render();
+  }});
+
+  hint.textContent = isLogin ? t('hintLogin') : t('hintRegister');
+
+  var fields = [];
+  fields.push(el('label', null, [t('usernameLabel') || 'Юзернейм (логин)', usernameInput]));
+  if(!isLogin){
+    fields.push(el('label', null, [t('displayName') || 'Ник (отображаемое имя)', nickInput]));
+    fields.push(usernameStatus);
+  }
+  fields.push(el('label', null, [t('password'), passInput]));
+
+  var form = el('form', {class:'auth', onsubmit: function(e){
+    e.preventDefault();
+    if(S._busy) return;
     err.textContent = ''; S._busy = true; submitBtn.disabled = true;
-    var p = isLogin ? login(nick.value, pass.value) : register(nick.value, pass.value);
+
+    var p;
+    if(isLogin){
+      p = login(usernameInput.value, passInput.value);
+    } else {
+      var u = normalizeUsername(usernameInput.value);
+      var n = String(nickInput.value || '').trim().slice(0, NICK_MAX);
+      p = register(u, passInput.value, n);
+    }
+
     p.then(function(){
       S.view = 'list'; S.open = null; S.authMode = 'login';
-      render(); window.scrollTo(0,0); heartbeat(); registerSession();
-    }).catch(function(ex){ err.textContent = (ex && ex.message) ? ex.message : t('loginFailed'); })
-     .then(function(){ S._busy = false; submitBtn.disabled = false; });
+      render(); window.scrollTo(0,0);
+      heartbeat(); registerSession();
+    }).catch(function(ex){
+      err.textContent = (ex && ex.message) ? ex.message : t('loginFailed');
+    }).then(function(){
+      S._busy = false; submitBtn.disabled = false;
+    });
   }}, [
     el('h2', {text: isLogin ? t('signIn') : t('signUp')}),
-    el('label', null, [t('username'), nick]),
-    el('label', null, [t('password'), pass]),
+    ...fields,
     hint, err,
     el('div', {class:'actions'}, [submitBtn]),
     el('div', {class:'switch'}, [
       isLogin ? t('noAccount') + ' ' : t('hasAccount') + ' ',
-      el('button', {type:'button', text: isLogin ? t('create') : t('enter'), onclick: function(){ S.authMode = isLogin ? 'register' : 'login'; render(); }})
+      switchBtn
     ])
-  ])];
+  ]);
+
+  return [form];
 }
+
 function filtered(){
   var q = S.q.trim().toLowerCase();
   return S.threads.filter(function(th){
@@ -2479,7 +2496,6 @@ function dmView(){
   return out;
 }
 
-/* ================= PROFILE ================= */
 function profileView(){
   if(!S.user) return [el('section', {class:'auth'}, [
     el('h2', {text:t('profile')}),
@@ -2724,11 +2740,12 @@ function profileEditor(){
   mediaWrap.appendChild(mediaInput);
   mediaWrap.appendChild(mediaUrlInput);
 
+  /* --- НИК (отображаемое имя) --- */
   var nickInput = el('input', {type:'text', maxlength:String(NICK_MAX), placeholder:'Отображаемое имя', value: draft.nick || ''});
   nickInput.addEventListener('input', function(){ draft.nick = nickInput.value; renderPrefixPreview(); });
   var nickErr = el('div', {class:'err'});
   var nickOk = el('div', {class:'badge ok'});
-  var saveNickBtn = el('button', {class:'btn primary', type:'button'}, [icon('save'), 'Сохранить ник']);
+  var saveNickBtn = el('button', {class:'btn primary', type:'button'}, [icon('save'), t('changeNick')]);
   saveNickBtn.addEventListener('click', function(){
     nickErr.textContent = ''; nickOk.textContent = '';
     var newNick = String(nickInput.value || '').trim().slice(0, NICK_MAX);
@@ -2746,23 +2763,57 @@ function profileEditor(){
       .then(function(){ saveNickBtn.disabled = false; });
   });
 
+  /* --- ЮЗЕРНЕЙМ (логин) — с паролем --- */
   var usernameInput = el('input', {type:'text', maxlength:'15', placeholder:'username (3–15: A-Za-z0-9_)', value: draft.username || '', style:'background:var(--bg-2);border:1px solid var(--line);border-radius:4px;padding:11px 13px;color:var(--fg);width:100%;font-family:var(--font-mono)'});
   var uErr = el('div', {class:'err'});
   var uOk = el('div', {class:'badge ok'});
+
+  // Поле пароля (появляется при попытке смены)
+  var uPassWrap = el('div', {style:'display:none;flex-direction:column;gap:6px;margin-top:8px'});
+  var uPassInput = el('input', {type:'password', placeholder:'Текущий пароль', style:'background:var(--bg-2);border:1px solid var(--line);border-radius:4px;padding:11px 13px;color:var(--fg);width:100%'});
+  uPassWrap.appendChild(el('span', {class:'hint', text:t('needPassToChange')}));
+  uPassWrap.appendChild(uPassInput);
+
   var saveUsernameBtn = el('button', {class:'btn primary', type:'button'}, [icon('save'), t('changeUsername')]);
+
   saveUsernameBtn.addEventListener('click', function(){
     uErr.textContent = ''; uOk.textContent = '';
+    uErr.style.color = '';
     var newU = normalizeUsername(usernameInput.value);
     var oldU = draft.username || usernameToKey(S.user.nick);
+
     if(newU === oldU){ uErr.textContent = 'Это ваш текущий юзернейм'; return; }
     if(!isValidUsername(newU)){ uErr.textContent = t('errUsernameFormat'); return; }
+
     var newKey = usernameToKey(newU);
     var oldKey = usernameToKey(S.user.nick);
     if(!isSafeKey(newKey)){ uErr.textContent = t('errUsernameFormat'); return; }
     if(OWNERS.indexOf(newKey) >= 0){ uErr.textContent = t('errUsernameTaken'); return; }
+
+    // Первый клик — показываем поле пароля
+    if(uPassWrap.style.display === 'none'){
+      uPassWrap.style.display = 'flex';
+      uPassInput.focus();
+      uErr.textContent = 'Введите текущий пароль и нажмите кнопку ещё раз.';
+      uErr.style.color = 'var(--warn)';
+      return;
+    }
+
+    var pass = uPassInput.value;
+    if(!pass){ uErr.textContent = 'Введите текущий пароль'; return; }
+
     saveUsernameBtn.disabled = true;
+    uErr.textContent = 'Проверяю…';
+
     usernameTaken(newU).then(function(taken){
       if(taken) throw new Error(t('errUsernameTaken'));
+      var u = auth.currentUser;
+      if(!u) throw new Error('Нет активной сессии');
+      var cred = firebase.auth.EmailAuthProvider.credential(u.email, pass);
+      return u.reauthenticateWithCredential(cred);
+    }).then(function(){
+      return auth.currentUser.updateEmail(authEmail(newU));
+    }).then(function(){
       var oldRec = S.users[oldKey] || {};
       var newRec = Object.assign({}, oldRec, {
         nick: oldRec.nick || S.user.nick,
@@ -2772,16 +2823,28 @@ function profileEditor(){
       return fbSet('users/' + newKey, newRec)
         .then(function(){ return fbSet('usernames/' + newKey, {username:newU, uid:myUid()}); })
         .then(function(){ return fbRemove('users/' + oldKey); })
-        .then(function(){ return fbRemove('usernames/' + oldKey); })
-        .then(function(){ return auth.currentUser.updateEmail(authEmail(newU)); })
-        .then(function(){
-          S.user.nick = newRec.nick;
-          draft.username = newU;
-          uOk.textContent = t('usernameChanged') + newU;
-          render();
-        });
-    }).catch(function(ex){ uErr.textContent = ex.message || t('errGeneric'); })
-      .then(function(){ saveUsernameBtn.disabled = false; });
+        .then(function(){ return fbRemove('usernames/' + oldKey); });
+    }).then(function(){
+      var freshRec = S.users[usernameToKey(newU)];
+      S.user.nick = (freshRec && freshRec.nick) || S.user.nick;
+      draft.username = newU;
+      uOk.textContent = t('usernameChanged') + newU;
+      uPassInput.value = '';
+      uPassWrap.style.display = 'none';
+      uErr.textContent = '';
+      render();
+    }).catch(function(ex){
+      var c = String((ex && ex.code) || '');
+      if(c.indexOf('wrong-password') >= 0 || c.indexOf('invalid-credential') >= 0){
+        uErr.textContent = 'Неверный пароль';
+      } else if(c.indexOf('requires-recent-login') >= 0){
+        uErr.textContent = 'Сессия устарела. Войдите заново.';
+      } else if(c.indexOf('email-already-in-use') >= 0){
+        uErr.textContent = t('errUsernameTaken');
+      } else {
+        uErr.textContent = (ex && ex.message) || t('errGeneric');
+      }
+    }).then(function(){ saveUsernameBtn.disabled = false; });
   });
 
   var bioInput = el('textarea', {maxlength:String(BIO_MAX), placeholder:t('bioPlaceholder'), value:draft.bio || '', style:'background:var(--bg-2);border:1px solid var(--line);border-radius:4px;padding:11px;color:var(--fg);width:100%;min-height:90px;resize:vertical;font-family:inherit'});
@@ -2819,6 +2882,7 @@ function profileEditor(){
     nickErr, nickOk,
 
     el('label', null, [t('usernameLabel'), usernameInput]),
+    uPassWrap,
     el('div', {class:'actions'}, [saveUsernameBtn]),
     el('span', {class:'hint', text:t('usernameHint')}),
     uErr, uOk,
@@ -2910,7 +2974,6 @@ function sessionsView(){
   return el('section', {class:'profile-edit'}, [el('h2', {text:t('sessionsTitle')}), list, el('div', {class:'actions'}, [killAllBtn])]);
 }
 
-/* ================= ADMIN ================= */
 function adminView(){
   if(!(S.isAdmin || isOwnerUser(S.user && S.user.nick))) return [el('div', {class:'empty', text:t('errNoPerm')})];
   var out = [];
@@ -3190,7 +3253,6 @@ function membersView(){
   return [el('div', {class:'sechead'}, [el('h2', {text:t('members')}), el('span', {class:'count mono', text:rows.length + ' ' + t('total')})]), el('div', {class:'tablebox'}, [el('table', null, [head, body])])];
 }
 
-/* ================= NAVIGATION ================= */
 function home(){ S.view = 'list'; S.open = null; S.board = null; S.q = ''; S.page = 1; S.compose = false; S.pageEdit = null; S.chatId = null; S.chatCreating = false; S.profileUser = null; S.profileEdit = false; S.adminTab = 'users'; S.dmId = null; render(); window.scrollTo(0,0); }
 function goPage(id){ S.view = id; S.open = null; S.compose = false; S.pageEdit = null; S.chatId = null; S.profileUser = null; S.profileEdit = false; S.dmId = null; render(); window.scrollTo(0,0); }
 function goChats(){ S.view = 'chatList'; S.open = null; S.compose = false; S.pageEdit = null; S.chatId = null; S.profileUser = null; S.profileEdit = false; S.dmId = null; render(); window.scrollTo(0,0); }
@@ -3198,7 +3260,6 @@ function goDms(){ S.view = 'dmList'; S.open = null; S.compose = false; S.pageEdi
 function goAdmin(){ S.view = 'admin'; S.open = null; S.compose = false; S.pageEdit = null; S.chatId = null; S.profileUser = null; S.profileEdit = false; S.dmId = null; render(); window.scrollTo(0,0); }
 function openThread(id){ if(!isSafeKey(id)) return; S.view = 'thread'; S.open = id; render(); window.scrollTo(0,0); bumpViews(id).catch(function(){}); }
 
-/* ================= RENDER ================= */
 function captureFormState(){
   var state = {focusId:null, selStart:null, selEnd:null, values:{}};
   var a = document.activeElement;
@@ -3285,7 +3346,6 @@ document.addEventListener('focusout', function(){
   setTimeout(function(){ if(_pendingRender && !isUserTyping()){ _pendingRender = false; render(); } }, 200);
 });
 
-/* ================= GLOBAL SEARCH ================= */
 (function(){
   var input = document.getElementById('global-search');
   var box = document.getElementById('global-search-results');
@@ -3381,7 +3441,6 @@ document.addEventListener('focusout', function(){
   });
 })();
 
-/* ================= EVENTS ================= */
 $('brand').addEventListener('click', home);
 $('nav-home').addEventListener('click', home);
 $('nav-dm').addEventListener('click', goDms);
@@ -3401,7 +3460,6 @@ var savedLang = storeGet('f60_lang');
 if(savedLang === 'en' || savedLang === 'ru') S.lang = savedLang;
 else S.lang = (navigator.language || 'ru').toLowerCase().indexOf('en') === 0 ? 'en' : 'ru';
 
-/* Button ripple effect */
 document.addEventListener('pointermove', function(e){
   var btn = e.target.closest('.btn');
   if(!btn) return;
@@ -3410,13 +3468,11 @@ document.addEventListener('pointermove', function(e){
   btn.style.setProperty('--my', ((e.clientY - r.top) / r.height * 100) + '%');
 });
 
-/* Nav scroll shadow */
 window.addEventListener('scroll', function(){
   var nav = document.getElementById('navbar');
   if(nav){ nav.classList.toggle('scrolled', window.scrollY > 10); }
 }, {passive:true});
 
-/* ================= REALTIME ================= */
 var _lastUsersHash = '', _lastThreadsHash = '', _lastChatsHash = '', _lastPagesHash = '', _lastOnlineHash = '', _lastSessionsHash = '', _lastDmsHash = '';
 function quickHash(obj){ try { var s = JSON.stringify(obj); return s.length + ':' + s.slice(0, 120); } catch(e){ return String(Date.now()); } }
 
@@ -3469,15 +3525,12 @@ db.ref('sessions').on('value', function(snap){
   if(S.view === 'profile' && S.profileTab === 'sessions') scheduleRender();
 });
 
-/* ================= AUTH STATE ================= */
 auth.onAuthStateChanged(function(u){
   restoreFromAuth(u).catch(function(e){ console.error('restoreFromAuth:', e); });
 });
 
-/* ================= INIT ================= */
 render();
 
-/* Intro animation */
 (function(){
   var intro = document.getElementById('intro');
   if(!intro) return;
