@@ -195,6 +195,28 @@ video.nick-media{width:18px;height:18px}
 .phone-cell .val{font-family:var(--font-mono);font-size:12px}
 .create-chat{display:flex;gap:8px;margin-bottom:12px}
 .create-chat input{flex:1;padding:8px 12px}
+
+.np{display:grid;grid-template-columns:minmax(0,1fr) 240px;gap:0;border:1px solid #1a1a1a;background:#000;min-height:75vh}
+.np-main{display:flex;flex-direction:column;min-width:0}
+.np-editor{flex:1;width:100%;min-height:70vh;resize:none;border:0;border-radius:0;background:#000;color:#e0e0e0;padding:16px;font-family:var(--font-mono);font-size:13px;line-height:1.6;outline:none}
+.np-count{font-family:var(--font-mono);font-size:11px;color:#555;padding:6px 16px;border-top:1px solid #1a1a1a}
+.np-side{background:#0a0a0c;border-left:1px solid #1a1a1a;padding:14px;display:flex;flex-direction:column;gap:10px}
+.np-art{margin:0;font-family:var(--font-mono);font-size:7.5px;line-height:1.1;color:var(--accent);text-shadow:0 0 8px rgba(255,0,0,.5);white-space:pre;overflow:hidden;text-align:left}
+.np-hr{height:1px;background:#1d1d22;margin:2px 0}
+.np-user{text-align:center;font-size:13px}
+.np-side input[type=text]{width:100%;padding:8px 10px;background:#1a1a1f;border:1px solid #2a2a30;font-size:12px}
+.np-row{display:flex;gap:8px}
+.np-prev{display:flex;gap:8px;align-items:flex-start}
+.np-prev img{max-width:100%;max-height:120px;border:1px solid #222}
+.np-check{font-size:12px;color:#aaa;display:flex;align-items:center;gap:6px;cursor:pointer}
+.np-send{width:100%;padding:8px}
+.np-note{font-size:11px;color:#666;line-height:1.4}
+@media (max-width:700px){
+  .np{grid-template-columns:1fr}
+  .np-side{border-left:0;border-top:1px solid #1a1a1a;order:-1}
+  .np-editor{min-height:40vh}
+  .np-art{font-size:6.5px}
+}
 </style>
 </head>
 <body>
@@ -1118,6 +1140,93 @@ function membersView() {
   return [el('h2', {text:'Юзеры'}), el('div', {class:'tablebox'}, [el('table', null, [tbody])])];
 }
 
+// ---------- новая тема (в стиле vilebin: поле слева, панель справа) ----------
+
+const NEW_ART = String.raw`  ____ _____ ___________ _____ _
+ / ___|  _  |_   _|  _  \  ___| |
+/ /___| |/' | | | | | | | |__ | |
+| ___ \  /| | | | | | | |  __|| |
+| \_/ \ |_/ / | | | |/ /| |___| |____
+\_____/\___/  \_/ |___/ \____/\_____/`;
+
+function newView() {
+  if (!S.user) { S.view = 'auth'; return authView(); }
+  const d = S.newDraft || (S.newDraft = {title:'', text:'', pin:false, pic:null});
+  const err = el('div', {class:'err'});
+
+  const ta = el('textarea', {class:'np-editor', maxlength:'5000', placeholder:'Текст темы...', spellcheck:'false'});
+  ta.value = d.text;
+  const cnt = el('div', {class:'np-count', text: d.text.length + ' / 5000'});
+  ta.oninput = () => { d.text = ta.value; cnt.textContent = d.text.length + ' / 5000'; };
+
+  const title = el('input', {type:'text', maxlength:'120', placeholder:'Заголовок', value: d.title});
+  title.oninput = () => { d.title = title.value; };
+
+  const prev = el('div', {class:'np-prev'});
+  const showPic = () => {
+    prev.innerHTML = '';
+    if (d.pic) prev.append(el('img', {src: d.pic}), el('button', {class:'btn small', type:'button', text:'✕', onclick: () => { d.pic = null; showPic(); }}));
+  };
+  showPic();
+  const file = el('input', {type:'file', accept:'image/*', style:'display:none', onchange: async e => {
+    const f = e.target.files[0];
+    if (!f) return;
+    try { d.pic = await compress(f, 900, 120); err.textContent = ''; }
+    catch (x) { err.textContent = 'Не вышло: ' + x.message; }
+    showPic(); file.value = '';
+  }});
+
+  const pin = el('input', {type:'checkbox'});
+  pin.checked = !!d.pin;
+  pin.onchange = () => { d.pin = pin.checked; };
+
+  let sending = false;
+  const send = el('button', {class:'btn primary np-send', type:'button', text:'Опубликовать'});
+  send.onclick = async () => {
+    if (sending) return;
+    const ttl = d.title.trim().slice(0, 120);
+    const txt = d.text.trim().slice(0, 5000);
+    if (!ttl) { err.textContent = 'Введите заголовок'; return; }
+    if (!txt) { err.textContent = 'Введите текст'; return; }
+    sending = true; send.disabled = true; err.textContent = '';
+    try {
+      const r = db.ref('threads').push();
+      const post = {uid: S.user.uid, author: S.user.nick, text: txt, date: TS};
+      if (d.pic) post.media = d.pic;
+      const th = {title: ttl, uid: S.user.uid, author: S.user.nick, date: TS, posts: {p0: post}};
+      if (d.pin && isAdmin()) th.pin = true;
+      await r.set(th);
+      S.newDraft = null;
+      S.view = 'thread'; S.open = r.key;
+      draw();
+    } catch (x) {
+      err.textContent = 'Не создалось: ' + x.message;
+      sending = false; send.disabled = false;
+    }
+  };
+
+  const hr = () => el('div', {class:'np-hr'});
+  const side = el('aside', {class:'np-side'}, [
+    el('pre', {class:'np-art', text: NEW_ART}),
+    hr(),
+    el('div', {class:'np-user'}, [nick(S.user.uid, S.user.nick)]),
+    hr(),
+    title,
+    el('div', {class:'np-row'}, [
+      el('button', {class:'btn small', type:'button', text:'📷 Картинка', onclick: () => file.click()}), file
+    ]),
+    prev,
+    isAdmin() ? el('label', {class:'np-check'}, [pin, ' Закрепить тему']) : null,
+    send,
+    err,
+    hr(),
+    el('div', {class:'np-note', text:'Текст до 5000 символов, заголовок до 120.'}),
+    el('button', {class:'btn small', type:'button', text:'← К списку', onclick: () => { S.view = 'list'; draw(); }})
+  ]);
+
+  return [el('div', {class:'np'}, [el('div', {class:'np-main'}, [ta, cnt]), side])];
+}
+
 // ---------- отрисовка ----------
 
 function drawWho() {
@@ -1148,6 +1257,7 @@ function draw() {
     case 'members': nodes = membersView(); break;
     case 'admin': nodes = adminView(); break;
     case 'priv': nodes = privView(); break;
+    case 'new': nodes = newView(); break;
     default: nodes = listView();
   }
   nodes.forEach(n => { if (n) app.append(n); });
@@ -1157,7 +1267,7 @@ function refresh() {
   drawWho();
   if (!S.ready) return;
   if (S.fill && (S.view === 'chat' || S.view === 'thread')) S.fill();
-  else if (S.view === 'auth' || (S.view === 'profile' && S.edit)) return;
+  else if (S.view === 'auth' || S.view === 'new' || (S.view === 'profile' && S.edit)) return;
   else draw();
 }
 
@@ -1169,15 +1279,7 @@ const router = {
   goPriv: () => { S.view = 'priv'; draw(); },
   goNew: () => {
     if (!S.user) { S.view = 'auth'; draw(); return; }
-    const title = (prompt('Заголовок:') || '').trim().slice(0, 120);
-    const text = (prompt('Текст:') || '').trim().slice(0, 5000);
-    if (title && text) {
-      const r = db.ref('threads').push();
-      r.set({
-        title: title, uid: S.user.uid, author: S.user.nick, date: TS,
-        posts: {p0: {uid: S.user.uid, author: S.user.nick, text: text, date: TS}}
-      }).then(draw).catch(x => alert('Не создалось: ' + x.message));
-    }
+    S.view = 'new'; draw();
   }
 };
 
