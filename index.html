@@ -135,6 +135,22 @@ tbody tr.pin td{color:var(--accent);font-weight:600}
   .profile-name-row { flex-direction: column; gap: 10px; }
   .profile-table td { padding: 12px; }
 }
+
+.chatwin{max-height:60vh;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding:4px}
+.compose{display:flex;flex-direction:column;gap:8px}
+.compose .bar{display:flex;gap:8px;align-items:center}
+.compose .bar .primary{margin-left:auto}
+.emo{flex-wrap:wrap;gap:8px;background:#0a0a0c;border:1px solid #222;padding:8px;font-size:22px}
+.emo span{cursor:pointer}
+.prev{display:flex;gap:8px;align-items:flex-start}
+.prev img,.msgimg{max-width:240px;max-height:240px;border:1px solid #222;display:block;margin-top:8px}
+.bio{background:#0d0d0d;border:1px solid #222;padding:14px;white-space:pre-wrap;border-radius:4px}
+.tlist a{display:block;padding:7px 0;cursor:pointer;border-bottom:1px solid #1a1a1a;color:#ddd}
+.tlist a:hover{color:var(--accent);text-decoration:none}
+.pstats{display:flex;gap:18px;flex-wrap:wrap;color:#888;font-size:13px;margin-top:6px}
+.pstats b{color:#fff}
+video.nick-media{width:18px;height:18px}
+.profile-banner img,.profile-avatar img{width:100%;height:100%;object-fit:cover;display:block}
 </style>
 </head>
 <body>
@@ -197,7 +213,7 @@ let lang = localStorage.getItem('lang') || 'ru';
 const t = k => T[lang][k] || k;
 
 // всё состояние в одной куче
-let S = {view:'list', authMode:'login', open:null, threads:[], user:null, users:{}, chats:{}, chatId:null, profile:null, edit:false, draft:null, page:1, limit:10};
+let S = {ready:false, drafts:{}, follows:{}, fill:null, view:'list', authMode:'login', open:null, threads:[], user:null, users:{}, chats:{}, chatId:null, profile:null, edit:false, draft:null, page:1, limit:10};
 
 // маленький помощник чтобы не писать createElement каждый раз
 function el(tag, attrs, kids) {
@@ -232,23 +248,26 @@ function setLang(l) {
 }
 
 // ужимаем картинку до ~200кб, иначе база разбухает
-function compress(file) {
-  return new Promise(res => {
+const okImg = x => typeof x == 'string' && /^data:image\/(jpeg|png|webp);base64,/.test(x);
+const okVid = x => typeof x == 'string' && /^data:video\/(mp4|webm);base64,/.test(x);
+const TS = firebase.database.ServerValue.TIMESTAMP;
+
+// ужимаем картинку: max - сторона в пикселях, kb - предел размера
+function compress(file, max, kb) {
+  return new Promise((res, rej) => {
+    if (!file || !file.type.startsWith('image/') || file.size > 10e6) return rej(new Error('нужна картинка до 10 МБ'));
     const r = new FileReader();
+    r.onerror = () => rej(new Error('не прочиталось'));
     r.onload = () => {
       const img = new Image();
+      img.onerror = () => rej(new Error('битая картинка'));
       img.onload = () => {
-        const sc = Math.min(1, 1000 / Math.max(img.width, img.height));
-        const w = Math.round(img.width * sc), h = Math.round(img.height * sc);
+        const sc = Math.min(1, max / Math.max(img.width, img.height));
         const c = document.createElement('canvas');
-        c.width = w; c.height = h;
-        c.getContext('2d').drawImage(img, 0, 0, w, h);
-        let q = 0.8;
-        let u = c.toDataURL('image/jpeg', q);
-        while (u.length * 0.75 > 200000 && q > 0.1) {
-          q -= 0.1;
-          u = c.toDataURL('image/jpeg', q);
-        }
+        c.width = Math.round(img.width * sc); c.height = Math.round(img.height * sc);
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        let q = 0.85, u = c.toDataURL('image/jpeg', q);
+        while (u.length * 0.75 > kb * 1000 && q > 0.1) { q -= 0.1; u = c.toDataURL('image/jpeg', q); }
         res(u);
       };
       img.src = r.result;
@@ -268,23 +287,31 @@ function getUser(id) {
 }
 
 // второй аргумент - ник из самого поста, на случай если юзера в базе нет
+function mediaEl(m) {
+  if (!m) return null;
+  if (okVid(m.s)) {
+    const v = el('video', {class:'nick-media', src: m.s, loop:'', playsinline:''});
+    v.muted = true; v.autoplay = true;
+    v.play().catch(() => {});
+    return v;
+  }
+  if (okImg(m.s)) return el('img', {class:'nick-media', src: m.s});
+  return null;
+}
+
 function nick(id, fallback) {
   const u = getUser(id);
-  if (!u) return el('span', {text: fallback || 'User', style: 'color:#aaa'});
+  if (!u) return el('span', {text: fallback || 'User', style:'color:#aaa'});
 
   let pre = '';
   if (u.owner) pre = el('span', {class:'nick-prefix prefix-owner', text:'[Founder]'});
   else if (u.role == 'admin') pre = el('span', {class:'nick-prefix prefix-admin', text:'[Admin]'});
 
   const w = el('span', {style:'display:inline-flex;align-items:center;gap:4px;cursor:pointer'}, [pre, el('span', {text: u.nick || fallback || 'User'})]);
-  if (u.profile && u.profile.mediaUrl) w.prepend(el('img', {class:'nick-media', src: u.profile.mediaUrl}));
-
-  w.onclick = e => {
-    e.stopPropagation();
-    S.view = 'profile';
-    S.profile = u.uid || id;
-    draw();
-  };
+  const pf = u.profile || {};
+  const m = mediaEl(pf.nickMedia || (pf.mediaUrl ? {s: pf.mediaUrl} : null));
+  if (m) w.prepend(m);
+  w.onclick = e => { e.stopPropagation(); S.view = 'profile'; S.profile = u.uid || id; draw(); };
   return w;
 }
 
@@ -292,7 +319,7 @@ function avatar(id, sz) {
   sz = sz || 40;
   const u = getUser(id);
   const a = el('div', {class:'avatar', style:`width:${sz}px;height:${sz}px;font-size:${sz*0.4}px`});
-  if (u && u.profile && u.profile.avatar) a.appendChild(el('img', {src: u.profile.avatar}));
+  if (u && u.profile && okImg(u.profile.avatar)) a.appendChild(el('img', {src: u.profile.avatar}));
   else a.textContent = ((u && u.nick) || '?')[0].toUpperCase();
   return a;
 }
@@ -426,120 +453,186 @@ function listView() {
   return out;
 }
 
-// ---------- тема ----------
+// ---------- поле ввода (тема и чат) ----------
+
+const EMO = ['😀','😂','😍','😎','😭','😡','👍','👎','🔥','💀','❤️','🎉','🤔','😱','🙏','👀'];
+
+function composer(key, ph, onSend) {
+  let pic = null, busy = false;
+  const ta = el('textarea', {placeholder: ph, maxlength:'2000', rows:'2'});
+  ta.value = S.drafts[key] || '';
+  ta.oninput = () => { S.drafts[key] = ta.value; };
+  const prev = el('div', {class:'prev'});
+  const panel = el('div', {class:'emo', style:'display:none'}, EMO.map(e =>
+    el('span', {text: e, onclick: () => { ta.value += e; S.drafts[key] = ta.value; ta.focus(); }})));
+  const file = el('input', {type:'file', accept:'image/*', style:'display:none', onchange: async e => {
+    const f = e.target.files[0];
+    if (!f) return;
+    try { pic = await compress(f, 900, 120); }
+    catch (x) { alert('Не вышло: ' + x.message); return; }
+    prev.innerHTML = '';
+    prev.append(el('img', {src: pic}), el('button', {class:'btn small', type:'button', text:'✕', onclick: () => { pic = null; prev.innerHTML = ''; }}));
+    file.value = '';
+  }});
+
+  async function send() {
+    const text = ta.value.trim();
+    if ((!text && !pic) || busy) return;
+    busy = true;
+    try {
+      await onSend(text, pic);
+      ta.value = ''; S.drafts[key] = ''; pic = null; prev.innerHTML = '';
+    } catch (x) { alert('Не отправилось: ' + x.message); }
+    busy = false;
+    ta.focus();
+  }
+  // Enter - отправить, Shift+Enter - новая строка
+  ta.onkeydown = e => { if (e.key == 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } };
+
+  return el('div', {class:'compose'}, [prev, ta, panel, el('div', {class:'bar'}, [
+    el('button', {class:'btn small', type:'button', text:'😊', onclick: () => { panel.style.display = panel.style.display == 'none' ? 'flex' : 'none'; }}),
+    el('button', {class:'btn small', type:'button', text:'📷', onclick: () => file.click()}),
+    file,
+    el('button', {class:'btn primary', type:'button', text: t('send'), onclick: send})
+  ])]);
+}
+
+function picEl(src) { return okImg(src) ? el('img', {class:'msgimg', src: src}) : null; }
 
 function threadView() {
-  const th = S.threads.find(x => x.id == S.open);
-  if (!th) return [el('div', {text:'Не найдено'})];
+  const th0 = S.threads.find(x => x.id == S.open);
+  if (!th0) return [el('div', {text:'Не найдено'})];
+  const box = el('div', {style:'display:flex;flex-direction:column;gap:12px'});
+
+  // перерисовываем только посты, поле ввода не трогаем - иначе пропадает текст
+  S.fill = () => {
+    const th = S.threads.find(x => x.id == S.open);
+    if (!th) return;
+    const y = window.scrollY;
+    box.innerHTML = '';
+    Object.entries(th.posts || {}).map(([key, p]) => ({...p, key})).sort((a, b) => a.date - b.date).forEach(p => {
+      const mine = S.user && p.uid == S.user.uid;
+      box.append(el('div', {class:'post'}, [
+        el('div', {class:'who'}, [avatar(p.uid, 48), nick(p.uid, p.author || th.author)]),
+        el('div', {class:'body'}, [
+          el('div', {class:'meta'}, [
+            el('span', {text: fmt(p.date)}),
+            (mine || isAdmin()) ? el('button', {class:'btn small danger', text:'✕', onclick: () => {
+              if (confirm('Удалить?')) del(`threads/${th.id}/posts/${p.key}`);
+            }}) : null
+          ]),
+          el('div', {class:'text', text: p.text || ''}),
+          picEl(p.media)
+        ])
+      ]));
+    });
+    window.scrollTo(0, y);
+  };
+  S.fill();
 
   const out = [
     el('button', {class:'btn', text:'← Назад', style:'align-self:flex-start', onclick: () => { S.view = 'list'; draw(); }}),
-    el('h2', {text: th.title, style:'margin:16px 0;color:#fff'})
+    el('h2', {text: th0.title, style:'margin:16px 0;color:#fff'}),
+    box
   ];
-
-  // берём ключ вместе с постом, чтобы удалять нормально
-  const posts = Object.entries(th.posts || {}).map(([key, p]) => ({...p, key})).sort((a, b) => a.date - b.date);
-
-  posts.forEach(p => {
-    const mine = S.user && p.uid == S.user.uid;
-    out.push(el('div', {class:'post'}, [
-      el('div', {class:'who'}, [avatar(p.uid, 48), nick(p.uid, p.author || th.author)]),
-      el('div', {class:'body'}, [
-        el('div', {class:'meta'}, [
-          el('span', {text: fmt(p.date)}),
-          (mine || isAdmin()) ? el('button', {class:'btn small danger', text:'✕', onclick: () => {
-            if (confirm('Удалить?')) del(`threads/${th.id}/posts/${p.key}`);
-          }}) : null
-        ]),
-        el('div', {class:'text', text: p.text}),
-        p.media ? el('img', {src: p.media, style:'max-width:100%;margin-top:10px;border:1px solid #222'}) : null
-      ])
-    ]));
-  });
-
   if (S.user) {
-    const ta = el('textarea', {placeholder:'Ответ...'});
-    out.push(el('div', {class:'compose'}, [
-      ta,
-      el('button', {class:'btn primary', text: t('send'), onclick: async () => {
-        const text = ta.value.trim();
-        if (!text) return;
-        await set(`threads/${th.id}/posts/p${Date.now()}`, {uid: S.user.uid, author: S.user.nick, text: text, date: Date.now()});
-        draw();
-      }})
-    ]));
-  }
+    out.push(composer('t' + th0.id, 'Ответ... (Enter - отправить)', (text, pic) =>
+      db.ref(`threads/${th0.id}/posts`).push({uid: S.user.uid, author: S.user.nick, text: text, media: pic || null, date: TS})));
+  } else out.push(el('div', {class:'muted', text:'Войдите, чтобы отвечать'}));
   return out;
 }
 
 // ---------- профиль ----------
 
 function profileView() {
-  if (!S.user) return [el('div', {text:'Войдите'})];
-  const uid = S.profile || S.user.uid;
-  const u = getUser(uid) || S.user;
-  const isMe = u.uid == S.user.uid;
+  const uid = S.profile || (S.user && S.user.uid);
+  const u = getUser(uid);
+  if (!u) return [el('div', {text:'Профиль не найден'})];
+  const isMe = S.user && u.uid == S.user.uid;
   const pf = u.profile || {};
 
-  let topics = 0;
-  S.threads.forEach(th => {
-    if (th.uid == u.uid || th.author == u.nick) topics++;
-  });
+  const mine = S.threads.filter(th => th.uid == u.uid || th.author == u.nick);
+  let posts = 0;
+  S.threads.forEach(th => Object.values(th.posts || {}).forEach(p => { if (p.uid == u.uid) posts++; }));
+  const followers = u.owner ? 666 : Object.keys(S.follows[u.uid] || {}).length;
+  const following = Object.values(S.follows).filter(f => f[u.uid]).length;
+  const iFollow = S.user && S.follows[u.uid] && S.follows[u.uid][S.user.uid];
+
+  const banner = el('div', {class:'profile-banner'});
+  if (okImg(pf.banner)) banner.append(el('img', {src: pf.banner}));
+  const av = el('div', {class:'profile-avatar'});
+  if (okImg(pf.avatar)) av.append(el('img', {src: pf.avatar}));
+  else av.textContent = (u.nick || '?')[0].toUpperCase();
+
+  const btn = isMe
+    ? el('button', {class:'btn', text: t('edit'), onclick: () => { S.edit = !S.edit; S.draft = {bio: pf.bio || '', avatar: pf.avatar, banner: pf.banner, nickMedia: pf.nickMedia, nick: u.nick}; draw(); }})
+    : el('button', {class: 'btn ' + (iFollow ? '' : 'primary'), text: iFollow ? 'Отписаться' : 'Подписаться', onclick: () => {
+        if (!S.user) { S.view = 'auth'; draw(); return; }
+        const r = db.ref(`follows/${u.uid}/${S.user.uid}`);
+        iFollow ? r.remove() : r.set(true);
+      }});
 
   const out = [
-    el('div', {class:'profile-container'}, [
-      el('div', {class:'profile-banner', html: pf.banner ? `<img src="${pf.banner}">` : ''}),
-      el('div', {class:'profile-main'}, [
-        el('div', {class:'profile-avatar', html: pf.avatar ? `<img src="${pf.avatar}">` : (u.nick || '?')[0].toUpperCase()}),
-        el('div', {class:'profile-details'}, [
-          el('div', {class:'profile-name-row'}, [
-            el('div', {class:'profile-username'}, [nick(u.uid, u.nick)]),
-            !isMe
-              ? el('button', {class:'btn-follow', text:'follow'})
-              : el('button', {class:'btn', text: t('edit'), onclick: () => {
-                  S.edit = !S.edit;
-                  S.draft = {...pf, nick: u.nick};
-                  draw();
-                }})
-          ]),
-          el('div', {class:'profile-stats-small', html:'<b>1</b> following &nbsp; <b>2</b> followers'})
-        ])
+    el('div', {class:'profile-container'}, [banner, el('div', {class:'profile-main'}, [av, el('div', {class:'profile-details'}, [
+      el('div', {class:'profile-name-row'}, [el('div', {class:'profile-username'}, [nick(u.uid, u.nick)]), btn]),
+      el('div', {class:'pstats'}, [
+        el('span', null, [el('b', {text: String(followers)}), ' подписчиков']),
+        el('span', null, [el('b', {text: String(following)}), ' подписок']),
+        el('span', null, [el('b', {text: String(mine.length)}), ' тем']),
+        el('span', null, [el('b', {text: String(posts)}), ' ответов'])
       ])
-    ]),
-    el('table', {class:'profile-table'}, [
-      el('tbody', null, [
-        el('tr', null, [el('td', {text:'Username'}), el('td', {text:'@' + u.nick})]),
-        el('tr', null, [el('td', {text:'Joined'}), el('td', {text: fmt(u.created)})]),
-        el('tr', null, [el('td', {text:'Topics'}), el('td', {text: topics})])
-      ])
-    ])
+    ])])]),
+    el('table', {class:'profile-table'}, [el('tbody', null, [
+      el('tr', null, [el('td', {text:'Username'}), el('td', {text:'@' + u.nick})]),
+      el('tr', null, [el('td', {text:'Роль'}), el('td', {text: u.owner ? 'Founder' : (u.role || 'user')})]),
+      el('tr', null, [el('td', {text:'Joined'}), el('td', {text: fmt(u.created)})])
+    ])])
   ];
-
-  if (!isMe) {
-    out.push(el('div', {class:'profile-private-box'}, [
-      el('div', {html:"This user's account is <b>private</b>."}),
-      el('div', {style:'margin-top:10px;font-size:12px', html:`Already follow <b>${u.nick}</b>? <a href="#" onclick="event.preventDefault(); S.view='auth'; draw();">Login</a> to see their pastes.`})
-    ]));
+  if (pf.bio) out.push(el('div', {class:'bio', text: pf.bio}));
+  if (mine.length) {
+    out.push(el('h3', {text:'Темы', style:'color:#fff'}));
+    out.push(el('div', {class:'tlist'}, mine.slice(0, 10).map(th => el('a', {text: th.title, onclick: () => { S.view = 'thread'; S.open = th.id; draw(); }}))));
   }
 
   if (isMe && S.edit) {
     const d = S.draft;
-    const aF = el('input', {type:'file', accept:'image/*', onchange: async e => { d.avatar = await compress(e.target.files[0]); }});
-    const bF = el('input', {type:'file', accept:'image/*', onchange: async e => { d.banner = await compress(e.target.files[0]); }});
+    const pick = (field, max, kb) => el('input', {type:'file', accept:'image/*', onchange: async e => {
+      try { d[field] = await compress(e.target.files[0], max, kb); } catch (x) { alert(x.message); }
+    }});
+    const mFile = el('input', {type:'file', accept:'image/*,video/mp4,video/webm', onchange: async e => {
+      const f = e.target.files[0];
+      if (!f) return;
+      try {
+        if (f.type.startsWith('video/')) {
+          if (f.size > 200000) throw new Error('видео для ника до 200 КБ');
+          d.nickMedia = {t:'v', s: await new Promise(r => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.readAsDataURL(f); })};
+          if (!okVid(d.nickMedia.s)) { d.nickMedia = null; throw new Error('только mp4 или webm'); }
+        } else d.nickMedia = {t:'i', s: await compress(f, 48, 8)};
+      } catch (x) { alert(x.message); }
+    }});
+    const nIn = el('input', {type:'text', value: d.nick, maxlength:'15', oninput: e => { d.nick = e.target.value; }});
+    const bIn = el('textarea', {maxlength:'300', oninput: e => { d.bio = e.target.value; }});
+    bIn.value = d.bio;
+    const err = el('div', {class:'err'});
 
     out.push(el('div', {class:'profile-edit'}, [
       el('h3', {text: t('edit'), style:'color:#fff'}),
-      el('label', null, [t('nick'), el('input', {type:'text', value: d.nick, oninput: e => { d.nick = e.target.value; }})]),
-      el('label', null, ['Bio', el('textarea', {value: d.bio || '', oninput: e => { d.bio = e.target.value; }})]),
-      el('label', null, ['Avatar', aF]),
-      el('label', null, ['Banner', bF]),
+      el('label', null, [t('nick') + ' (логин для входа не меняется)', nIn]),
+      el('label', null, ['Bio', bIn]),
+      el('label', null, ['Avatar', pick('avatar', 200, 40)]),
+      el('label', null, ['Banner', pick('banner', 900, 90)]),
+      el('label', null, ['Фото/видео возле ника', mFile]),
+      el('button', {class:'btn small', type:'button', text:'Убрать медиа у ника', onclick: () => { d.nickMedia = null; alert('Уберётся после «Сохранить»'); }}),
+      err,
       el('div', {style:'display:flex;gap:10px'}, [
         el('button', {class:'btn primary', text: t('save'), onclick: async () => {
-          const newNick = (d.nick || '').trim() || u.nick;
-          await upd('users/' + u.uid, {nick: newNick, profile: d});
-          S.user.nick = newNick;
-          S.edit = false;
-          draw();
+          const n = (d.nick || '').trim();
+          if (!/^[A-Za-z0-9_]{3,15}$/.test(n)) { err.textContent = 'Ник: 3-15 символов, латиница, цифры, _'; return; }
+          if (Object.values(S.users).some(x => x.uid != u.uid && x.nick && x.nick.toLowerCase() == n.toLowerCase())) { err.textContent = 'Ник занят'; return; }
+          try {
+            await upd('users/' + u.uid, {nick: n, profile: {bio: d.bio || '', avatar: d.avatar || null, banner: d.banner || null, nickMedia: d.nickMedia || null}});
+            S.user.nick = n; S.edit = false; draw();
+          } catch (x) { err.textContent = 'Не сохранилось: ' + x.message; }
         }}),
         el('button', {class:'btn', text: t('cancel'), onclick: () => { S.edit = false; draw(); }})
       ])
@@ -553,34 +646,45 @@ function profileView() {
 function chatView() {
   const c = S.chats[S.chatId];
   if (!c) return [el('div', {text:'Не найдено'})];
+  const win = el('div', {class:'chatwin'});
+  let stick = true; // прилипать к низу
 
-  const msgs = Object.values(c.messages || {}).sort((a, b) => a.date - b.date);
+  // обновляем только окно сообщений, чтобы не сбрасывало на первое сообщение
+  S.fill = () => {
+    const cc = S.chats[S.chatId];
+    if (!cc) return;
+    const old = win.scrollTop;
+    const near = stick || win.scrollHeight - win.scrollTop - win.clientHeight < 80;
+    win.innerHTML = '';
+    Object.entries(cc.messages || {}).map(([key, m]) => ({...m, key})).sort((a, b) => a.date - b.date).forEach(m => {
+      const mine = S.user && m.uid == S.user.uid;
+      win.append(el('div', {class:'chatmsg' + (mine ? ' self' : '')}, [
+        avatar(m.uid, 32),
+        el('div', {class:'bub'}, [
+          el('div', {class:'top'}, [nick(m.uid, m.author), el('span', {text: fmt(m.date)}),
+            (mine || isAdmin()) ? el('button', {class:'btn small danger', text:'✕', onclick: () => { if (confirm('Удалить?')) del(`chats/${cc.id}/messages/${m.key}`); }}) : null]),
+          el('div', {class:'txt', text: m.text || ''}),
+          picEl(m.media)
+        ])
+      ]));
+    });
+    win.scrollTop = near ? win.scrollHeight : old;
+    stick = false;
+  };
+  S.fill();
+  setTimeout(() => { win.scrollTop = win.scrollHeight; }, 0);
+
   const out = [
     el('button', {class:'btn', text:'← Назад', onclick: () => { S.view = 'chatList'; draw(); }}),
     el('h2', {text: c.name, style:'margin:16px 0'}),
-    el('div', {class:'chatwin'}, msgs.map(m =>
-      el('div', {class:'chatmsg' + (S.user && m.uid == S.user.uid ? ' self' : '')}, [
-        avatar(m.uid, 32),
-        el('div', {class:'bub'}, [
-          el('div', {class:'top'}, [nick(m.uid, m.author), el('span', {text: fmt(m.date)})]),
-          el('div', {class:'txt', text: m.text})
-        ])
-      ])
-    ))
+    win
   ];
-
   if (S.user) {
-    const inp = el('input', {placeholder:'Сообщение...'});
-    out.push(el('div', {class:'compose'}, [
-      inp,
-      el('button', {class:'btn primary', text: t('send'), onclick: async () => {
-        const text = inp.value.trim();
-        if (!text) return;
-        await set(`chats/${S.chatId}/messages/m${Date.now()}`, {uid: S.user.uid, author: S.user.nick, text: text, date: Date.now()});
-        inp.value = '';
-      }})
-    ]));
-  }
+    out.push(composer('c' + c.id, 'Сообщение... (Enter - отправить)', (text, pic) => {
+      stick = true;
+      return db.ref(`chats/${c.id}/messages`).push({uid: S.user.uid, author: S.user.nick, text: text, media: pic || null, date: TS});
+    }));
+  } else out.push(el('div', {class:'muted', text:'Войдите, чтобы писать'}));
   return out;
 }
 
@@ -644,18 +748,24 @@ function membersView() {
 
 // ---------- отрисовка ----------
 
-function draw() {
-  const app = document.getElementById('app');
-  app.innerHTML = '';
-
+function drawWho() {
   const w = document.getElementById('who');
   w.innerHTML = '';
-  if (S.user) {
-    w.append(nick(S.user.uid, S.user.nick), el('button', {text: t('out'), onclick: () => auth.signOut()}));
-  } else {
-    w.append(el('button', {text: t('login'), onclick: () => { S.view = 'auth'; S.authMode = 'login'; draw(); }}));
-  }
+  if (S.user) w.append(nick(S.user.uid, S.user.nick), el('button', {text: t('out'), onclick: () => auth.signOut()}));
+  else if (S.ready) w.append(el('button', {text: t('login'), onclick: () => { S.view = 'auth'; S.authMode = 'login'; draw(); }}));
   document.getElementById('nav-admin').style.display = isAdmin() ? '' : 'none';
+}
+
+function draw() {
+  S.fill = null;
+  const app = document.getElementById('app');
+  app.innerHTML = '';
+  drawWho();
+  if (!S.ready) { app.append(el('div', {class:'muted', style:'text-align:center;padding:40px'}, [el('span', {class:'spinner'}), 'Загрузка...'])); return; }
+
+  // запоминаем где мы, чтобы после F5 открылось то же самое
+  const id = {thread: S.open, chat: S.chatId, profile: S.profile}[S.view];
+  history.replaceState(null, '', '#' + S.view + (id ? '/' + id : ''));
 
   let nodes;
   switch (S.view) {
@@ -668,6 +778,15 @@ function draw() {
     default: nodes = listView();
   }
   nodes.forEach(n => { if (n) app.append(n); });
+}
+
+// событие из базы: не трогаем формы, а чат/тему обновляем точечно
+function refresh() {
+  drawWho();
+  if (!S.ready) return;
+  if (S.fill && (S.view == 'chat' || S.view == 'thread')) S.fill();
+  else if (S.view == 'auth' || (S.view == 'profile' && S.edit)) return;
+  else draw();
 }
 
 const router = {
@@ -692,7 +811,7 @@ const router = {
 
 db.ref('users').on('value', s => {
   S.users = s.val() || {};
-  draw();
+  refresh();
 }, err => {
   // если сюда попали - правила базы не дают читать users, отсюда и все "User"
   console.error('users не читаются:', err.message);
@@ -701,14 +820,14 @@ db.ref('users').on('value', s => {
 db.ref('threads').on('value', s => {
   const d = s.val() || {};
   S.threads = Object.keys(d).map(k => ({id: k, ...d[k]})).sort((a, b) => (b.date || 0) - (a.date || 0));
-  if (S.view != 'chat') draw();
+  refresh();
 }, err => console.error('threads:', err.message));
 
 db.ref('chats').on('value', s => {
   const d = s.val() || {};
   S.chats = {};
   Object.keys(d).forEach(k => { S.chats[k] = {id: k, ...d[k]}; });
-  if (S.view.includes('chat')) draw();
+  refresh();
 }, err => console.error('chats:', err.message));
 
 // ---------- кто залогинен ----------
@@ -762,9 +881,26 @@ function get_has(rec, uid) {
   return !!(rec && rec.uid == uid);
 }
 
+db.ref('follows').on('value', s => { S.follows = s.val() || {}; refresh(); }, err => console.error('follows:', err.message));
+
+// после F5 открываем то же место
+(function () {
+  const [v, i] = location.hash.slice(1).split('/');
+  if (['thread', 'chat', 'chatList', 'profile', 'members'].includes(v)) {
+    S.view = v;
+    if (v == 'thread') S.open = i;
+    if (v == 'chat') S.chatId = i;
+    if (v == 'profile') S.profile = i;
+  }
+})();
+
+// держим вход в браузере (на file:// это может не работать - открывайте через http/https)
+auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(e => console.warn('persistence:', e.code));
+
 auth.onAuthStateChanged(async u => {
   if (S.registering) return; // регистрация сама вызовет loadUser
   await loadUser(u);
+  S.ready = true;
   draw();
 });
 
