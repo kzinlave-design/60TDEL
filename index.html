@@ -106,7 +106,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .nav-search-results .gs-item .gs-sub{font-size:11px;color:var(--muted);font-family:var(--font-mono)}
 .nav-search-results .gs-empty{padding:16px;color:var(--muted);text-align:center;font-size:13px}
 
-.wrap{max-width:1220px;margin-inline:auto;padding-inline:16px;padding-block:32px 72px;display:flex;flex-direction:column;gap:24px}
+.wrap{max-width:1220px;margin-inline:auto;padding-inline:16px;padding-block:32px 72px;display:flex;flex-direction:column;gap:24px;min-width:0}
 h1,h2,h3{margin:0;font-weight:600;letter-spacing:-.02em}
 h2{font-size:17px;position:relative;padding-left:14px}
 h2::before{content:"";position:absolute;left:0;top:4px;bottom:4px;width:3px;background:linear-gradient(180deg,var(--accent-2),var(--accent-dim));border-radius:3px;box-shadow:0 0 12px rgba(224,69,63,.4)}
@@ -155,7 +155,7 @@ h2::before{content:"";position:absolute;left:0;top:4px;bottom:4px;width:3px;back
 .pager button[aria-current="true"]{background:linear-gradient(180deg,var(--accent-2),var(--accent));color:#fff}
 .pager button:disabled{opacity:.3;cursor:default}
 
-.tablebox{overflow-x:auto;border:1px solid var(--line);border-radius:var(--radius-lg);background:var(--surface);box-shadow:var(--shadow);animation:fadeUp .5s var(--ease-out) both}
+.tablebox{overflow-x:auto;border:1px solid var(--line);border-radius:var(--radius-lg);background:var(--surface);box-shadow:var(--shadow);animation:fadeUp .5s var(--ease-out) both;max-width:100%}
 table{width:100%;border-collapse:collapse;min-width:0}
 th,td{padding:12px 16px;text-align:left;border-bottom:1px solid var(--line);vertical-align:middle}
 tr:last-child td{border-bottom:0}
@@ -176,7 +176,7 @@ tr.row:hover .rowbtn{color:var(--accent-2)}
 .empty{padding:48px 12px;text-align:center;color:var(--muted);font-size:14px}
 .sechead{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}
 
-.compose{border:1px solid var(--line);border-radius:var(--radius-lg);background:var(--surface);padding:20px;display:flex;flex-direction:column;gap:14px;box-shadow:var(--shadow);animation:scaleIn .4s var(--ease-out) both}
+.compose{border:1px solid var(--line);border-radius:var(--radius-lg);background:var(--surface);padding:20px;display:flex;flex-direction:column;gap:14px;box-shadow:var(--shadow);animation:scaleIn .4s var(--ease-out) both;min-width:0}
 .compose label{display:flex;flex-direction:column;gap:6px;font-size:12.5px;color:var(--muted);font-weight:500}
 .compose input,.compose select,.compose textarea{background:var(--bg-2);border:1px solid var(--line);border-radius:var(--radius-sm);padding:10px 13px;color:var(--fg);width:100%;transition:all .25s var(--ease)}
 .compose input:focus,.compose select:focus,.compose textarea:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 3px rgba(224,69,63,.12)}
@@ -185,7 +185,7 @@ tr.row:hover .rowbtn{color:var(--accent-2)}
 .actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .hint{font-size:11.5px;color:var(--muted-2)}
 
-.drop{border:1px dashed var(--line-2);border-radius:var(--radius);padding:14px;background:var(--bg-2);display:flex;flex-direction:column;gap:11px;align-items:flex-start;transition:all .25s var(--ease)}
+.drop{border:1px dashed var(--line-2);border-radius:var(--radius);padding:14px;background:var(--bg-2);display:flex;flex-direction:column;gap:11px;align-items:flex-start;transition:all .25s var(--ease);min-width:0;max-width:100%}
 .drop.dragover{border-color:var(--accent);background:rgba(224,69,63,.08);transform:scale(1.01)}
 .drop .droprow{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .drop .thumb{width:80px;height:80px;border:1px solid var(--line);border-radius:var(--radius-sm);object-fit:cover;background:var(--surface-2);animation:popIn .3s var(--ease-out);display:block;line-height:0}
@@ -208,21 +208,21 @@ tr.row:hover .rowbtn{color:var(--accent-2)}
 .auth .hintline{font-size:12px;color:var(--muted-2);line-height:1.55}
 .err{color:var(--err);font-size:12.5px;min-height:16px;font-weight:500}
 
-.post{display:grid;grid-template-columns:160px minmax(0,1fr);border:1px solid var(--line);border-radius:var(--radius-lg);background:var(--surface);box-shadow:var(--shadow);overflow:hidden;transition:border-color .3s var(--ease),transform .3s var(--ease);animation:fadeUp .4s var(--ease-out) both}
+.post{display:grid;grid-template-columns:160px minmax(0,1fr);border:1px solid var(--line);border-radius:var(--radius-lg);background:var(--surface);box-shadow:var(--shadow);overflow:hidden;transition:border-color .3s var(--ease),transform .3s var(--ease);animation:fadeUp .4s var(--ease-out) both;min-width:0}
 .post:hover{border-color:var(--line-2)}
 .post+.post{margin-top:12px}
-.post .who{padding:16px;border-right:1px solid var(--line);display:flex;flex-direction:column;gap:10px;align-items:flex-start;background:var(--surface-2)}
+.post .who{padding:16px;border-right:1px solid var(--line);display:flex;flex-direction:column;gap:10px;align-items:flex-start;background:var(--surface-2);min-width:0}
 .avatar{width:48px;height:48px;border:1px solid var(--line-2);color:var(--fg);display:grid;place-items:center;font-family:var(--font-mono);font-weight:600;font-size:18px;text-transform:uppercase;overflow:hidden;cursor:pointer;border-radius:var(--radius);background:var(--surface);transition:transform .25s var(--ease),box-shadow .25s var(--ease);line-height:0;font-size:0}
 .avatar:hover{transform:scale(1.08);box-shadow:0 6px 20px rgba(0,0,0,.4)}
 .avatar img{width:100%;height:100%;object-fit:cover;display:block;border:0}
-.post .name{font-weight:500;overflow-wrap:anywhere;display:flex;align-items:center;gap:2px;flex-wrap:wrap;font-size:14px}
-.post .body{padding:16px 18px;min-width:0}
+.post .name{font-weight:500;overflow-wrap:anywhere;display:flex;align-items:center;gap:2px;flex-wrap:wrap;font-size:14px;min-width:0}
+.post .body{padding:16px 18px;min-width:0;overflow:hidden}
 .post .meta{font-size:11.5px;color:var(--muted);margin-bottom:10px;font-family:var(--font-mono);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .post .text{white-space:pre-wrap;overflow-wrap:anywhere;margin:0 0 10px;line-height:1.65;font-size:14.5px}
-.post .attach{margin-top:10px;line-height:0;font-size:0}
-.post .attach img{max-width:100%;max-height:500px;border:1px solid var(--line);border-radius:var(--radius);display:block;cursor:zoom-in;transition:transform .3s var(--ease)}
+.post .attach{margin-top:10px;line-height:0;font-size:0;max-width:100%;overflow:hidden}
+.post .attach img{max-width:100%;max-height:500px;height:auto;border:1px solid var(--line);border-radius:var(--radius);display:block;cursor:zoom-in;transition:transform .3s var(--ease)}
 .post .attach img:hover{transform:scale(1.01)}
-.post .attach video{max-width:100%;max-height:500px;border:1px solid var(--line);border-radius:var(--radius);display:block;background:#000}
+.post .attach video{max-width:100%;max-height:500px;height:auto;border:1px solid var(--line);border-radius:var(--radius);display:block;background:#000}
 .post-actions{margin-left:auto;display:inline-flex;gap:5px;opacity:0;transition:opacity .25s var(--ease)}
 .post:hover .post-actions{opacity:1}
 .post-actions button{background:none;border:1px solid var(--line);color:var(--muted);width:28px;height:28px;border-radius:var(--radius-sm);cursor:pointer;display:grid;place-items:center;font-size:12px;padding:0;transition:all .2s var(--ease)}
@@ -236,7 +236,7 @@ tr.row:hover .rowbtn{color:var(--accent-2)}
 .lightbox img,.lightbox video{max-width:92vw;max-height:92vh;border:1px solid var(--line-2);border-radius:var(--radius);animation:scaleIn .3s var(--ease-out);display:block;line-height:0}
 .back{align-self:flex-start}
 .titlebar{display:flex;flex-direction:column;gap:8px;animation:slideRight .4s var(--ease-out) both}
-.titlebar h1{font-size:26px;font-weight:700;letter-spacing:-.025em}
+.titlebar h1{font-size:26px;font-weight:700;letter-spacing:-.025em;overflow-wrap:anywhere}
 
 .page{border:1px solid var(--line);border-radius:var(--radius-lg);background:var(--surface);padding:26px;display:flex;flex-direction:column;gap:16px;box-shadow:var(--shadow);animation:fadeUp .5s var(--ease-out) both}
 .page h1{font-size:28px;font-weight:800;background:linear-gradient(180deg,#fff,#b0b0c0);-webkit-background-clip:text;background-clip:text;color:transparent;letter-spacing:-.03em}
@@ -257,19 +257,19 @@ tr.row:hover .rowbtn{color:var(--accent-2)}
 .chatform{border:1px solid var(--line);border-radius:var(--radius-lg);background:var(--surface);padding:16px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px;align-items:end;box-shadow:var(--shadow)}
 .chatform input{background:var(--bg-2);border:1px solid var(--line);border-radius:var(--radius-sm);padding:11px 13px;color:var(--fg);width:100%;transition:all .25s var(--ease)}
 .chatform input:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 3px rgba(224,69,63,.12)}
-.chatwin{border:1px solid var(--line);border-radius:var(--radius-lg);background:var(--surface);min-height:360px;max-height:65vh;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;box-shadow:var(--shadow)}
-.chatmsg{display:grid;grid-template-columns:42px minmax(0,1fr);gap:12px;animation:fadeUp .35s var(--ease-out) both}
+.chatwin{border:1px solid var(--line);border-radius:var(--radius-lg);background:var(--surface);min-height:360px;max-height:65vh;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;box-shadow:var(--shadow);min-width:0}
+.chatmsg{display:grid;grid-template-columns:42px minmax(0,1fr);gap:12px;animation:fadeUp .35s var(--ease-out) both;min-width:0}
 .chatmsg .av{width:42px;height:42px;border:1px solid var(--line-2);color:var(--fg);display:grid;place-items:center;font-family:var(--font-mono);font-weight:600;font-size:15px;text-transform:uppercase;overflow:hidden;cursor:pointer;border-radius:var(--radius);background:var(--surface);transition:transform .25s var(--ease);line-height:0;font-size:0}
 .chatmsg .av:hover{transform:scale(1.08)}
 .chatmsg .av img{width:100%;height:100%;object-fit:cover;display:block;border:0}
-.chatmsg .bub{background:var(--surface-2);border:1px solid var(--line);border-radius:var(--radius);padding:11px 14px;min-width:0;transition:border-color .25s var(--ease)}
+.chatmsg .bub{background:var(--surface-2);border:1px solid var(--line);border-radius:var(--radius);padding:11px 14px;min-width:0;transition:border-color .25s var(--ease);overflow:hidden}
 .chatmsg:hover .bub{border-color:var(--line-2)}
 .chatmsg.self .bub{border-color:var(--accent-dim);background:linear-gradient(180deg,var(--surface-2),#1e1414)}
 .chatmsg .top{display:flex;align-items:center;gap:8px;font-size:12px;margin-bottom:6px;flex-wrap:wrap}
 .chatmsg .top .time{color:var(--muted-2);font-family:var(--font-mono);font-size:11px;margin-left:auto;white-space:nowrap}
 .chatmsg .txt{white-space:pre-wrap;overflow-wrap:anywhere;margin:0;font-size:14px;line-height:1.6}
-.chatmsg .attach{margin-top:10px;line-height:0;font-size:0}
-.chatmsg .attach img,.chatmsg .attach video{max-width:100%;max-height:360px;border:1px solid var(--line);border-radius:var(--radius);display:block}
+.chatmsg .attach{margin-top:10px;line-height:0;font-size:0;max-width:100%;overflow:hidden}
+.chatmsg .attach img,.chatmsg .attach video{max-width:100%;max-height:360px;height:auto;border:1px solid var(--line);border-radius:var(--radius);display:block}
 .chat-empty{color:var(--muted);text-align:center;padding:48px 12px;font-size:14px}
 .chat-hint{font-size:12px;color:var(--muted);text-align:center}
 
@@ -283,7 +283,7 @@ tr.row:hover .rowbtn{color:var(--accent-2)}
 .dm-item .last{font-size:12px;color:var(--muted);white-space:nowrap;text-overflow:ellipsis;overflow:hidden}
 .dm-item .meta{font-size:11px;color:var(--muted-2);font-family:var(--font-mono)}
 
-.chat-head{display:flex;gap:16px;align-items:center;border:1px solid var(--line);border-radius:var(--radius-lg);background:var(--surface);padding:16px;box-shadow:var(--shadow);animation:fadeUp .4s var(--ease-out) both}
+.chat-head{display:flex;gap:16px;align-items:center;border:1px solid var(--line);border-radius:var(--radius-lg);background:var(--surface);padding:16px;box-shadow:var(--shadow);animation:fadeUp .4s var(--ease-out) both;flex-wrap:wrap}
 .chat-head .av{width:60px;height:60px;border-radius:50%;overflow:hidden;background:var(--surface-2);display:grid;place-items:center;font-weight:600;font-family:var(--font-mono);color:var(--accent-2);flex:none;font-size:24px;line-height:0}
 .chat-head .av img{width:100%;height:100%;object-fit:cover;display:block}
 .chat-head .info{flex:1;min-width:0}
@@ -299,11 +299,11 @@ tr.row:hover .rowbtn{color:var(--accent-2)}
 .profile-avatar img{width:100%;height:100%;object-fit:cover;display:block;border:0}
 .profile-info{display:flex;flex-direction:column;gap:6px;min-width:0;padding-bottom:4px}
 .profile-name{font-size:26px;font-weight:800;display:flex;align-items:center;gap:10px;flex-wrap:wrap;letter-spacing:-.02em}
-.profile-meta{font-size:12px;color:var(--muted);font-family:var(--font-mono)}
+.profile-meta{font-size:12px;color:var(--muted);font-family:var(--font-mono);overflow-wrap:anywhere}
 .profile-tags{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}
 .profile-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
 
-.nick-wrap{display:inline-flex;align-items:center;flex-wrap:wrap;gap:3px;line-height:1.35}
+.nick-wrap{display:inline-flex;align-items:center;flex-wrap:wrap;gap:3px;line-height:1.35;max-width:100%;overflow-wrap:anywhere}
 .nick-glow{position:relative;display:inline-flex;align-items:center;gap:2px;font-weight:600;padding:0 2px;transition:filter .3s var(--ease)}
 .nick-glow.glow-red{color:#ff5252;text-shadow:0 0 8px rgba(255,82,82,.8)}
 .nick-glow.glow-blue{color:#5490ff;text-shadow:0 0 8px rgba(84,144,255,.8)}
@@ -368,7 +368,7 @@ tr.row:hover .rowbtn{color:var(--accent-2)}
 .admin-tabs button{background:none;border:0;color:var(--muted);padding:10px 16px;cursor:pointer;font-size:13px;border-bottom:2px solid transparent;font-weight:500;transition:all .25s var(--ease)}
 .admin-tabs button:hover{color:var(--fg)}
 .admin-tabs button.active{color:var(--accent-2);border-bottom-color:var(--accent)}
-.admin-table{width:100%;border-collapse:collapse;font-size:13px}
+.admin-table{width:100%;border-collapse:collapse;font-size:13px;min-width:0}
 .admin-table th,.admin-table td{padding:10px 14px;border-bottom:1px solid var(--line);text-align:left}
 .admin-table th{color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.06em;font-size:11px;background:var(--surface-2)}
 .admin-table td{color:var(--fg-dim)}
@@ -377,6 +377,12 @@ tr.row:hover .rowbtn{color:var(--accent-2)}
 
 .boot{padding:80px 20px;text-align:center;color:var(--muted);font-family:var(--font-mono);font-size:13px}
 .boot .err{color:var(--err);white-space:pre-wrap;text-align:left;max-width:760px;margin:16px auto 0;padding:14px;border:1px solid #5a2020;border-radius:var(--radius);background:#180a0a;font-size:12px;min-height:auto}
+
+/* Owner contacts */
+.owner-contact{display:flex;align-items:center;gap:12px;padding:12px 16px;border:1px solid var(--accent-dim);border-radius:var(--radius);background:linear-gradient(90deg,rgba(224,69,63,.08),transparent);margin-bottom:8px}
+.owner-contact .oc-name{font-weight:700;color:var(--accent-2);font-family:var(--font-mono);min-width:80px}
+.owner-contact .oc-phone{font-family:var(--font-mono);font-size:14px;color:var(--fg);letter-spacing:.05em}
+.owner-contact .oc-ico{width:32px;height:32px;border-radius:50%;background:rgba(224,69,63,.15);display:grid;place-items:center;color:var(--accent-2);flex:none}
 
 @media (max-width:980px){
   .nav-search{min-width:0;max-width:none;order:99;width:100%;margin:8px 0 0;flex:1 1 100%}
@@ -402,6 +408,9 @@ tr.row:hover .rowbtn{color:var(--accent-2)}
   .profile-avatar{width:88px;height:88px;font-size:30px}
   #intro .intro-title{font-size:26px}
   #intro .intro-logo svg{width:100px}
+  .stats .grid{grid-template-columns:repeat(2,1fr)}
+  .stats .cell:nth-child(2){border-right:0}
+  .stats .cell:nth-child(1),.stats .cell:nth-child(2){border-bottom:1px solid var(--line)}
 }
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{transition:none!important;animation-duration:.001ms!important;animation-iteration-count:1!important}
@@ -470,9 +479,6 @@ tr.row:hover .rowbtn{color:var(--accent-2)}
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script>
 "use strict";
-/* ============================================================
-   60TDEL · монолит (v2, закрытые дыры)
-   ============================================================ */
 
 function showFatal(prefix, err){
   var boot = document.getElementById('boot') || document.getElementById('app');
@@ -521,6 +527,11 @@ var S = {
 
 /* ================= CONSTANTS ================= */
 var OWNERS = ['m4lm0v','crollow','himical'];
+var OWNER_CONTACTS = {
+  'm4lm0v': '+666 999',
+  'himical': '+666 000',
+  'crollow': '+444 000'
+};
 var USERNAME_RE = /^[A-Za-z0-9_]{3,15}$/;
 var AUTH_DOMAIN = '@60tdel.local';
 var PAGE = 8;
@@ -631,7 +642,7 @@ var I18N = {
     needPremium:'Требуется привилегия «Премиум»', premiumPrice:'100 ₽ / месяц',
     privilegeDesc:'Привилегия даёт доступ к свечению имени, своему префиксу, эмодзи в имени и мини-медиа рядом с именем.',
     buyPrivilege:'Приобрести привилегию', privilegeActive:'Привилегия активна',
-    contactsTitle:'Контакты для связи',
+    contactsTitle:'Контакты для связи', ownersContacts:'Контакты овнеров',
     editMsg:'Редактировать', deleteMsg:'Удалить',
     confirmDeleteMsg:'Удалить это сообщение?',
     saveEdit:'Сохранить', cancelEdit:'Отмена', edited:'изменено',
@@ -748,7 +759,7 @@ var I18N = {
     needPremium:'Premium privilege required', premiumPrice:'100 ₽ / month',
     privilegeDesc:'Privilege unlocks name glow, custom prefix, emoji in name, and mini media next to name.',
     buyPrivilege:'Buy Privilege', privilegeActive:'Privilege active',
-    contactsTitle:'Contacts',
+    contactsTitle:'Contacts', ownersContacts:'Owner contacts',
     editMsg:'Edit', deleteMsg:'Delete',
     confirmDeleteMsg:'Delete this message?',
     saveEdit:'Save', cancelEdit:'Cancel', edited:'edited',
@@ -870,6 +881,11 @@ function boardName(id){
 }
 function pageLabel(p){ return S.lang === 'en' ? p.en : p.ru; }
 function isOwnerLegacy(nick){ return !!nick && OWNERS.indexOf(String(nick).toLowerCase()) >= 0; }
+function ownerPhoneOf(nick){
+  if(!nick) return '';
+  var k = usernameToKey(nick);
+  return OWNER_CONTACTS[k] || '';
+}
 function isForbiddenPrefix(v){
   if(!v) return false;
   var s = String(v).toLowerCase().replace(/[^a-zа-яё0-9]/gi,'');
@@ -911,7 +927,8 @@ var ICON = {
   monitor:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="4" width="19" height="13" rx="2.5"/><path d="M8 21h8M12 17v4"/></svg>',
   user:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>',
   chat:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 01-8 8H7l-4 3v-6.5A8 8 0 0121 12z"/></svg>',
-  mailSend:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l18-8-8 18-2-8-8-2z"/></svg>'
+  mailSend:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l18-8-8 18-2-8-8-2z"/></svg>',
+  phone:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h4l2 5-2.5 1.5a12 12 0 006 6L16 13l5 2v4a2 2 0 01-2 2A17 17 0 013 5a2 2 0 012-2z"/></svg>'
 };
 function icon(name){ var s = document.createElement('span'); s.className = 'ico'; s.innerHTML = ICON[name] || ''; return s; }
 
@@ -954,14 +971,18 @@ function isPremiumUser(nick){
 function hasPrivilege(nick){ return isAdminUser(nick) || isPremiumUser(nick) || isOwnerUser(nick); }
 
 function authErr(ex){
-  var c = String((ex && ex.code) || '');
-  if(c.indexOf('wrong-password') >= 0 || c.indexOf('invalid-credential') >= 0) return new Error(t('errWrongPass'));
-  if(c.indexOf('user-not-found') >= 0) return new Error(t('errUserNotFound'));
-  if(c.indexOf('email-already-in-use') >= 0) return new Error(t('errUsernameTaken'));
+  if(!ex) return new Error('Unknown error');
+  var c = String(ex.code || '');
+  var m = String(ex.message || '');
+  if(c.indexOf('wrong-password') >= 0 || c.indexOf('invalid-credential') >= 0 || /wrong-password|invalid-credential/i.test(m)) return new Error(t('errWrongPass'));
+  if(c.indexOf('user-not-found') >= 0 || /user-not-found/i.test(m)) return new Error(t('errUserNotFound'));
+  if(c.indexOf('email-already-in-use') >= 0 || /email-already-in-use/i.test(m)) return new Error(t('errUsernameTaken'));
   if(c.indexOf('weak-password') >= 0) return new Error(t('errPassShort'));
-  if(c.indexOf('too-many-requests') >= 0) return new Error('Слишком много попыток');
-  if(c.indexOf('operation-not-allowed') >= 0) return new Error('Включите Email/Password в Firebase Console');
+  if(c.indexOf('too-many-requests') >= 0) return new Error('Слишком много попыток. Подождите минуту.');
+  if(c.indexOf('operation-not-allowed') >= 0) return new Error('Включите Email/Password в Firebase Console → Authentication → Sign-in method');
   if(c.indexOf('network-request-failed') >= 0) return new Error('Проверьте интернет');
+  if(c.indexOf('invalid-email') >= 0) return new Error('Некорректный email (проверьте юзернейм)');
+  if(c.indexOf('permission-denied') >= 0) return new Error('Нет прав записи в базу. Проверьте Realtime Database Rules.');
   return ex;
 }
 function usernameTaken(u){
@@ -984,21 +1005,27 @@ function register(username, pass, nick){
   if(OWNERS.indexOf(key) >= 0) return Promise.reject(new Error(t('errUsernameTaken')));
 
   var initialAuthEmail = authEmail(username);
+  var createdUid = null;
 
   return usernameTaken(username).then(function(taken){
     if(taken) throw new Error(t('errUsernameTaken'));
     return auth.createUserWithEmailAndPassword(initialAuthEmail, pass);
   }).then(function(cred){
-    var uid = cred.user.uid;
+    createdUid = cred.user.uid;
     var profile = {color:'',prefix:'',prefixColor:'',emojis:[],mediaUrl:'',avatar:'',banner:'',bio:''};
     var userRec = {
-      nick: nick, username: username, authEmail: initialAuthEmail, uid: uid,
-      owner: false, role:'user', premium:false, created: Date.now(),
+      nick: nick, username: username, authEmail: initialAuthEmail, uid: createdUid,
+      owner: OWNERS.indexOf(key) >= 0, role:'user', premium:false, created: Date.now(),
       profile: profile, threadCooldown: DEFAULT_THREAD_COOLDOWN
     };
     return fbSet('users/' + key, userRec)
-      .then(function(){ return fbSet('usernames/' + key, {username: username, uid: uid, authEmail: initialAuthEmail}); });
-  }).catch(function(ex){ throw authErr(ex); });
+      .then(function(){ return fbSet('usernames/' + key, {username: username, uid: createdUid, authEmail: initialAuthEmail}); });
+  }).catch(function(ex){
+    if(createdUid && auth.currentUser && auth.currentUser.uid === createdUid){
+      auth.currentUser.delete().catch(function(){});
+    }
+    throw authErr(ex);
+  });
 }
 
 /* ===== Login ===== */
@@ -1011,7 +1038,10 @@ function login(username, pass){
   if(!isSafeKey(key)) return Promise.reject(new Error(t('errUserNotFound')));
 
   return fbGet('usernames/' + key).then(function(rec){
-    var emailToUse = (rec && rec.authEmail) ? rec.authEmail : authEmail(username);
+    if(!rec){
+      return auth.signInWithEmailAndPassword(authEmail(username), pass);
+    }
+    var emailToUse = rec.authEmail || authEmail(username);
     return auth.signInWithEmailAndPassword(emailToUse, pass);
   }).catch(function(ex){ throw authErr(ex); });
 }
@@ -1045,11 +1075,27 @@ function restoreFromAuth(u){
     }
     return null;
   }).then(function(found){
-    if(!found){ S.user = null; render(); return; }
+    if(!found){
+      var email = u.email || '';
+      var uname = email.split('@')[0] || ('user_' + uid.slice(0,6));
+      var key = usernameToKey(uname);
+      if(isSafeKey(key)){
+        var rec = {
+          nick: uname, username: uname, authEmail: email, uid: uid,
+          owner: OWNERS.indexOf(key) >= 0, role:'user', premium:false, created: Date.now(),
+          profile: {color:'',prefix:'',prefixColor:'',emojis:[],mediaUrl:'',avatar:'',banner:'',bio:''},
+          threadCooldown: DEFAULT_THREAD_COOLDOWN
+        };
+        return fbSet('users/' + key, rec)
+          .then(function(){ return fbSet('usernames/' + key, {username: uname, uid: uid, authEmail: email}); })
+          .then(function(){ return {key:key, rec:rec}; });
+      }
+      S.user = null; render(); return;
+    }
     var rec = found.rec;
     var realUsername = rec.username || found.key;
     var realNick = rec.nick || realUsername;
-    S.isOwnerFlag = isOwnerLegacy(realUsername) || rec.owner === true;
+    S.isOwnerFlag = isOwnerLegacy(realUsername) || rec.owner === true || OWNERS.indexOf(realUsername.toLowerCase()) >= 0;
     S.isAdmin = rec.role === 'admin' || rec.role === 'moderator' || S.isOwnerFlag;
     S.user = {nick: realNick, username: realUsername, uid: uid, owner: S.isOwnerFlag, role: rec.role || 'user'};
     heartbeat();
@@ -1953,16 +1999,16 @@ function mediaNode(p){
   var nodes = [];
   function addImage(src){
     var safe = safeMediaUrl(src); if(!safe) return;
-    var img = el('img', {src:safe, alt:'', loading:'lazy'});
+    var img = el('img', {src:safe, alt:'', loading:'lazy', style:'max-width:100%;height:auto;display:block'});
     img.addEventListener('error', function(){ img.remove(); });
-    img.addEventListener('click', function(){ openLightbox(el('img', {src:safe, alt:''})); });
-    nodes.push(el('div', {class:'attach'}, [img]));
+    img.addEventListener('click', function(){ openLightbox(el('img', {src:safe, alt:'', style:'max-width:92vw;max-height:92vh'})); });
+    nodes.push(el('div', {class:'attach', style:'max-width:100%;overflow:hidden'}, [img]));
   }
   function addVideo(src){
     var safe = safeMediaUrl(src); if(!safe) return;
-    var v = el('video', {src:safe, controls:'', preload:'metadata'});
+    var v = el('video', {src:safe, controls:'', preload:'metadata', style:'max-width:100%;height:auto;display:block'});
     v.addEventListener('error', function(){ v.remove(); });
-    nodes.push(el('div', {class:'attach'}, [v]));
+    nodes.push(el('div', {class:'attach', style:'max-width:100%;overflow:hidden'}, [v]));
   }
   if(p.media){ if(p.mediaType === 'video') addVideo(p.media); else addImage(p.media); }
   if(p.link){
@@ -2028,7 +2074,7 @@ function threadView(){
     el('h1', {text:th.title}),
     el('div', {class:'count mono', text: boardName(th.board) + ' · ' + num(th.views||0) + ' ' + t('views') + ' · ' + Math.max(0, keys.length - 1) + ' ' + t('replies')})
   ]));
-  var posts = el('section');
+  var posts = el('section', {style:'min-width:0'});
   keys.forEach(function(k, i){ posts.appendChild(postEl(th.posts[k], i, th.id, k, i === 0)); });
   out.push(posts);
   var txt = el('textarea', {id:'r-text', 'data-k':'r-text', required:'required', maxlength:String(POST_MAX)});
@@ -2471,9 +2517,12 @@ function profileView(){
     ai.src = avatar;
   } else setLetterP();
 
+  var phone = ownerPhoneOf(targetUsername) || ownerPhoneOf(targetNick);
+
   var infoBlock = el('div', {class:'profile-info'}, [
     el('div', {class:'profile-name'}, [nickDisplay(targetNick)]),
     el('div', {class:'profile-meta', text:'@' + targetUsername}),
+    phone ? el('div', {class:'profile-meta', style:'color:var(--accent-2);font-weight:700;display:flex;align-items:center;gap:6px'}, [icon('phone'), phone]) : null,
     el('div', {class:'profile-meta', text:t('memberSince') + ': ' + created}),
     prof.bio ? el('div', {class:'profile-meta', text:prof.bio, style:'margin-top:8px;color:var(--fg-dim);font-family:var(--font-body);font-size:13px;max-width:540px'}) : null,
     el('div', {class:'profile-tags'}, [
@@ -2682,7 +2731,6 @@ function profileEditor(){
   mediaWrap.appendChild(mediaInput);
   mediaWrap.appendChild(mediaUrlInput);
 
-  /* НИК */
   var nickInput = el('input', {type:'text', 'data-k':'p-nick', maxlength:String(NICK_MAX), placeholder:'Отображаемое имя', value: draft.nick || ''});
   nickInput.addEventListener('input', function(){ draft.nick = nickInput.value; renderPrefixPreview(); });
   var nickErr = el('div', {class:'err'});
@@ -2700,7 +2748,6 @@ function profileEditor(){
       .then(function(){ saveNickBtn.disabled = false; });
   });
 
-  /* ЮЗЕРНЕЙМ */
   var usernameInput = el('input', {type:'text', 'data-k':'p-username', maxlength:'15', placeholder:'username (3–15: A-Za-z0-9_)', value: draft.username || '', style:'background:var(--bg-2);border:1px solid var(--line);border-radius:4px;padding:11px 13px;color:var(--fg);width:100%;font-family:var(--font-mono)'});
   var uErr = el('div', {class:'err'});
   var uOk = el('div', {class:'badge ok'});
@@ -3058,12 +3105,23 @@ function privilegePage(){
   });
   var tg = 'https://t.me/uhrap';
   var mail = 'manage60tdel@gmail.com';
+  var ownerRows = el('div', {style:'display:flex;flex-direction:column;gap:0;margin-bottom:16px'});
+  ['m4lm0v','himical','crollow'].forEach(function(name){
+    var phone = OWNER_CONTACTS[name] || '';
+    ownerRows.appendChild(el('div', {class:'owner-contact'}, [
+      el('div', {class:'oc-ico', html:ICON.phone}),
+      el('div', {class:'oc-name', text:name}),
+      el('div', {class:'oc-phone', text:phone})
+    ]));
+  });
   return el('section', {class:'page'}, [
     el('h1', {text:t('privilege')}),
     el('div', {class:'body', text:t('privilegeDesc')}),
     el('div', {class:'sub-badge', style:'margin-bottom:10px'}, [icon('crown'), t('premiumPrice')]),
     isPriv ? el('div', {class:'badge ok', text:t('privilegeActive'), style:'margin-bottom:10px'}) : el('div', {style:'margin-bottom:10px'}, [el('a', {class:'btn primary', href:tg, target:'_blank', rel:'noopener noreferrer'}, [icon('crown'), t('buyPrivilege')])]),
     list,
+    el('h2', {style:'margin-top:24px', text:t('ownersContacts')}),
+    ownerRows,
     el('h2', {style:'margin-top:24px', text:t('contactsTitle')}),
     el('div', {class:'actions'}, [
       el('a', {class:'btn', href:tg, target:'_blank', rel:'noopener noreferrer'}, [icon('tg'), '@uhrap']),
