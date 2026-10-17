@@ -11,7 +11,6 @@
 /* ================= ANIMATIONS ================= */
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-@keyframes popIn { 0% { opacity: 0; transform: scale(0.95); } 100% { opacity: 1; transform: scale(1); } }
 .anim-fade { animation: fadeIn 0.4s ease forwards; }
 .anim-slide { animation: slideDown 0.3s ease forwards; }
 
@@ -320,12 +319,20 @@ function openLightbox(url) {
 }
 
 // ================= USER HELPERS =================
+// Если база хранит записи под ником (а не UID), эта функция найдет их
+function getUserRecord(uidOrNick) {
+  if (!uidOrNick) return null;
+  if (state.users[uidOrNick]) return state.users[uidOrNick];
+  // Ищем по нику, если uid не совпал
+  return Object.values(state.users).find(u => u.nick && u.nick.toLowerCase() === String(uidOrNick).toLowerCase());
+}
+
 function getNickDisplay(uid, fallbackNick) {
-  const u = state.users[uid];
+  const u = getUserRecord(uid);
   
-  // Если профиль удален или это старый пост, выводим сохраненное имя (fallbackNick)
+  // Выводим фолбек (сохраненное имя), если профиль не найден
   if(!u) {
-    return el('span', {text: fallbackNick || t('anonymous'), style:'color:#aaa'});
+    return el('span', {text: fallbackNick || 'User', style:'color:#aaa'});
   }
 
   let prefix = '';
@@ -343,12 +350,12 @@ function getNickDisplay(uid, fallbackNick) {
   if(u.profile?.emojis?.[0]) wrap.appendChild(el('span', {text: u.profile.emojis[0], style:'margin-left:2px'}));
   
   wrap.style.cursor = 'pointer';
-  wrap.onclick = (e) => { e.stopPropagation(); state.view = 'profile'; state.profileUser = uid; render(); };
+  wrap.onclick = (e) => { e.stopPropagation(); state.view = 'profile'; state.profileUser = u.uid || uid; render(); };
   return wrap;
 }
 
 function getAvatar(uid, size=40) {
-  const u = state.users[uid];
+  const u = getUserRecord(uid);
   const av = el('div', {class:'avatar', style:`width:${size}px;height:${size}px;font-size:${size*0.4}px`});
   if(u && u.profile?.avatar) av.appendChild(el('img', {src: safeMediaUrl(u.profile.avatar)}));
   else av.textContent = (u?.nick || '?').charAt(0).toUpperCase();
@@ -382,6 +389,7 @@ function authView() {
       } else {
         const cred = await auth.createUserWithEmailAndPassword(fakeEmail, passInp.value);
         const uid = cred.user.uid;
+        // ВАЖНО: Сохраняем профиль по UID
         await fbSet('users/' + uid, {
           uid, email: fakeEmail, nick, role: 'user', owner: OWNERS.includes(nick.toLowerCase()), created: Date.now(),
           profile: { avatar: '', banner: '', bio: '', color: '', prefix: '', emojis: [], mediaUrl: '' }
@@ -521,14 +529,14 @@ function threadView() {
 function profileView() {
   if(!state.user) return [el('div', {text:currentLang==='ru'?'Войдите, чтобы просмотреть профиль':'Login to view profile'})];
   const uid = state.profileUser || state.user.uid;
-  const u = state.users[uid] || {};
-  const isMe = uid === state.user.uid;
+  const u = getUserRecord(uid) || {};
+  const isMe = u.uid === state.user.uid || uid === state.user.uid;
   const prof = u.profile || {};
 
   // Считаем статистику юзера
   let topicsCount = 0;
   state.threads.forEach(th => {
-    if(th.uid === uid) topicsCount++;
+    if(th.uid === u.uid || th.author === u.nick) topicsCount++;
   });
 
   const avatarHtml = prof.avatar ? `<img src="${safeMediaUrl(prof.avatar)}">` : (u.nick || '?').charAt(0).toUpperCase();
@@ -543,7 +551,7 @@ function profileView() {
       el('div', {class:'profile-avatar', html: avatarHtml}),
       el('div', {class:'profile-details'}, [
         el('div', {class:'profile-name-row'}, [
-          el('div', {class:'profile-username'}, [getNickDisplay(uid)]),
+          el('div', {class:'profile-username'}, [getNickDisplay(u.uid || uid)]),
           !isMe ? el('button', {class:'btn-follow', text:'follow'}) : el('button', {class:'btn', text:t('edit_prof'), onclick:() => { state.profileEdit = !state.profileEdit; state.profileDraft = { ...prof, nick: u.nick }; render(); }})
         ]),
         el('div', {class:'profile-stats-small', html:`<b>1</b> following &nbsp; <b>2</b> followers`})
@@ -593,7 +601,7 @@ function profileView() {
       el('div', {style:'display:flex; gap:10px'}, [
         el('button', {class:'btn primary', text:t('save'), onclick: async () => {
           try {
-            await fbUpdate('users/' + uid, { nick: d.nick, profile: d });
+            await fbUpdate('users/' + u.uid, { nick: d.nick, profile: d });
             state.profileEdit = false; render();
           } catch(e) { err.textContent = e.message; }
         }}),
@@ -623,8 +631,6 @@ function chatListView() {
 
   const body = el('tbody');
   Object.values(state.chats).sort((a,b) => (b.date||0) - (a.date||0)).forEach(c => {
-    if (!c.uid) c.uid = 'Unknown'; // Защита от старых записей
-    
     body.appendChild(el('tr', {style:'cursor:pointer', onclick: () => { 
         state.view = 'chat'; 
         state.chatId = c.id; 
@@ -632,7 +638,7 @@ function chatListView() {
     }}, [
       el('td', {text: c.name || 'Без названия'}),
       el('td', {text: Object.keys(c.messages || {}).length}),
-      el('td', null, [getNickDisplay(c.uid, c.author)]) // Подставляем имя из чата
+      el('td', null, [getNickDisplay(c.uid, c.author)]) 
     ]));
   });
   
@@ -716,7 +722,7 @@ function membersView() {
   const out = [el('h2', {text:t('users')})];
   const body = el('tbody');
   Object.values(state.users).forEach(u => {
-    if(!u || !u.nick) return; // Скрываем битые профили
+    if(!u || !u.nick) return; 
     
     body.appendChild(el('tr', null, [
       el('td', null, [getNickDisplay(u.uid)]),
@@ -815,17 +821,30 @@ db.ref('dms').on('value', snap => {
 
 auth.onAuthStateChanged(async u => {
   if(u) {
-    state.user = { uid: u.uid, email: u.email, nick: 'User' };
-    try {
-      const rec = await fbGet('users/' + u.uid);
-      if(rec) {
-        state.user = { ...state.user, ...rec };
-      } else {
-        const defaultNick = u.email.split('@')[0] || 'User_'+u.uid.slice(0,4);
-        await fbSet('users/' + u.uid, { uid: u.uid, email: u.email, nick: defaultNick, role: 'user', owner: false, created: Date.now(), profile: {} });
-        state.user.nick = defaultNick;
+    // Ищем профиль по UID. Если не нашли — создаем
+    let rec = await fbGet('users/' + u.uid);
+    
+    // Если профиля нет, но раньше сохраняли под ником, попробуем найти по нику
+    if(!rec) {
+      const defaultNick = u.email.split('@')[0];
+      const usersSnap = await fbGet('users');
+      if(usersSnap) {
+         const foundByNick = Object.values(usersSnap).find(user => user.nick && user.nick.toLowerCase() === defaultNick.toLowerCase());
+         if(foundByNick) {
+           rec = foundByNick;
+           // Мигрируем запись на UID
+           await fbSet('users/' + u.uid, { ...rec, uid: u.uid });
+         }
       }
-    } catch(e) { console.error(e); }
+    }
+
+    if(rec) {
+      state.user = { uid: u.uid, email: u.email, nick: rec.nick, owner: rec.owner, role: rec.role };
+    } else {
+      const defaultNick = u.email.split('@')[0] || 'User_'+u.uid.slice(0,4);
+      await fbSet('users/' + u.uid, { uid: u.uid, email: u.email, nick: defaultNick, role: 'user', owner: false, created: Date.now(), profile: {} });
+      state.user = { uid: u.uid, email: u.email, nick: defaultNick };
+    }
   } else {
     state.user = null;
   }
