@@ -181,137 +181,197 @@ firebase.initializeApp({
   messagingSenderId: "246430149246",
   appId: "1:246430149246:web:a6a5802ff2f6166a70862f"
 });
-const auth = firebase.auth(), db = firebase.database();
+const auth = firebase.auth();
+const db = firebase.database();
 
 const get = p => db.ref(p).once('value').then(s => s.exists() ? s.val() : null);
-const set = (p,v) => db.ref(p).set(v);
-const upd = (p,v) => db.ref(p).update(v);
-const del = (p) => db.ref(p).remove();
+const set = (p, v) => db.ref(p).set(v);
+const upd = (p, v) => db.ref(p).update(v);
+const del = p => db.ref(p).remove();
 
 const T = {
-  ru: {login:'Войти', reg:'Регистрация', out:'Выйти', send:'Отправить', save:'Сохранить', cancel:'Отмена', edit:'Редактировать профиль', pass:'Пароль', nick:'Никнейм', auth:'Вход', reg_title:'Регистрация', no_acc:'Нет аккаунта? ', has_acc:'Есть аккаунт? ', create:'Создать'},
-  en: {login:'Login', reg:'Register', out:'Logout', send:'Send', save:'Save', cancel:'Cancel', edit:'Edit Profile', pass:'Password', nick:'Username', auth:'Login', reg_title:'Register', no_acc:'No account? ', has_acc:'Have account? ', create:'Create'}
+  ru: {login:'Войти', reg:'Регистрация', out:'Выйти', send:'Отправить', save:'Сохранить', cancel:'Отмена', edit:'Редактировать профиль', pass:'Пароль', nick:'Никнейм', auth:'Вход', reg_title:'Регистрация', no_acc:'Нет аккаунта? ', has_acc:'Есть аккаунт? '},
+  en: {login:'Login', reg:'Register', out:'Logout', send:'Send', save:'Save', cancel:'Cancel', edit:'Edit Profile', pass:'Password', nick:'Username', auth:'Login', reg_title:'Register', no_acc:'No account? ', has_acc:'Have account? '}
 };
 let lang = localStorage.getItem('lang') || 'ru';
 const t = k => T[lang][k] || k;
 
-let S = { view: 'list', authMode: 'login', open: null, threads: [], user: null, users: {}, chats: {}, chatId: null, profile: null, edit: false, draft: null, page: 1, limit: 10 };
-const EMOJIS = ['💀','🔥','⚡','🩸','⛧','🦇','🕷️','🕸️','☠️','🎯','🔪','🗡️','⚔️','🧨','💣','🦅','🐺','👁️','🔮','🧿'];
+// всё состояние в одной куче
+let S = {view:'list', authMode:'login', open:null, threads:[], user:null, users:{}, chats:{}, chatId:null, profile:null, edit:false, draft:null, page:1, limit:10};
 
-const el = (tag, attrs, kids) => {
+// маленький помощник чтобы не писать createElement каждый раз
+function el(tag, attrs, kids) {
   const e = document.createElement(tag);
-  if(attrs) for(const k in attrs){
-    if(k === 'class') e.className = attrs[k];
-    else if(k === 'text') e.textContent = attrs[k];
-    else if(k === 'html') e.innerHTML = attrs[k];
-    else if(k.startsWith('on')) e.addEventListener(k.slice(2), attrs[k]);
-    else e.setAttribute(k, attrs[k]);
+  for (const k in (attrs || {})) {
+    const v = attrs[k];
+    if (k == 'class') e.className = v;
+    else if (k == 'text') e.textContent = v;
+    else if (k == 'html') e.innerHTML = v;
+    else if (k.startsWith('on')) e.addEventListener(k.slice(2), v);
+    else e.setAttribute(k, v);
   }
-  for(const c of (kids||[])) if(c) e.appendChild(typeof c === 'string' ? document.createTextNode(c) : c);
+  (kids || []).forEach(c => {
+    if (c) e.appendChild(typeof c == 'string' ? document.createTextNode(c) : c);
+  });
   return e;
-};
+}
 
-const fmt = ts => ts ? new Date(ts).toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'en-GB',{day:'numeric',month:'short',year:'numeric'}) : '—';
-const isAdmin = () => S.user && (S.user.owner || S.user.role === 'admin');
+function fmt(ts) {
+  if (!ts) return '—';
+  return new Date(ts).toLocaleDateString(lang == 'ru' ? 'ru-RU' : 'en-GB', {day:'numeric', month:'short', year:'numeric'});
+}
+function isAdmin() { return S.user && (S.user.owner || S.user.role == 'admin'); }
 
 function setLang(l) {
   lang = l;
   localStorage.setItem('lang', l);
-  document.getElementById('btn-ru').className = l === 'ru' ? 'active' : '';
-  document.getElementById('btn-en').className = l === 'en' ? 'active' : '';
-  document.getElementById('footer-rights').textContent = l === 'ru' ? 'Все права защищены' : 'All rights reserved';
+  document.getElementById('btn-ru').className = l == 'ru' ? 'active' : '';
+  document.getElementById('btn-en').className = l == 'en' ? 'active' : '';
+  document.getElementById('footer-rights').textContent = l == 'ru' ? 'Все права защищены' : 'All rights reserved';
   draw();
 }
 
-async function compress(file) {
+// ужимаем картинку до ~200кб, иначе база разбухает
+function compress(file) {
   return new Promise(res => {
     const r = new FileReader();
     r.onload = () => {
-      const i = new Image();
-      i.onload = () => {
-        let w = i.width, h = i.height, sc = Math.min(1, 1000/Math.max(w,h));
-        w = Math.round(w*sc); h = Math.round(h*sc);
-        const c = document.createElement('canvas'); c.width = w; c.height = h;
-        c.getContext('2d').drawImage(i, 0, 0, w, h);
-        let q = 0.8, u = c.toDataURL('image/jpeg', q);
-        while(u.length * 0.75 > 200000 && q > 0.1){ q -= 0.1; u = c.toDataURL('image/jpeg', q); }
+      const img = new Image();
+      img.onload = () => {
+        const sc = Math.min(1, 1000 / Math.max(img.width, img.height));
+        const w = Math.round(img.width * sc), h = Math.round(img.height * sc);
+        const c = document.createElement('canvas');
+        c.width = w; c.height = h;
+        c.getContext('2d').drawImage(img, 0, 0, w, h);
+        let q = 0.8;
+        let u = c.toDataURL('image/jpeg', q);
+        while (u.length * 0.75 > 200000 && q > 0.1) {
+          q -= 0.1;
+          u = c.toDataURL('image/jpeg', q);
+        }
         res(u);
       };
-      i.src = r.result;
+      img.src = r.result;
     };
     r.readAsDataURL(file);
   });
 }
 
+// ищем юзера по uid, если нет - по нику (для старых постов)
 function getUser(id) {
   if (!id) return null;
-  return S.users[id] || Object.values(S.users).find(u => u.nick?.toLowerCase() === String(id).toLowerCase());
+  if (S.users[id]) return S.users[id];
+  // это мы сами, а в базе записи нет (или она не прочиталась)
+  if (S.user && S.user.uid == id) return S.user;
+  const low = String(id).toLowerCase();
+  return Object.values(S.users).find(u => u.nick && u.nick.toLowerCase() == low) || null;
 }
 
+// второй аргумент - ник из самого поста, на случай если юзера в базе нет
 function nick(id, fallback) {
   const u = getUser(id);
   if (!u) return el('span', {text: fallback || 'User', style: 'color:#aaa'});
-  
-  let pre = '';
-  if(u.owner) pre = el('span', {class: 'nick-prefix prefix-owner', text: '[Founder]'});
-  else if(u.role === 'admin') pre = el('span', {class: 'nick-prefix prefix-admin', text: '[Admin]'});
 
-  const n = el('span', {text: u.nick || 'User'});
-  const w = el('span', {style: 'display:inline-flex;align-items:center;gap:4px;cursor:pointer'}, [pre, n]);
-  if(u.profile?.mediaUrl) w.prepend(el('img', {class: 'nick-media', src: u.profile.mediaUrl}));
-  
-  w.onclick = e => { e.stopPropagation(); S.view = 'profile'; S.profile = u.uid || id; draw(); };
+  let pre = '';
+  if (u.owner) pre = el('span', {class:'nick-prefix prefix-owner', text:'[Founder]'});
+  else if (u.role == 'admin') pre = el('span', {class:'nick-prefix prefix-admin', text:'[Admin]'});
+
+  const w = el('span', {style:'display:inline-flex;align-items:center;gap:4px;cursor:pointer'}, [pre, el('span', {text: u.nick || fallback || 'User'})]);
+  if (u.profile && u.profile.mediaUrl) w.prepend(el('img', {class:'nick-media', src: u.profile.mediaUrl}));
+
+  w.onclick = e => {
+    e.stopPropagation();
+    S.view = 'profile';
+    S.profile = u.uid || id;
+    draw();
+  };
   return w;
 }
 
-function avatar(id, sz = 40) {
+function avatar(id, sz) {
+  sz = sz || 40;
   const u = getUser(id);
-  const a = el('div', {class: 'avatar', style: `width:${sz}px;height:${sz}px;font-size:${sz*0.4}px`});
-  if(u?.profile?.avatar) a.appendChild(el('img', {src: u.profile.avatar}));
-  else a.textContent = (u?.nick || '?')[0].toUpperCase();
+  const a = el('div', {class:'avatar', style:`width:${sz}px;height:${sz}px;font-size:${sz*0.4}px`});
+  if (u && u.profile && u.profile.avatar) a.appendChild(el('img', {src: u.profile.avatar}));
+  else a.textContent = ((u && u.nick) || '?')[0].toUpperCase();
   return a;
 }
 
-function authView() {
-  const isL = S.authMode === 'login';
-  const err = el('div', {class: 'err'});
-  const n = el('input', {type: 'text', placeholder: t('nick'), maxlength: '15'});
-  const p = el('input', {type: 'password', placeholder: t('pass'), minlength: '6'});
+// ---------- вход / регистрация ----------
 
-  return [el('form', {class: 'auth', onsubmit: async e => {
+function authView() {
+  const isLogin = S.authMode == 'login';
+  const err = el('div', {class:'err'});
+  const n = el('input', {type:'text', placeholder: t('nick'), maxlength:'15'});
+  const p = el('input', {type:'password', placeholder: t('pass'), minlength:'6'});
+
+  const form = el('form', {class:'auth', onsubmit: async e => {
     e.preventDefault();
-    if(S._busy) return; S._busy = true; err.textContent = '';
-    
-    const user = n.value.trim().replace(/[^a-zA-Z0-9_]/g, '');
-    if(user.length < 3) { err.textContent = 'Ник от 3 символов'; S._busy = false; return; }
-    const email = user.toLowerCase() + '@60tdel.local';
+    if (S.busy) return;
+    S.busy = true;
+    err.textContent = '';
+
+    const name = n.value.trim().replace(/[^a-zA-Z0-9_]/g, '');
+    if (name.length < 3) {
+      err.textContent = 'Ник от 3 символов';
+      S.busy = false;
+      return;
+    }
+    const email = name.toLowerCase() + '@60tdel.local';
 
     try {
-      if(isL) await auth.signInWithEmailAndPassword(email, p.value);
-      else {
+      if (isLogin) {
+        await auth.signInWithEmailAndPassword(email, p.value);
+      } else {
+        // пока идёт регистрация onAuthStateChanged не трогаем, иначе он
+        // раньше времени подхватит юзера без записи в базе и поставит "user"
+        S.registering = true;
         const c = await auth.createUserWithEmailAndPassword(email, p.value);
-        await set('users/' + c.user.uid, { uid: c.user.uid, email, nick: user, role: 'user', owner: false, created: Date.now(), profile: {} });
+        // ник кладём и в сам аккаунт - так он не потеряется даже если база не пустит запись
+        await c.user.updateProfile({displayName: name});
+        try {
+          await set('users/' + c.user.uid, {uid: c.user.uid, email: email, nick: name, role:'user', owner:false, created: Date.now(), profile:{}});
+        } catch (ex) {
+          console.error('не записался юзер в базу', ex);
+        }
+        S.registering = false;
+        await loadUser(auth.currentUser);
       }
-      S.view = 'list'; draw();
-    } catch(ex) {
+      S.view = 'list';
+      draw();
+    } catch (ex) {
+      S.registering = false;
+      console.error(ex);
+      const code = ex.code || '';
       let m = ex.message;
-      if(ex.code?.includes('wrong-password') || ex.code?.includes('not-found')) m = 'Неверный ник или пароль';
-      if(ex.code?.includes('email-already')) m = 'Ник занят';
+      // firebase сейчас на любую ошибку логина отдаёт invalid-credential
+      if (/wrong-password|user-not-found|invalid-credential|invalid-login/.test(code)) m = 'Неверный ник или пароль';
+      else if (code.includes('email-already')) m = 'Ник занят';
+      else if (code.includes('weak-password')) m = 'Пароль минимум 6 символов';
+      else if (code.includes('too-many-requests')) m = 'Слишком много попыток, подожди пару минут';
+      else if (code.includes('network')) m = 'Нет связи с сервером';
+      else m = m + ' (' + code + ')';
       err.textContent = m;
     }
-    S._busy = false;
+    S.busy = false;
   }}, [
-    el('h2', {text: isL ? t('auth') : t('reg_title'), style: 'color:#fff;text-align:center'}),
+    el('h2', {text: isLogin ? t('auth') : t('reg_title'), style:'color:#fff;text-align:center'}),
     el('label', null, ['Никнейм', n]),
     el('label', null, [t('pass'), p]),
     err,
-    el('button', {class: 'btn primary', type: 'submit', text: isL ? t('login') : t('reg')}),
-    el('div', {class: 'switch'}, [
-      isL ? t('no_acc') : t('has_acc'),
-      el('button', {type: 'button', text: isL ? t('reg') : t('login'), onclick: () => { S.authMode = isL ? 'register' : 'login'; draw(); }})
+    el('button', {class:'btn primary', type:'submit', text: isLogin ? t('login') : t('reg')}),
+    el('div', {class:'switch'}, [
+      isLogin ? t('no_acc') : t('has_acc'),
+      el('button', {type:'button', text: isLogin ? t('reg') : t('login'), onclick: () => {
+        S.authMode = isLogin ? 'register' : 'login';
+        draw();
+      }})
     ])
-  ])];
+  ]);
+  return [form];
 }
+
+// ---------- список тем ----------
 
 function listView() {
   const art = `
@@ -323,71 +383,88 @@ function listView() {
 ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░  ░▒▓█▓▒░   ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        
  ░▒▓██████▓▒░░▒▓████████▓▒░  ░▒▓█▓▒░   ░▒▓███████▓▒░░▒▓████████▓▒░▒▓████████▓▒░ `;
 
-  const out = [el('div', {class: 'hero anim-fade'}, [
-    el('div', {class: 'hero-art', text: art}),
-    el('div', {class: 'links'}, [
-      el('a', {href: 'https://t.me/B2L3NC1AGA', target: '_blank', text: 'Official Telegram Channel'}),
-      el('a', {href: 'https://t.me/+ogE4l7ZAQ-g3NDZl', target: '_blank', text: 'Official Telegram Chat'})
+  const out = [el('div', {class:'hero anim-fade'}, [
+    el('div', {class:'hero-art', text: art}),
+    el('div', {class:'links'}, [
+      el('a', {href:'https://t.me/B2L3NC1AGA', target:'_blank', text:'Official Telegram Channel'}),
+      el('a', {href:'https://t.me/+ogE4l7ZAQ-g3NDZl', target:'_blank', text:'Official Telegram Chat'})
     ]),
-    el('div', {class: 'search'}, [
-      el('div', {class: 'sf'}, [el('input', {type: 'text', placeholder: 'Search...'}), el('button', {text: 'Search'})])
+    el('div', {class:'search'}, [
+      el('div', {class:'sf'}, [el('input', {type:'text', placeholder:'Search...'}), el('button', {text:'Search'})])
     ])
   ])];
 
   const tbody = el('tbody');
-  const paged = S.threads.slice((S.page - 1) * S.limit, S.page * S.limit);
+  const page = S.threads.slice((S.page - 1) * S.limit, S.page * S.limit);
 
-  if (!paged.length) tbody.appendChild(el('tr', null, [el('td', {colspan: '5', text: 'Нет тем.', style: 'text-align:center;padding:20px;color:#666'})]));
+  if (!page.length) {
+    tbody.appendChild(el('tr', null, [el('td', {colspan:'5', text:'Нет тем.', style:'text-align:center;padding:20px;color:#666'})]));
+  }
 
-  paged.forEach(th => {
-    const tr = el('tr', {class: th.pin ? 'pin' : '', style: 'cursor:pointer', onclick: () => { S.view = 'thread'; S.open = th.id; draw(); }}, [
+  page.forEach(th => {
+    const comments = Math.max(0, Object.keys(th.posts || {}).length - 1);
+    tbody.appendChild(el('tr', {class: th.pin ? 'pin' : '', style:'cursor:pointer', onclick: () => {
+      S.view = 'thread';
+      S.open = th.id;
+      draw();
+    }}, [
       el('td', {text: th.title}),
-      el('td', {class: 'num', text: String(Math.max(0, Object.keys(th.posts || {}).length - 1))}),
-      el('td', {class: 'num', text: String(th.views || 0)}),
+      el('td', {class:'num', text: String(comments)}),
+      el('td', {class:'num', text: String(th.views || 0)}),
       el('td', null, [nick(th.uid, th.author)]),
-      el('td', {class: 'date', text: fmt(th.date)})
-    ]);
-    tbody.appendChild(tr);
+      el('td', {class:'date', text: fmt(th.date)})
+    ]));
   });
 
-  out.push(el('div', {class: 'tablebox'}, [el('table', null, [
-    el('thead', null, [el('tr', null, ['Заголовок', 'Комменты', 'Просмотры', 'Автор', 'Дата'].map((t, i) => el('th', {text: t, class: i===1 || i===2 ? 'num' : i===4 ? 'date' : ''})))]),
+  const heads = ['Заголовок', 'Комменты', 'Просмотры', 'Автор', 'Дата'].map((x, i) =>
+    el('th', {text: x, class: (i == 1 || i == 2) ? 'num' : (i == 4 ? 'date' : '')}));
+
+  out.push(el('div', {class:'tablebox'}, [el('table', null, [
+    el('thead', null, [el('tr', null, heads)]),
     tbody
   ])]));
-
   return out;
 }
 
-function threadView() {
-  const th = S.threads.find(x => x.id === S.open);
-  if(!th) return [el('div', {text: 'Не найдено'})];
+// ---------- тема ----------
 
-  const out = [el('button', {class: 'btn', text: '← Назад', onclick: () => { S.view = 'list'; draw(); }, style: 'align-self:flex-start'}), el('h2', {text: th.title, style: 'margin:16px 0;color:#fff'})];
-  const posts = Object.values(th.posts || {}).sort((a,b) => a.date - b.date);
+function threadView() {
+  const th = S.threads.find(x => x.id == S.open);
+  if (!th) return [el('div', {text:'Не найдено'})];
+
+  const out = [
+    el('button', {class:'btn', text:'← Назад', style:'align-self:flex-start', onclick: () => { S.view = 'list'; draw(); }}),
+    el('h2', {text: th.title, style:'margin:16px 0;color:#fff'})
+  ];
+
+  // берём ключ вместе с постом, чтобы удалять нормально
+  const posts = Object.entries(th.posts || {}).map(([key, p]) => ({...p, key})).sort((a, b) => a.date - b.date);
 
   posts.forEach(p => {
-    out.push(el('div', {class: 'post'}, [
-      el('div', {class: 'who'}, [avatar(p.uid, 48), nick(p.uid, p.author)]),
-      el('div', {class: 'body'}, [
-        el('div', {class: 'meta'}, [
+    const mine = S.user && p.uid == S.user.uid;
+    out.push(el('div', {class:'post'}, [
+      el('div', {class:'who'}, [avatar(p.uid, 48), nick(p.uid, p.author || th.author)]),
+      el('div', {class:'body'}, [
+        el('div', {class:'meta'}, [
           el('span', {text: fmt(p.date)}),
-          (p.uid === S.user?.uid || isAdmin()) ? el('button', {class: 'btn small danger', text: '✕', onclick: () => {
-            if(confirm('Удалить?')) del(`threads/${th.id}/posts/${Object.keys(th.posts).find(k => th.posts[k].date === p.date)}`);
+          (mine || isAdmin()) ? el('button', {class:'btn small danger', text:'✕', onclick: () => {
+            if (confirm('Удалить?')) del(`threads/${th.id}/posts/${p.key}`);
           }}) : null
         ]),
-        el('div', {class: 'text', text: p.text}),
-        p.media ? el('img', {src: p.media, style: 'max-width:100%;margin-top:10px;border:1px solid #222'}) : null
+        el('div', {class:'text', text: p.text}),
+        p.media ? el('img', {src: p.media, style:'max-width:100%;margin-top:10px;border:1px solid #222'}) : null
       ])
     ]));
   });
 
-  if(S.user) {
-    const ta = el('textarea', {placeholder: 'Ответ...'});
-    out.push(el('div', {class: 'compose'}, [
+  if (S.user) {
+    const ta = el('textarea', {placeholder:'Ответ...'});
+    out.push(el('div', {class:'compose'}, [
       ta,
-      el('button', {class: 'btn primary', text: t('send'), onclick: async () => {
-        if(!ta.value.trim()) return;
-        await set(`threads/${th.id}/posts/p${Date.now()}`, { uid: S.user.uid, author: S.user.nick, text: ta.value.trim(), date: Date.now() });
+      el('button', {class:'btn primary', text: t('send'), onclick: async () => {
+        const text = ta.value.trim();
+        if (!text) return;
+        await set(`threads/${th.id}/posts/p${Date.now()}`, {uid: S.user.uid, author: S.user.nick, text: text, date: Date.now()});
         draw();
       }})
     ]));
@@ -395,95 +472,112 @@ function threadView() {
   return out;
 }
 
+// ---------- профиль ----------
+
 function profileView() {
-  if(!S.user) return [el('div', {text: 'Войдите'})];
+  if (!S.user) return [el('div', {text:'Войдите'})];
   const uid = S.profile || S.user.uid;
   const u = getUser(uid) || S.user;
-  const isMe = u.uid === S.user.uid;
+  const isMe = u.uid == S.user.uid;
   const pf = u.profile || {};
 
   let topics = 0;
-  S.threads.forEach(th => { if(th.uid === u.uid || th.author === u.nick) topics++; });
+  S.threads.forEach(th => {
+    if (th.uid == u.uid || th.author == u.nick) topics++;
+  });
 
   const out = [
-    el('div', {class: 'profile-container'}, [
-      el('div', {class: 'profile-banner', html: pf.banner ? `<img src="${pf.banner}">` : ''}),
-      el('div', {class: 'profile-main'}, [
-        el('div', {class: 'profile-avatar', html: pf.avatar ? `<img src="${pf.avatar}">` : (u.nick || '?')[0].toUpperCase()}),
-        el('div', {class: 'profile-details'}, [
-          el('div', {class: 'profile-name-row'}, [
-            el('div', {class: 'profile-username'}, [nick(u.uid)]),
-            !isMe ? el('button', {class: 'btn-follow', text: 'follow'}) : el('button', {class: 'btn', text: t('edit'), onclick: () => { S.edit = !S.edit; S.draft = {...pf, nick: u.nick}; draw(); }})
+    el('div', {class:'profile-container'}, [
+      el('div', {class:'profile-banner', html: pf.banner ? `<img src="${pf.banner}">` : ''}),
+      el('div', {class:'profile-main'}, [
+        el('div', {class:'profile-avatar', html: pf.avatar ? `<img src="${pf.avatar}">` : (u.nick || '?')[0].toUpperCase()}),
+        el('div', {class:'profile-details'}, [
+          el('div', {class:'profile-name-row'}, [
+            el('div', {class:'profile-username'}, [nick(u.uid, u.nick)]),
+            !isMe
+              ? el('button', {class:'btn-follow', text:'follow'})
+              : el('button', {class:'btn', text: t('edit'), onclick: () => {
+                  S.edit = !S.edit;
+                  S.draft = {...pf, nick: u.nick};
+                  draw();
+                }})
           ]),
-          el('div', {class: 'profile-stats-small', html: `<b>1</b> following &nbsp; <b>2</b> followers`})
+          el('div', {class:'profile-stats-small', html:'<b>1</b> following &nbsp; <b>2</b> followers'})
         ])
       ])
     ]),
-    el('table', {class: 'profile-table'}, [
+    el('table', {class:'profile-table'}, [
       el('tbody', null, [
-        el('tr', null, [el('td', {text: 'Username'}), el('td', {text: '@' + u.nick})]),
-        el('tr', null, [el('td', {text: 'Joined'}), el('td', {text: fmt(u.created)})]),
-        el('tr', null, [el('td', {text: 'Topics'}), el('td', {text: topics})])
+        el('tr', null, [el('td', {text:'Username'}), el('td', {text:'@' + u.nick})]),
+        el('tr', null, [el('td', {text:'Joined'}), el('td', {text: fmt(u.created)})]),
+        el('tr', null, [el('td', {text:'Topics'}), el('td', {text: topics})])
       ])
     ])
   ];
 
-  if(!isMe) {
-    out.push(el('div', {class: 'profile-private-box'}, [
-      el('div', {html: `This user's account is <b>private</b>.`}),
-      el('div', {style: 'margin-top:10px;font-size:12px', html: `Already follow <b>${u.nick}</b>? <a href="#" onclick="event.preventDefault(); S.view='auth'; draw();">Login</a> to see their pastes.`})
+  if (!isMe) {
+    out.push(el('div', {class:'profile-private-box'}, [
+      el('div', {html:"This user's account is <b>private</b>."}),
+      el('div', {style:'margin-top:10px;font-size:12px', html:`Already follow <b>${u.nick}</b>? <a href="#" onclick="event.preventDefault(); S.view='auth'; draw();">Login</a> to see their pastes.`})
     ]));
   }
 
-  if(isMe && S.edit) {
+  if (isMe && S.edit) {
     const d = S.draft;
-    const aF = el('input', {type: 'file', accept: 'image/*', onchange: async e => { d.avatar = await compress(e.target.files[0]); }});
-    const bF = el('input', {type: 'file', accept: 'image/*', onchange: async e => { d.banner = await compress(e.target.files[0]); }});
-    
-    out.push(el('div', {class: 'profile-edit'}, [
-      el('h3', {text: t('edit'), style: 'color:#fff'}),
-      el('label', null, [t('nick'), el('input', {type: 'text', value: d.nick, oninput: e => d.nick = e.target.value})]),
-      el('label', null, ['Bio', el('textarea', {value: d.bio, oninput: e => d.bio = e.target.value})]),
+    const aF = el('input', {type:'file', accept:'image/*', onchange: async e => { d.avatar = await compress(e.target.files[0]); }});
+    const bF = el('input', {type:'file', accept:'image/*', onchange: async e => { d.banner = await compress(e.target.files[0]); }});
+
+    out.push(el('div', {class:'profile-edit'}, [
+      el('h3', {text: t('edit'), style:'color:#fff'}),
+      el('label', null, [t('nick'), el('input', {type:'text', value: d.nick, oninput: e => { d.nick = e.target.value; }})]),
+      el('label', null, ['Bio', el('textarea', {value: d.bio || '', oninput: e => { d.bio = e.target.value; }})]),
       el('label', null, ['Avatar', aF]),
       el('label', null, ['Banner', bF]),
-      el('div', {style: 'display:flex;gap:10px'}, [
-        el('button', {class: 'btn primary', text: t('save'), onclick: async () => {
-          await upd('users/' + u.uid, { nick: d.nick, profile: d }); S.edit = false; draw();
+      el('div', {style:'display:flex;gap:10px'}, [
+        el('button', {class:'btn primary', text: t('save'), onclick: async () => {
+          const newNick = (d.nick || '').trim() || u.nick;
+          await upd('users/' + u.uid, {nick: newNick, profile: d});
+          S.user.nick = newNick;
+          S.edit = false;
+          draw();
         }}),
-        el('button', {class: 'btn', text: t('cancel'), onclick: () => { S.edit = false; draw(); }})
+        el('button', {class:'btn', text: t('cancel'), onclick: () => { S.edit = false; draw(); }})
       ])
     ]));
   }
-
   return out;
 }
 
+// ---------- чаты ----------
+
 function chatView() {
   const c = S.chats[S.chatId];
-  if(!c) return [el('div', {text: 'Не найдено'})];
-  
+  if (!c) return [el('div', {text:'Не найдено'})];
+
+  const msgs = Object.values(c.messages || {}).sort((a, b) => a.date - b.date);
   const out = [
-    el('button', {class: 'btn', text: '← Назад', onclick: () => { S.view = 'chatList'; draw(); }}),
-    el('h2', {text: c.name, style: 'margin:16px 0'}),
-    el('div', {class: 'chatwin'}, Object.values(c.messages || {}).sort((a,b) => a.date - b.date).map(m => 
-      el('div', {class: 'chatmsg' + (m.uid === S.user?.uid ? ' self' : '')}, [
+    el('button', {class:'btn', text:'← Назад', onclick: () => { S.view = 'chatList'; draw(); }}),
+    el('h2', {text: c.name, style:'margin:16px 0'}),
+    el('div', {class:'chatwin'}, msgs.map(m =>
+      el('div', {class:'chatmsg' + (S.user && m.uid == S.user.uid ? ' self' : '')}, [
         avatar(m.uid, 32),
-        el('div', {class: 'bub'}, [
-          el('div', {class: 'top'}, [nick(m.uid, m.author), el('span', {text: fmt(m.date)})]),
-          el('div', {class: 'txt', text: m.text})
+        el('div', {class:'bub'}, [
+          el('div', {class:'top'}, [nick(m.uid, m.author), el('span', {text: fmt(m.date)})]),
+          el('div', {class:'txt', text: m.text})
         ])
       ])
     ))
   ];
 
-  if(S.user) {
-    const i = el('input', {placeholder: 'Сообщение...'});
-    out.push(el('div', {class: 'compose'}, [
-      i,
-      el('button', {class: 'btn primary', text: t('send'), onclick: async () => {
-        if(!i.value.trim()) return;
-        await set(`chats/${S.chatId}/messages/m${Date.now()}`, { uid: S.user.uid, author: S.user.nick, text: i.value.trim(), date: Date.now() });
-        i.value = '';
+  if (S.user) {
+    const inp = el('input', {placeholder:'Сообщение...'});
+    out.push(el('div', {class:'compose'}, [
+      inp,
+      el('button', {class:'btn primary', text: t('send'), onclick: async () => {
+        const text = inp.value.trim();
+        if (!text) return;
+        await set(`chats/${S.chatId}/messages/m${Date.now()}`, {uid: S.user.uid, author: S.user.nick, text: text, date: Date.now()});
+        inp.value = '';
       }})
     ]));
   }
@@ -492,92 +586,185 @@ function chatView() {
 
 function chatListView() {
   const tbody = el('tbody');
-  Object.values(S.chats).sort((a,b) => (b.date||0) - (a.date||0)).forEach(c => {
-    tbody.appendChild(el('tr', {style: 'cursor:pointer', onclick: () => { S.view = 'chat'; S.chatId = c.id; draw(); }}, [
+  Object.values(S.chats).sort((a, b) => (b.date || 0) - (a.date || 0)).forEach(c => {
+    tbody.appendChild(el('tr', {style:'cursor:pointer', onclick: () => {
+      S.view = 'chat';
+      S.chatId = c.id;
+      draw();
+    }}, [
       el('td', {text: c.name}),
       el('td', {text: Object.keys(c.messages || {}).length}),
       el('td', null, [nick(c.uid, c.author)])
     ]));
   });
   return [
-    el('h2', {text: 'Чаты'}),
-    el('div', {class: 'tablebox'}, [el('table', null, [tbody])])
+    el('h2', {text:'Чаты'}),
+    el('div', {class:'tablebox'}, [el('table', null, [tbody])])
   ];
 }
 
+// ---------- юзеры ----------
+
 function membersView() {
-  const tbody = el('tbody');
+  const all = new Map();
+
+  // сначала те кто есть в базе
   Object.values(S.users).forEach(u => {
-    if(!u.nick) return;
+    if (u.nick) all.set(u.nick.toLowerCase(), u);
+  });
+
+  // кто писал, но записи нет - добавляем по имени из поста
+  function addAuthor(name, uid, date) {
+    if (!name) return;
+    const k = name.toLowerCase();
+    if (!all.has(k)) all.set(k, {nick: name, role:'user', created: date, uid: uid});
+  }
+  S.threads.forEach(th => {
+    addAuthor(th.author, th.uid, th.date);
+    Object.values(th.posts || {}).forEach(p => addAuthor(p.author, p.uid, p.date));
+  });
+  Object.values(S.chats).forEach(c => {
+    addAuthor(c.author, c.uid, c.date);
+    Object.values(c.messages || {}).forEach(m => addAuthor(m.author, m.uid, m.date));
+  });
+  // и мы сами
+  if (S.user) addAuthor(S.user.nick, S.user.uid, Date.now());
+
+  const tbody = el('tbody');
+  Array.from(all.values()).forEach(u => {
     tbody.appendChild(el('tr', null, [
-      el('td', null, [nick(u.uid)]),
+      el('td', null, [nick(u.uid || u.nick, u.nick)]),
       el('td', {text: u.owner ? 'Owner' : (u.role || 'user')}),
       el('td', {text: fmt(u.created)})
     ]));
   });
-  return [el('h2', {text: 'Юзеры'}), el('div', {class: 'tablebox'}, [el('table', null, [tbody])])];
+
+  return [el('h2', {text:'Юзеры'}), el('div', {class:'tablebox'}, [el('table', null, [tbody])])];
 }
+
+// ---------- отрисовка ----------
 
 function draw() {
   const app = document.getElementById('app');
   app.innerHTML = '';
-  
+
   const w = document.getElementById('who');
   w.innerHTML = '';
-  if(S.user) {
-    w.append(nick(S.user.uid), el('button', {text: t('out'), onclick: () => auth.signOut()}));
+  if (S.user) {
+    w.append(nick(S.user.uid, S.user.nick), el('button', {text: t('out'), onclick: () => auth.signOut()}));
   } else {
     w.append(el('button', {text: t('login'), onclick: () => { S.view = 'auth'; S.authMode = 'login'; draw(); }}));
   }
   document.getElementById('nav-admin').style.display = isAdmin() ? '' : 'none';
 
-  let nodes = [];
-  if(S.view === 'auth') nodes = authView();
-  else if(S.view === 'thread') nodes = threadView();
-  else if(S.view === 'chatList') nodes = chatListView();
-  else if(S.view === 'chat') nodes = chatView();
-  else if(S.view === 'profile') nodes = profileView();
-  else if(S.view === 'members') nodes = membersView();
-  else nodes = listView();
-
-  nodes.forEach(n => n && app.append(n));
+  let nodes;
+  switch (S.view) {
+    case 'auth': nodes = authView(); break;
+    case 'thread': nodes = threadView(); break;
+    case 'chatList': nodes = chatListView(); break;
+    case 'chat': nodes = chatView(); break;
+    case 'profile': nodes = profileView(); break;
+    case 'members': nodes = membersView(); break;
+    default: nodes = listView();
+  }
+  nodes.forEach(n => { if (n) app.append(n); });
 }
 
 const router = {
   home: () => { S.view = 'list'; S.open = null; draw(); },
   goChats: () => { S.view = 'chatList'; draw(); },
   goMembers: () => { S.view = 'members'; draw(); },
-  goNew: () => { 
-    if(!S.user) { S.view = 'auth'; draw(); return; }
+  goAdmin: () => { S.view = 'members'; draw(); }, // отдельной админки пока нет
+  goNew: () => {
+    if (!S.user) { S.view = 'auth'; draw(); return; }
     const title = prompt('Заголовок:');
     const text = prompt('Текст:');
-    if(title && text) set('threads/t' + Date.now(), { title, uid: S.user.uid, author: S.user.nick, date: Date.now(), posts: { p0: { uid: S.user.uid, text, date: Date.now() } } }).then(draw);
+    if (title && text) {
+      set('threads/t' + Date.now(), {
+        title: title, uid: S.user.uid, author: S.user.nick, date: Date.now(),
+        posts: {p0: {uid: S.user.uid, author: S.user.nick, text: text, date: Date.now()}}
+      }).then(draw);
+    }
   }
 };
 
-db.ref('users').on('value', s => { S.users = s.val() || {}; draw(); });
-db.ref('threads').on('value', s => { 
-  const d = s.val() || {}; 
-  S.threads = Object.keys(d).map(k => ({ id: k, ...d[k] })).sort((a,b) => (b.date||0) - (a.date||0)); 
-  if(S.view !== 'chat') draw(); 
-});
-db.ref('chats').on('value', s => { 
-  const d = s.val() || {}; 
-  S.chats = Object.keys(d).reduce((a, k) => { a[k] = { id: k, ...d[k] }; return a; }, {}); 
-  if(S.view.includes('chat')) draw(); 
+// ---------- слушаем базу ----------
+
+db.ref('users').on('value', s => {
+  S.users = s.val() || {};
+  draw();
+}, err => {
+  // если сюда попали - правила базы не дают читать users, отсюда и все "User"
+  console.error('users не читаются:', err.message);
 });
 
-auth.onAuthStateChanged(async u => {
-  if(u) {
+db.ref('threads').on('value', s => {
+  const d = s.val() || {};
+  S.threads = Object.keys(d).map(k => ({id: k, ...d[k]})).sort((a, b) => (b.date || 0) - (a.date || 0));
+  if (S.view != 'chat') draw();
+}, err => console.error('threads:', err.message));
+
+db.ref('chats').on('value', s => {
+  const d = s.val() || {};
+  S.chats = {};
+  Object.keys(d).forEach(k => { S.chats[k] = {id: k, ...d[k]}; });
+  if (S.view.includes('chat')) draw();
+}, err => console.error('chats:', err.message));
+
+// ---------- кто залогинен ----------
+
+async function loadUser(u) {
+  if (!u) { S.user = null; return; }
+
+  // ник по умолчанию: из аккаунта, иначе из почты
+  const fromMail = (u.email || '').split('@')[0];
+  let me = {uid: u.uid, nick: u.displayName || fromMail, role:'user', owner:false};
+
+  try {
     let rec = await get('users/' + u.uid);
-    if(!rec) {
-      const dNick = u.email.split('@')[0];
-      const all = await get('users');
-      const found = all ? Object.values(all).find(x => x.nick?.toLowerCase() === dNick) : null;
-      if(found) { rec = found; await set('users/' + u.uid, { ...rec, uid: u.uid }); }
+
+    // старый аккаунт без записи под своим uid - ищем по нику
+    if (!rec) {
+      try {
+        const all = await get('users');
+        if (all) rec = Object.values(all).find(x => x.nick && x.nick.toLowerCase() == fromMail.toLowerCase());
+      } catch (e) {
+        console.warn('список юзеров не прочитать', e.message);
+      }
     }
-    S.user = rec ? { uid: u.uid, nick: rec.nick, owner: rec.owner, role: rec.role } : { uid: u.uid, nick: u.email.split('@')[0], role: 'user' };
-  } else S.user = null;
+
+    if (rec) {
+      me.nick = rec.nick || me.nick;
+      me.owner = !!rec.owner;
+      me.role = rec.role || 'user';
+      me.created = rec.created;
+      me.profile = rec.profile;
+    }
+
+    // записи нет вообще - создаём, чтоб юзер появился в списке
+    if (!get_has(rec, u.uid)) {
+      try {
+        await set('users/' + u.uid, {uid: u.uid, email: u.email, nick: me.nick, role: me.role, owner: me.owner, created: me.created || Date.now(), profile: me.profile || {}});
+      } catch (e) {
+        console.warn('не смог создать запись юзера', e.message);
+      }
+    }
+  } catch (e) {
+    // база не отвечает - всё равно пускаем, ник возьмём из аккаунта
+    console.error('loadUser:', e.message);
+  }
+
+  S.user = me;
+}
+
+// была ли запись именно под этим uid
+function get_has(rec, uid) {
+  return !!(rec && rec.uid == uid);
+}
+
+auth.onAuthStateChanged(async u => {
+  if (S.registering) return; // регистрация сама вызовет loadUser
+  await loadUser(u);
   draw();
 });
 
