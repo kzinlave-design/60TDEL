@@ -6,72 +6,49 @@
 <title>60TDEL</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=VT323&display=swap">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=VT323&display=swap" rel="stylesheet">
 <style>
-/* ================= ANIMATIONS ================= */
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-@keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-.anim-fade { animation: fadeIn 0.4s ease forwards; }
-.anim-slide { animation: slideDown 0.3s ease forwards; }
-
-/* ================= BASE ================= */
+*{box-sizing:border-box}
 :root{
   --bg:#000; --bg-2:#0a0a0c; --surface:#121215; --surface-2:#1a1a1f;
-  --line:#2a2a30; --line-2:#3a3a42; --line-3:#4a4a55;
-  --fg:#e0e0e0; --fg-dim:#a0a0a5; --muted:#707075;
-  --accent:#ff0000; --accent-2:#cc0000; --accent-dim:#440000;
-  --link:#ff4444; --btn-bg:#aa0000;
-  --ok:#3fd47a; --warn:#e8a840; --err:#ff5a5a;
-  --radius:4px; --radius-lg:8px;
-  --font-body:"Inter",system-ui,sans-serif; --font-mono:"IBM Plex Mono",monospace; --font-pixel:"VT323",monospace;
+  --line:#2a2a30; --line-2:#3a3a42; --fg:#e0e0e0; --muted:#707075;
+  --accent:#ff0000; --accent-dim:#440000; --err:#ff5a5a;
+  --radius:4px; --font-body:"Inter",sans-serif; --font-mono:"IBM Plex Mono",monospace; --font-pixel:"VT323",monospace;
   color-scheme:dark;
 }
-*{box-sizing:border-box}
 html{background:var(--bg);scroll-behavior:smooth}
-body{background:var(--bg); color:var(--fg); font-family:var(--font-body); font-size:14px; line-height:1.5; margin:0; min-height:100vh; -webkit-font-smoothing:antialiased;}
-a{color:var(--link);text-decoration:none} a:hover{text-decoration:underline}
+body{background:var(--bg); color:var(--fg); font-family:var(--font-body); font-size:14px; line-height:1.5; margin:0; min-height:100vh;}
+a{color:var(--accent);text-decoration:none} a:hover{text-decoration:underline}
 button,input,select,textarea{font:inherit;color:inherit;background:var(--bg-2);border:1px solid var(--line);border-radius:var(--radius)}
-:focus-visible{outline:1px solid var(--accent)}
 h1,h2,h3{margin:0;font-weight:600}
 .muted{color:var(--muted)}
 .err{color:var(--err);font-size:12px;min-height:16px;margin-top:4px}
 .spinner{width:14px;height:14px;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite;display:inline-block;vertical-align:-2px;margin-right:6px}
 @keyframes spin{to{transform:rotate(360deg)}}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.anim-fade { animation: fadeIn 0.4s ease forwards; }
 
-/* ================= LAYOUT ================= */
 .nav{background:#000;border-bottom:1px solid #1a1a1a;padding:0 20px;position:sticky;top:0;z-index:20}
 .nav-in{max-width:1100px;margin:0 auto;display:flex;align-items:center;gap:16px;min-height:50px;flex-wrap:wrap}
-.brand{font-family:var(--font-body);font-weight:800;font-size:20px;color:#fff;letter-spacing:0;cursor:pointer;display:flex;align-items:center}
+.brand{font-weight:800;font-size:20px;color:#fff;cursor:pointer;display:flex;align-items:center}
 .brand span{color:var(--accent)}
-.nav button.link{background:none;border:0;color:#888;font-size:13px;cursor:pointer;padding:4px 0;transition:color .2s;position:relative}
+.nav button.link{background:none;border:0;color:#888;font-size:13px;cursor:pointer;padding:4px 0;transition:color .2s}
 .nav button.link:hover,.nav button.link[aria-current="page"]{color:var(--accent)}
 .nav .who{margin-left:auto;display:flex;align-items:center;gap:12px;font-size:12px;color:#888;font-family:var(--font-mono)}
 .nav .who button{background:none;border:0;color:var(--accent);cursor:pointer;font-weight:600}
 .nav-search{position:relative;flex:1;max-width:300px}
-.nav-search input{width:100%;padding:6px 10px;border-radius:2px;background:#111;border:1px solid #222;font-size:12px}
+.nav-search input{width:100%;padding:6px 10px;background:#111;border:1px solid #222;font-size:12px}
 .lang-switch{display:flex;border:1px solid #333;border-radius:4px;overflow:hidden;margin-left:10px}
-.lang-switch button{background:#111;color:#888;border:0;padding:2px 8px;font-size:11px;cursor:pointer;transition:all .2s}
+.lang-switch button{background:#111;color:#888;border:0;padding:2px 8px;font-size:11px;cursor:pointer}
 .lang-switch button.active{background:var(--accent);color:#fff;font-weight:bold}
 .wrap{max-width:1100px;margin:0 auto;padding:20px;display:flex;flex-direction:column;gap:20px;min-height:70vh}
 .footer{text-align:center;padding:30px;color:#444;font-size:12px;border-top:1px solid #1a1a1a;margin-top:40px}
 
-/* ================= HERO & ASCII ART ================= */
 .hero{text-align:center;padding:30px 0 20px; overflow:hidden;}
-.hero-art {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  line-height: 1.05;
-  color: var(--accent);
-  white-space: pre;
-  display: inline-block;
-  text-align: left;
-  margin-bottom: 20px;
-  text-shadow: 0 0 8px rgba(255, 0, 0, 0.6);
-}
+.hero-art {font-family: var(--font-mono);font-size: 10px;line-height: 1.05;color: var(--accent);white-space: pre;display: inline-block;text-align: left;margin-bottom: 20px;text-shadow: 0 0 8px rgba(255, 0, 0, 0.6);}
 .hero .links{display:flex;flex-direction:column;gap:4px;font-weight:600;font-size:14px;margin-bottom:20px}
 .hero .links a{color:var(--accent)}
 
-/* ================= TABLES ================= */
 .tablebox{background:#0a0a0c;border:1px solid #1a1a1a;overflow-x:auto}
 table{width:100%;border-collapse:collapse;font-size:13px}
 th,td{padding:10px 14px;text-align:left;border-bottom:1px solid #1a1a1a}
@@ -80,12 +57,9 @@ tbody tr:hover{background:#111}
 td.title{width:100%}
 td.num,th.num{text-align:center;width:1%;white-space:nowrap}
 td.date,th.date{text-align:right;white-space:nowrap;width:1%}
-.rowbtn{background:none;border:0;color:#e0e0e0;font-weight:500;cursor:pointer;padding:0;text-align:left}
-.rowbtn:hover{color:var(--accent);text-decoration:none}
 tbody tr.pin{background:linear-gradient(90deg,#1a0000,#0a0a0c)}
 tbody tr.pin td{color:var(--accent);font-weight:600}
 
-/* ================= UI ELEMENTS ================= */
 .btn{background:#111;border:1px solid #333;padding:6px 12px;border-radius:2px;cursor:pointer;color:#ccc;font-size:12px;font-weight:500;transition:all .2s;display:inline-flex;align-items:center;justify-content:center;gap:4px}
 .btn:hover{background:#222;border-color:#555;color:#fff}
 .btn.primary{background:var(--accent-dim);border-color:var(--accent);color:var(--accent);font-weight:700}
@@ -102,14 +76,12 @@ tbody tr.pin td{color:var(--accent);font-weight:600}
 .pager button{background:#111;border:1px solid #333;padding:6px 12px;cursor:pointer;color:#888;font-family:var(--font-mono)}
 .pager button.active{background:var(--accent);color:#fff;border-color:var(--accent)}
 
-/* Auth */
-.auth{max-width:400px;margin:40px auto;background:#0a0a0c;border:1px solid #222;padding:24px;display:flex;flex-direction:column;gap:16px;animation:slideDown .4s ease}
+.auth{max-width:400px;margin:40px auto;background:#0a0a0c;border:1px solid #222;padding:24px;display:flex;flex-direction:column;gap:16px}
 .auth label{display:flex;flex-direction:column;gap:6px;font-size:12px;color:#888}
-.auth input{padding:10px;background:#000;border:1px solid #333;border-radius:2px}
+.auth input{padding:10px;background:#000;border:1px solid #333}
 .auth .switch{text-align:center;font-size:12px;color:#666}
 .auth .switch button{background:none;border:0;color:var(--accent);cursor:pointer}
 
-/* ================= NEW PROFILE UI ================= */
 .profile-container { background: #0d0d0d; border: 1px solid #222; border-radius: 6px; overflow: hidden; margin-bottom: 20px; }
 .profile-banner { width: 100%; height: 220px; background: #1a1a1a; position: relative; }
 .profile-banner img { width: 100%; height: 100%; object-fit: cover; }
@@ -121,18 +93,15 @@ tbody tr.pin td{color:var(--accent);font-weight:600}
 .profile-username { font-size: 22px; font-weight: 600; color: #fff; display: flex; align-items: center; gap: 8px; }
 .profile-stats-small { font-size: 13px; color: #888; }
 .profile-stats-small b { color: #fff; font-weight: 600; }
-.btn-follow { background: #222; border: 1px solid #333; color: #ccc; padding: 6px 16px; border-radius: 20px; font-size: 13px; cursor: pointer; transition: all .2s; }
+.btn-follow { background: #222; border: 1px solid #333; color: #ccc; padding: 6px 16px; border-radius: 20px; font-size: 13px; cursor: pointer; }
 .btn-follow:hover { background: #333; color: #fff; }
-
 .profile-table { width: 100%; margin-top: 20px; background: #0d0d0d; border: 1px solid #222; border-radius: 6px; border-collapse: collapse; }
 .profile-table td { padding: 16px 20px; border-bottom: 1px solid #222; font-size: 14px; color: #888; }
 .profile-table td:last-child { text-align: right; color: #fff; font-weight: 500; }
-
 .profile-private-box { background: #0d0d0d; border: 1px solid #222; border-radius: 6px; padding: 40px 20px; text-align: center; color: #ccc; margin-top: 20px; }
 .profile-private-box b { color: #fff; }
 
-/* Threads & Chats */
-.post{display:grid;grid-template-columns:140px minmax(0,1fr);background:#0a0a0c;border:1px solid #1a1a1a;margin-bottom:10px;animation:fadeIn .3s ease}
+.post{display:grid;grid-template-columns:140px minmax(0,1fr);background:#0a0a0c;border:1px solid #1a1a1a;margin-bottom:10px}
 .post .who{padding:16px;border-right:1px solid #1a1a1a;background:#111;display:flex;flex-direction:column;gap:8px}
 .post .body{padding:16px;min-width:0}
 .post .meta{font-size:11px;color:#555;margin-bottom:8px;font-family:var(--font-mono);display:flex;justify-content:space-between}
@@ -140,7 +109,7 @@ tbody tr.pin td{color:var(--accent);font-weight:600}
 .post .attach img{max-width:100%;border-radius:2px;margin-top:10px;border:1px solid #222;max-height:300px;object-fit:contain;cursor:pointer}
 .avatar{width:40px;height:40px;background:#222;display:grid;place-items:center;font-weight:700;color:#aaa;border-radius:4px;overflow:hidden;flex:none}
 .avatar img{width:100%;height:100%;object-fit:cover}
-.chatwin{background:#0a0a0c;border:1px solid #222;min-height:300px;max-height:60vh;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;margin-bottom:16px;animation:fadeIn .4s ease}
+.chatwin{background:#0a0a0c;border:1px solid #222;min-height:300px;max-height:60vh;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;margin-bottom:16px}
 .chatmsg{display:grid;grid-template-columns:36px 1fr;gap:12px}
 .chatmsg .bub{background:#111;border:1px solid #222;padding:10px 14px;border-radius:4px}
 .chatmsg.self .bub{border-color:var(--accent-dim);background:linear-gradient(180deg,#111,#1a0000)}
@@ -150,24 +119,17 @@ tbody tr.pin td{color:var(--accent);font-weight:600}
 .compose input,.compose textarea{padding:10px;background:#000;border:1px solid #333}
 .compose textarea{min-height:100px;resize:vertical}
 
-/* Nick Decors */
 .nick-prefix{font-size:11px;font-weight:700;margin-right:4px}
 .prefix-owner{color:#ff0} .prefix-admin{color:var(--accent)} .prefix-moderator{color:#0ff}
-.nick-glow.glow-red{color:var(--accent);text-shadow:0 0 5px rgba(255,0,0,0.5)} 
-.nick-glow.glow-gold{color:#f5b842;text-shadow:0 0 5px rgba(245,184,66,0.5)}
-.nick-glow.glow-purple{color:#b870ff;text-shadow:0 0 5px rgba(184,112,255,0.5)}
 .nick-media{width:16px;height:16px;vertical-align:-3px;margin-right:4px;border-radius:2px;object-fit:cover}
 
-/* Lightbox */
 .lightbox{position:fixed;inset:0;background:rgba(0,0,0,.9);display:grid;place-items:center;z-index:999;cursor:zoom-out}
 .lightbox img{max-width:90vw;max-height:90vh;border:1px solid #333}
 
 @media (max-width:700px){
   .nav-in{gap:8px}.nav .who .who-name{display:none}
   .post{grid-template-columns:1fr}
-  .profile-head-inner{flex-direction:column;align-items:center;text-align:center;margin-top:-50px}
-  .profile-info{align-items:center}
-  .hero-art{ font-size: 6px; text-shadow: 0 0 4px rgba(255, 0, 0, 0.6); }
+  .hero-art{ font-size: 6px; }
   .profile-main { flex-direction: column; align-items: center; margin-top: -50px; }
   .profile-details { padding-top: 10px; align-items: center; }
   .profile-name-row { flex-direction: column; gap: 10px; }
@@ -179,18 +141,18 @@ tbody tr.pin td{color:var(--accent);font-weight:600}
 
 <header class="nav">
   <div class="nav-in">
-    <div class="brand" onclick="window.router.home()">60<span>TDEL</span></div>
-    <button class="link" id="nav-home" onclick="window.router.home()" data-i18n="home">Главная</button>
-    <button class="link" id="nav-chat" onclick="window.router.goChats()" data-i18n="chats">Чаты</button>
-    <button class="link" id="nav-members" onclick="window.router.goMembers()" data-i18n="users">Юзеры</button>
-    <button class="link" id="nav-new" onclick="window.router.goNew()" data-i18n="new_topic">Новая тема</button>
-    <button class="link" id="nav-admin" style="display:none" onclick="window.router.goAdmin()" data-i18n="admin">Админка</button>
+    <div class="brand" onclick="router.home()">60<span>TDEL</span></div>
+    <button class="link" onclick="router.home()">Главная</button>
+    <button class="link" onclick="router.goChats()">Чаты</button>
+    <button class="link" onclick="router.goMembers()">Юзеры</button>
+    <button class="link" onclick="router.goNew()">Новая тема</button>
+    <button class="link" id="nav-admin" style="display:none" onclick="router.goAdmin()">Админка</button>
     
     <div class="nav-search">
       <input type="text" id="global-search" placeholder="Поиск..." autocomplete="off">
     </div>
 
-    <div class="lang-switch" id="lang-switch">
+    <div class="lang-switch">
       <button onclick="setLang('ru')" id="btn-ru">RU</button>
       <button onclick="setLang('en')" id="btn-en">EN</button>
     </div>
@@ -202,7 +164,7 @@ tbody tr.pin td{color:var(--accent);font-weight:600}
 <main class="wrap" id="app"></main>
 
 <footer class="footer">
-  <b>60TDEL</b> · © 2026 · <span data-i18n="rights">Все права защищены</span>
+  <b>60TDEL</b> · © 2026 · <span id="footer-rights">Все права защищены</span>
 </footer>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -210,8 +172,7 @@ tbody tr.pin td{color:var(--accent);font-weight:600}
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 
 <script>
-// ================= CONFIG & INIT =================
-const firebaseConfig = {
+firebase.initializeApp({
   apiKey: "AIzaSyDEndaUeUIw_b7iPMvw63JLqz7oNl0-8Qg",
   authDomain: "tdel-45a78.firebaseapp.com",
   databaseURL: "https://tdel-45a78-default-rtdb.europe-west1.firebasedatabase.app",
@@ -219,62 +180,25 @@ const firebaseConfig = {
   storageBucket: "tdel-45a78.firebasestorage.app",
   messagingSenderId: "246430149246",
   appId: "1:246430149246:web:a6a5802ff2f6166a70862f"
+});
+const auth = firebase.auth(), db = firebase.database();
+
+const get = p => db.ref(p).once('value').then(s => s.exists() ? s.val() : null);
+const set = (p,v) => db.ref(p).set(v);
+const upd = (p,v) => db.ref(p).update(v);
+const del = (p) => db.ref(p).remove();
+
+const T = {
+  ru: {login:'Войти', reg:'Регистрация', out:'Выйти', send:'Отправить', save:'Сохранить', cancel:'Отмена', edit:'Редактировать профиль', pass:'Пароль', nick:'Никнейм', auth:'Вход', reg_title:'Регистрация', no_acc:'Нет аккаунта? ', has_acc:'Есть аккаунт? ', create:'Создать'},
+  en: {login:'Login', reg:'Register', out:'Logout', send:'Send', save:'Save', cancel:'Cancel', edit:'Edit Profile', pass:'Password', nick:'Username', auth:'Login', reg_title:'Register', no_acc:'No account? ', has_acc:'Have account? ', create:'Create'}
 };
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.database();
+let lang = localStorage.getItem('lang') || 'ru';
+const t = k => T[lang][k] || k;
 
-const fbGet = p => db.ref(p).once('value').then(s => s.exists() ? s.val() : null);
-const fbSet = (p,v) => db.ref(p).set(v);
-const fbUpdate = (p,v) => db.ref(p).update(v);
-const fbRemove = (p) => db.ref(p).remove();
+let S = { view: 'list', authMode: 'login', open: null, threads: [], user: null, users: {}, chats: {}, chatId: null, profile: null, edit: false, draft: null, page: 1, limit: 10 };
+const EMOJIS = ['💀','🔥','⚡','🩸','⛧','🦇','🕷️','🕸️','☠️','🎯','🔪','🗡️','⚔️','🧨','💣','🦅','🐺','👁️','🔮','🧿'];
 
-// ================= TRANSLATIONS =================
-const I18N = {
-  ru: {
-    home:'Главная', chats:'Чаты', users:'Юзеры', admin:'Админка', new_topic:'Новая тема', rights:'Все права защищены',
-    search_paste:'Search for by topics', title:'Заголовок', comments:'Комменты', views:'Просмотры', author:'Автор', date:'Дата',
-    login:'Войти', reg:'Регистрация', logout:'Выйти', nick:'Никнейм', pass:'Пароль', create_acc:'Создать аккаунт', no_acc:'Нет аккаунта?', has_acc:'Есть аккаунт?',
-    send:'Отправить', save:'Сохранить', cancel:'Отмена', msg:'Написать ЛС', edit_prof:'Редактировать профиль',
-    bio:'О себе', avatar:'Аватар', banner:'Баннер', emoji:'Смайлик', write_msg:'Написать...', enter_to_write:'Войдите, чтобы писать', no_chats:'Нет чатов', new_chat:'Название нового чата'
-  },
-  en: {
-    home:'Home', chats:'Chats', users:'Users', admin:'Admin', new_topic:'New Topic', rights:'All rights reserved',
-    search_paste:'Search for by topics', title:'Title', comments:'Comments', views:'Views', author:'Author', date:'Added',
-    login:'Login', reg:'Register', logout:'Logout', nick:'Nickname', pass:'Password', create_acc:'Create account', no_acc:'No account?', has_acc:'Have an account?',
-    send:'Send', save:'Save', cancel:'Cancel', msg:'Message', edit_prof:'Edit Profile',
-    bio:'Bio', avatar:'Avatar', banner:'Banner', emoji:'Emoji', write_msg:'Write...', enter_to_write:'Login to write', no_chats:'No chats', new_chat:'New chat name'
-  }
-};
-let currentLang = localStorage.getItem('60_lang') || 'ru';
-function t(key) { return I18N[currentLang][key] || key; }
-function setLang(l) {
-  currentLang = l;
-  localStorage.setItem('60_lang', l);
-  document.querySelectorAll('[data-i18n]').forEach(el => {
-    const key = el.getAttribute('data-i18n');
-    if(I18N[l][key]) el.textContent = I18N[l][key];
-  });
-  document.getElementById('btn-ru').className = l === 'ru' ? 'active' : '';
-  document.getElementById('btn-en').className = l === 'en' ? 'active' : '';
-  document.getElementById('global-search').placeholder = l === 'ru' ? 'Поиск...' : 'Search...';
-  render();
-}
-
-// ================= STATE =================
-const state = {
-  view: 'list', authMode: 'login', open: null, threads: [], user: null,
-  users: {}, chats: {}, chatId: null, dms: {}, dmId: null, dmTarget: '',
-  profileUser: null, profileEdit: false, profileDraft: null,
-  isAdmin: false, isOwnerFlag: false, _busy: false,
-  page: 1, itemsPerPage: 10
-};
-
-const OWNERS = ['m4lm0v','crollow','himical'];
-const CUSTOM_EMOJIS = ['💀','🔥','⚡','🩸','⛧','🦇','🕷️','🕸️','☠️','🎯','🔪','🗡️','⚔️','🧨','💣','🦅','🐺','👁️','🔮','🧿'];
-
-// ================= UTILS =================
-function el(tag, attrs, kids) {
+const el = (tag, attrs, kids) => {
   const e = document.createElement(tag);
   if(attrs) for(const k in attrs){
     if(k === 'class') e.className = attrs[k];
@@ -283,574 +207,381 @@ function el(tag, attrs, kids) {
     else if(k.startsWith('on')) e.addEventListener(k.slice(2), attrs[k]);
     else e.setAttribute(k, attrs[k]);
   }
-  for(const c of (kids||[])) if(c != null) e.appendChild(typeof c === 'string' ? document.createTextNode(c) : c);
+  for(const c of (kids||[])) if(c) e.appendChild(typeof c === 'string' ? document.createTextNode(c) : c);
   return e;
-}
-const fmtTime = ts => ts ? new Date(ts).toLocaleDateString(currentLang==='ru'?'ru-RU':'en-GB',{day:'numeric',month:'short',year:'numeric'}) : '—';
-const safeMediaUrl = u => (!u || /^javascript:/i.test(u)) ? '' : u;
-const currentIsAdmin = () => state.user && (state.user.owner || state.user.role === 'admin' || state.user.role === 'moderator');
+};
 
-function compressImage(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const img = new Image();
-      img.onload = () => {
-        let w = img.width, h = img.height;
-        const scale = Math.min(1, 1000/Math.max(w,h));
-        w = Math.round(w*scale); h = Math.round(h*scale);
+const fmt = ts => ts ? new Date(ts).toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'en-GB',{day:'numeric',month:'short',year:'numeric'}) : '—';
+const isAdmin = () => S.user && (S.user.owner || S.user.role === 'admin');
+
+function setLang(l) {
+  lang = l;
+  localStorage.setItem('lang', l);
+  document.getElementById('btn-ru').className = l === 'ru' ? 'active' : '';
+  document.getElementById('btn-en').className = l === 'en' ? 'active' : '';
+  document.getElementById('footer-rights').textContent = l === 'ru' ? 'Все права защищены' : 'All rights reserved';
+  draw();
+}
+
+async function compress(file) {
+  return new Promise(res => {
+    const r = new FileReader();
+    r.onload = () => {
+      const i = new Image();
+      i.onload = () => {
+        let w = i.width, h = i.height, sc = Math.min(1, 1000/Math.max(w,h));
+        w = Math.round(w*sc); h = Math.round(h*sc);
         const c = document.createElement('canvas'); c.width = w; c.height = h;
-        c.getContext('2d').drawImage(img, 0, 0, w, h);
-        let q = 0.8, url = c.toDataURL('image/jpeg', q);
-        while(url.length * 0.75 > 200000 && q > 0.1){ q -= 0.1; url = c.toDataURL('image/jpeg', q); }
-        resolve(url);
+        c.getContext('2d').drawImage(i, 0, 0, w, h);
+        let q = 0.8, u = c.toDataURL('image/jpeg', q);
+        while(u.length * 0.75 > 200000 && q > 0.1){ q -= 0.1; u = c.toDataURL('image/jpeg', q); }
+        res(u);
       };
-      img.onerror = () => reject(new Error('Ошибка картинки'));
-      img.src = reader.result;
+      i.src = r.result;
     };
-    reader.readAsDataURL(file);
+    r.readAsDataURL(file);
   });
 }
 
-function openLightbox(url) {
-  const lb = el('div', {class:'lightbox'}, [el('img', {src: url})]);
-  lb.onclick = () => lb.remove();
-  document.body.appendChild(lb);
+function getUser(id) {
+  if (!id) return null;
+  return S.users[id] || Object.values(S.users).find(u => u.nick?.toLowerCase() === String(id).toLowerCase());
 }
 
-// ================= USER HELPERS =================
-function getUserRecord(uidOrNick) {
-  if (!uidOrNick) return null;
-  if (state.users[uidOrNick]) return state.users[uidOrNick];
-  // Поиск по нику (для старых записей)
-  return Object.values(state.users).find(u => u.nick && u.nick.toLowerCase() === String(uidOrNick).toLowerCase());
-}
-
-function getNickDisplay(uid, fallbackNick) {
-  const u = getUserRecord(uid);
+function nick(id, fallback) {
+  const u = getUser(id);
+  if (!u) return el('span', {text: fallback || 'User', style: 'color:#aaa'});
   
-  // Если профиль не найден, используем сохраненное имя
-  if(!u) {
-    return el('span', {text: fallbackNick || 'User', style:'color:#aaa'});
-  }
+  let pre = '';
+  if(u.owner) pre = el('span', {class: 'nick-prefix prefix-owner', text: '[Founder]'});
+  else if(u.role === 'admin') pre = el('span', {class: 'nick-prefix prefix-admin', text: '[Admin]'});
 
-  let prefix = '';
-  if(u.owner) prefix = el('span', {class:'nick-prefix prefix-owner', text:'[Founder]'});
-  else if(u.role === 'admin') prefix = el('span', {class:'nick-prefix prefix-admin', text:'[Admin]'});
-  else if(u.role === 'moderator') prefix = el('span', {class:'nick-prefix prefix-moderator', text:'[Mod]'});
-
-  const color = u.profile?.color || '';
-  const span = el('span', {class: `nick-glow glow-${color}`, text: u.nick || 'User'});
+  const n = el('span', {text: u.nick || 'User'});
+  const w = el('span', {style: 'display:inline-flex;align-items:center;gap:4px;cursor:pointer'}, [pre, n]);
+  if(u.profile?.mediaUrl) w.prepend(el('img', {class: 'nick-media', src: u.profile.mediaUrl}));
   
-  const wrap = el('span', {style:'display:inline-flex;align-items:center;gap:4px'});
-  if(prefix) wrap.appendChild(prefix);
-  if(u.profile?.mediaUrl) wrap.appendChild(el('img', {class:'nick-media', src: safeMediaUrl(u.profile.mediaUrl)}));
-  wrap.appendChild(span);
-  if(u.profile?.emojis?.[0]) wrap.appendChild(el('span', {text: u.profile.emojis[0], style:'margin-left:2px'}));
-  
-  wrap.style.cursor = 'pointer';
-  wrap.onclick = (e) => { e.stopPropagation(); state.view = 'profile'; state.profileUser = u.uid || uid; render(); };
-  return wrap;
+  w.onclick = e => { e.stopPropagation(); S.view = 'profile'; S.profile = u.uid || id; draw(); };
+  return w;
 }
 
-function getAvatar(uid, size=40) {
-  const u = getUserRecord(uid);
-  const av = el('div', {class:'avatar', style:`width:${size}px;height:${size}px;font-size:${size*0.4}px`});
-  if(u && u.profile?.avatar) av.appendChild(el('img', {src: safeMediaUrl(u.profile.avatar)}));
-  else av.textContent = (u?.nick || '?').charAt(0).toUpperCase();
-  return av;
+function avatar(id, sz = 40) {
+  const u = getUser(id);
+  const a = el('div', {class: 'avatar', style: `width:${sz}px;height:${sz}px;font-size:${sz*0.4}px`});
+  if(u?.profile?.avatar) a.appendChild(el('img', {src: u.profile.avatar}));
+  else a.textContent = (u?.nick || '?')[0].toUpperCase();
+  return a;
 }
 
-// ================= VIEW: AUTH =================
 function authView() {
-  const isLogin = state.authMode === 'login';
-  const err = el('div', {class:'err'});
-  const nickInp = el('input', {type:'text', placeholder:t('nick'), required:'required', maxlength:'15', style:'font-family:var(--font-mono)'});
-  const passInp = el('input', {type:'password', placeholder:t('pass')+' (мин. 6)', required:'required', minlength:'6'});
+  const isL = S.authMode === 'login';
+  const err = el('div', {class: 'err'});
+  const n = el('input', {type: 'text', placeholder: t('nick'), maxlength: '15'});
+  const p = el('input', {type: 'password', placeholder: t('pass'), minlength: '6'});
 
-  const fields = [ 
-    el('label', null, [t('nick') + ' (логин)', nickInp]),
-    el('label', null, [t('pass'), passInp])
-  ];
-
-  return [el('form', {class:'auth', onsubmit: async e => {
+  return [el('form', {class: 'auth', onsubmit: async e => {
     e.preventDefault();
-    if(state._busy) return; state._busy = true; err.textContent = '';
+    if(S._busy) return; S._busy = true; err.textContent = '';
     
-    const nick = nickInp.value.trim().replace(/[^a-zA-Z0-9_]/g, '');
-    if(nick.length < 3) { err.textContent = 'Ник от 3 символов (A-Z, 0-9, _)'; state._busy = false; return; }
-    
-    const fakeEmail = nick.toLowerCase() + '@60tdel.local';
+    const user = n.value.trim().replace(/[^a-zA-Z0-9_]/g, '');
+    if(user.length < 3) { err.textContent = 'Ник от 3 символов'; S._busy = false; return; }
+    const email = user.toLowerCase() + '@60tdel.local';
 
     try {
-      if(isLogin) {
-        await auth.signInWithEmailAndPassword(fakeEmail, passInp.value);
-      } else {
-        const cred = await auth.createUserWithEmailAndPassword(fakeEmail, passInp.value);
-        const uid = cred.user.uid;
-        await fbSet('users/' + uid, {
-          uid, email: fakeEmail, nick, role: 'user', owner: OWNERS.includes(nick.toLowerCase()), created: Date.now(),
-          profile: { avatar: '', banner: '', bio: '', color: '', prefix: '', emojis: [], mediaUrl: '' }
-        });
+      if(isL) await auth.signInWithEmailAndPassword(email, p.value);
+      else {
+        const c = await auth.createUserWithEmailAndPassword(email, p.value);
+        await set('users/' + c.user.uid, { uid: c.user.uid, email, nick: user, role: 'user', owner: false, created: Date.now(), profile: {} });
       }
-      state.view = 'list'; render();
+      S.view = 'list'; draw();
     } catch(ex) {
-      let msg = ex.message;
-      if(ex.code === 'auth/wrong-password' || ex.code === 'auth/user-not-found' || ex.code === 'auth/invalid-credential') msg = 'Неверный ник или пароль';
-      if(ex.code === 'auth/email-already-in-use') msg = 'Этот ник уже занят';
-      if(ex.code === 'auth/weak-password') msg = 'Пароль слишком простой';
-      err.textContent = msg;
-    } finally { state._busy = false; }
+      let m = ex.message;
+      if(ex.code?.includes('wrong-password') || ex.code?.includes('not-found')) m = 'Неверный ник или пароль';
+      if(ex.code?.includes('email-already')) m = 'Ник занят';
+      err.textContent = m;
+    }
+    S._busy = false;
   }}, [
-    el('h2', {text: isLogin ? t('login') : t('reg'), style:'color:#fff;text-align:center'}),
-    ...fields, err,
-    el('div', {style:'justify-content:center; display:flex'}, [el('button', {class:'btn primary', type:'submit', text: isLogin ? t('login') : t('create_acc'), style:'padding:10px 20px;width:100%'})]),
-    el('div', {class:'switch'}, [isLogin ? t('no_acc')+' ' : t('has_acc')+' ', el('button', {type:'button', text: isLogin ? t('reg') : t('login'), onclick: () => { state.authMode = isLogin ? 'register' : 'login'; render(); }})])
+    el('h2', {text: isL ? t('auth') : t('reg_title'), style: 'color:#fff;text-align:center'}),
+    el('label', null, ['Никнейм', n]),
+    el('label', null, [t('pass'), p]),
+    err,
+    el('button', {class: 'btn primary', type: 'submit', text: isL ? t('login') : t('reg')}),
+    el('div', {class: 'switch'}, [
+      isL ? t('no_acc') : t('has_acc'),
+      el('button', {type: 'button', text: isL ? t('reg') : t('login'), onclick: () => { S.authMode = isL ? 'register' : 'login'; draw(); }})
+    ])
   ])];
 }
 
-// ================= VIEW: LIST =================
 function listView() {
-  const out = [];
-  
-  const asciiArt = `
+  const art = `
  ░▒▓███████▓▒░▒▓████████▓▒░▒▓████████▓▒░▒▓███████▓▒░░▒▓████████▓▒░▒▓█▓▒░        
 ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░  ░▒▓█▓▒░   ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        
 ░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░  ░▒▓█▓▒░   ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        
 ░▒▓███████▓▒░░▒▓█▓▒░░▒▓█▓▒░  ░▒▓█▓▒░   ░▒▓█▓▒░░▒▓█▓▒░▒▓██████▓▒░ ░▒▓█▓▒░        
 ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░  ░▒▓█▓▒░   ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        
 ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░  ░▒▓█▓▒░   ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        
- ░▒▓██████▓▒░░▒▓████████▓▒░  ░▒▓█▓▒░   ░▒▓███████▓▒░░▒▓████████▓▒░▒▓████████▓▒░ 
-  `;
+ ░▒▓██████▓▒░░▒▓████████▓▒░  ░▒▓█▓▒░   ░▒▓███████▓▒░░▒▓████████▓▒░▒▓████████▓▒░ `;
 
-  out.push(el('div', {class:'hero anim-fade'}, [
-    el('div', {class:'hero-art', text: asciiArt}),
-    el('div', {class:'links'}, [
-      el('a', {href:'https://t.me/B2L3NC1AGA', target:'_blank', text:'Official Telegram Channel'}),
-      el('a', {href:'https://t.me/+ogE4l7ZAQ-g3NDZl', target:'_blank', text:'Official Telegram Chat'})
+  const out = [el('div', {class: 'hero anim-fade'}, [
+    el('div', {class: 'hero-art', text: art}),
+    el('div', {class: 'links'}, [
+      el('a', {href: 'https://t.me/B2L3NC1AGA', target: '_blank', text: 'Official Telegram Channel'}),
+      el('a', {href: 'https://t.me/+ogE4l7ZAQ-g3NDZl', target: '_blank', text: 'Official Telegram Chat'})
     ]),
-    el('div', {style:'font-weight:600;margin-bottom:10px;color:#fff', text:t('search_paste')}),
-    el('div', {class:'search'}, [
-      el('div', {class:'sf'}, [
-        el('input', {type:'text', placeholder:'...'}),
-        el('button', {text:t('search_paste')})
-      ]),
-      el('div', {class:'count', text:`${currentLang==='ru'?'Показано':'Showing'}: ${state.threads.length}`})
+    el('div', {class: 'search'}, [
+      el('div', {class: 'sf'}, [el('input', {type: 'text', placeholder: 'Search...'}), el('button', {text: 'Search'})])
     ])
-  ]));
+  ])];
 
-  const head = el('thead', null, [el('tr', null, [
-    el('th', {text:t('title')}), el('th', {class:'num', text:t('comments')}), el('th', {class:'num', text:t('views')}), el('th', {text:t('author')}), el('th', {class:'date', text:t('date')})
-  ])]);
-  
-  const body = el('tbody');
-  if(!state.threads.length) {
-    body.appendChild(el('tr', null, [el('td', {class:'empty', colspan:'5', text:currentLang==='ru'?'Пока нет тем.':'No topics yet.', style:'text-align:center;padding:20px;color:#666'})]));
-  }
-  
-  const start = (state.page - 1) * state.itemsPerPage;
-  const paginatedThreads = state.threads.slice(start, start + state.itemsPerPage);
+  const tbody = el('tbody');
+  const paged = S.threads.slice((S.page - 1) * S.limit, S.page * S.limit);
 
-  paginatedThreads.forEach(th => {
-    const comments = th.posts ? Object.keys(th.posts).length - 1 : 0;
-    const tr = el('tr', {class: th.pin ? 'pin' : '', style:'cursor:pointer', onclick: () => { state.view='thread'; state.open=th.id; render(); }}, [
-      el('td', {class:'title', text: th.title}),
-      el('td', {class:'num', text: String(comments > 0 ? comments : '—')}),
-      el('td', {class:'num', text: String(th.views || 0)}),
-      el('td', null, [getNickDisplay(th.uid, th.author)]), 
-      el('td', {class:'date', text: fmtTime(th.date)})
+  if (!paged.length) tbody.appendChild(el('tr', null, [el('td', {colspan: '5', text: 'Нет тем.', style: 'text-align:center;padding:20px;color:#666'})]));
+
+  paged.forEach(th => {
+    const tr = el('tr', {class: th.pin ? 'pin' : '', style: 'cursor:pointer', onclick: () => { S.view = 'thread'; S.open = th.id; draw(); }}, [
+      el('td', {text: th.title}),
+      el('td', {class: 'num', text: String(Math.max(0, Object.keys(th.posts || {}).length - 1))}),
+      el('td', {class: 'num', text: String(th.views || 0)}),
+      el('td', null, [nick(th.uid, th.author)]),
+      el('td', {class: 'date', text: fmt(th.date)})
     ]);
-    body.appendChild(tr);
-  });
-  
-  out.push(el('div', {class:'tablebox anim-slide'}, [el('table', null, [head, body])]));
-
-  const totalPages = Math.ceil(state.threads.length / state.itemsPerPage);
-  if(totalPages > 1) {
-    const pager = el('div', {class:'pager'});
-    for(let i=1; i<=totalPages; i++) {
-      pager.appendChild(el('button', {class: i === state.page ? 'active' : '', text: i, onclick: () => { state.page = i; render(); window.scrollTo(0,0); }}));
-    }
-    out.push(pager);
-  }
-
-  return out;
-}
-
-// ================= VIEW: THREAD =================
-function threadView() {
-  const th = state.threads.find(x => x.id === state.open);
-  if(!th) return [el('div', {text:currentLang==='ru'?'Тема не найдена':'Topic not found'})];
-  const out = [];
-  out.push(el('button', {class:'btn', text:'← ' + (currentLang==='ru'?'Назад':'Back'), onclick:() => { state.view='list'; render(); }, style:'align-self:flex-start'}));
-  out.push(el('h2', {text: th.title, style:'margin:16px 0 8px;color:#fff;font-size:20px'}));
-  
-  const posts = th.posts ? Object.values(th.posts).sort((a,b) => a.date - b.date) : [];
-  posts.forEach(p => {
-    out.push(el('div', {class:'post'}, [
-      el('div', {class:'who'}, [ getAvatar(p.uid, 48), getNickDisplay(p.uid, p.author) ]),
-      el('div', {class:'body'}, [
-        el('div', {class:'meta'}, [
-          el('span', {text: fmtTime(p.date)}),
-          (p.uid === state.user?.uid || currentIsAdmin()) ? el('button', {class:'btn small danger', text:'✕', onclick:() => {
-             if(confirm(currentLang==='ru'?'Удалить пост?':'Delete post?')) fbRemove(`threads/${th.id}/posts/${Object.keys(th.posts).find(k => th.posts[k].date === p.date)}`);
-          }}) : null
-        ].filter(Boolean)),
-        el('div', {class:'text', text: p.text}),
-        p.media ? el('div', {class:'attach'}, [el('img', {src: safeMediaUrl(p.media), onclick:() => openLightbox(p.media)})]) : null
-      ])
-    ]));
+    tbody.appendChild(tr);
   });
 
-  if(state.user) {
-    const ta = el('textarea', {placeholder: currentLang==='ru'?'Ваш ответ...':'Your reply...'});
-    const fileInp = el('input', {type:'file', accept:'image/*', style:'margin-top:10px', onchange: async e => {
-        if(!e.target.files[0]) return;
-        try { ta.dataset.media = await compressImage(e.target.files[0]); alert(currentLang==='ru'?'Фото прикреплено!':'Photo attached!'); } catch(ex) { alert(ex.message); }
-    }});
-    out.push(el('div', {class:'compose'}, [
-      ta, fileInp,
-      el('button', {class:'btn primary', text:t('send'), onclick: async () => {
-        if(!ta.value.trim()) return;
-        const postId = 'p' + Date.now();
-        await fbSet(`threads/${th.id}/posts/${postId}`, {
-          uid: state.user.uid, author: state.user.nick, text: ta.value.trim(), date: Date.now(), media: ta.dataset.media || null
-        });
-        render();
-      }})
-    ]));
-  }
-  return out;
-}
-
-// ================= VIEW: NEW PROFILE =================
-function profileView() {
-  if(!state.user) return [el('div', {text:currentLang==='ru'?'Войдите, чтобы просмотреть профиль':'Login to view profile'})];
-  const uid = state.profileUser || state.user.uid;
-  const u = getUserRecord(uid) || state.user;
-  const isMe = u.uid === state.user.uid || uid === state.user.uid;
-  const prof = u.profile || {};
-
-  // Считаем статистику юзера
-  let topicsCount = 0;
-  state.threads.forEach(th => {
-    if(th.uid === u.uid || th.author === u.nick) topicsCount++;
-  });
-
-  const avatarHtml = prof.avatar ? `<img src="${safeMediaUrl(prof.avatar)}">` : (u.nick || '?').charAt(0).toUpperCase();
-  const bannerHtml = prof.banner ? `<img src="${safeMediaUrl(prof.banner)}">` : '';
-
-  const out = [];
-
-  // Блок профиля
-  out.push(el('div', {class:'profile-container'}, [
-    el('div', {class:'profile-banner', html: bannerHtml}),
-    el('div', {class:'profile-main'}, [
-      el('div', {class:'profile-avatar', html: avatarHtml}),
-      el('div', {class:'profile-details'}, [
-        el('div', {class:'profile-name-row'}, [
-          el('div', {class:'profile-username'}, [getNickDisplay(u.uid || uid)]),
-          !isMe ? el('button', {class:'btn-follow', text:'follow'}) : el('button', {class:'btn', text:t('edit_prof'), onclick:() => { state.profileEdit = !state.profileEdit; state.profileDraft = { ...prof, nick: u.nick }; render(); }})
-        ]),
-        el('div', {class:'profile-stats-small', html:`<b>1</b> following &nbsp; <b>2</b> followers`})
-      ])
-    ])
-  ]));
-
-  // Таблица с данными
-  out.push(el('table', {class:'profile-table'}, [
-    el('tbody', null, [
-      el('tr', null, [el('td', {text:'Username'}), el('td', {text:'@' + (u.nick || 'user')})]),
-      el('tr', null, [el('td', {text:'Joined'}), el('td', {text: fmtTime(u.created)})]),
-      el('tr', null, [el('td', {text:'Topics'}), el('td', {text: String(topicsCount)})])
-    ])
-  ]));
-
-  // Блок "Приватный аккаунт" как на скрине
-  if(!isMe) {
-    out.push(el('div', {class:'profile-private-box'}, [
-      el('div', {html:`This user's account is <b>private</b>.`}),
-      el('div', {style:'margin-top:10px; font-size:12px;', html:`Already follow <b>${u.nick}</b>? <a href="#" onclick="event.preventDefault(); window.router.goAuth();">Login</a> to see their pastes and comments.`})
-    ]));
-  }
-
-  // Редактор профиля
-  if(isMe && state.profileEdit) {
-    const d = state.profileDraft;
-    const err = el('div', {class:'err'});
-    
-    const avatarFile = el('input', {type:'file', accept:'image/*', onchange: async e => {
-      if(!e.target.files[0]) return;
-      try { d.avatar = await compressImage(e.target.files[0]); alert('Avatar OK!'); } catch(ex) { err.textContent = ex.message; }
-    }});
-    
-    const bannerFile = el('input', {type:'file', accept:'image/*', onchange: async e => {
-      if(!e.target.files[0]) return;
-      try { d.banner = await compressImage(e.target.files[0]); alert('Banner OK!'); } catch(ex) { err.textContent = ex.message; }
-    }});
-
-    out.push(el('div', {class:'profile-edit'}, [
-      el('h3', {text:t('edit_prof'), style:'color:#fff;margin-bottom:10px'}),
-      el('label', null, [t('nick'), el('input', {type:'text', value: d.nick, oninput: e => d.nick = e.target.value, maxlength:'15'})]),
-      el('label', null, [t('bio'), el('textarea', {value: d.bio, oninput: e => d.bio = e.target.value, maxlength:'200', style:'min-height:60px'})]),
-      el('label', null, [t('avatar'), avatarFile]),
-      el('label', null, [t('banner'), bannerFile]),
-      err,
-      el('div', {style:'display:flex; gap:10px'}, [
-        el('button', {class:'btn primary', text:t('save'), onclick: async () => {
-          try {
-            await fbUpdate('users/' + u.uid, { nick: d.nick, profile: d });
-            state.profileEdit = false; render();
-          } catch(e) { err.textContent = e.message; }
-        }}),
-        el('button', {class:'btn', text:t('cancel'), onclick:() => { state.profileEdit = false; render(); }})
-      ])
-    ]));
-  }
-
-  return out;
-}
-
-// ================= VIEW: CHATS =================
-function chatListView() {
-  const out = [el('h2', {text:t('chats')})];
-  
-  if(state.user) {
-    const form = el('div', {class:'compose', style:'flex-direction:row;align-items:center;margin-bottom:20px'}, [
-      el('input', {type:'text', placeholder:t('new_chat'), id:'new-chat-name', style:'flex:1'}),
-      el('button', {class:'btn primary', text:'+', onclick: async () => {
-        const name = document.getElementById('new-chat-name').value.trim();
-        if(!name) return;
-        await fbSet('chats/c_' + Date.now(), { name, uid: state.user.uid, author: state.user.nick, date: Date.now(), messages: {} });
-      }})
-    ]);
-    out.push(form);
-  }
-
-  const body = el('tbody');
-  Object.values(state.chats).sort((a,b) => (b.date||0) - (a.date||0)).forEach(c => {
-    body.appendChild(el('tr', {style:'cursor:pointer', onclick: () => { 
-        state.view = 'chat'; 
-        state.chatId = c.id; 
-        render(); 
-    }}, [
-      el('td', {text: c.name || 'Без названия'}),
-      el('td', {text: Object.keys(c.messages || {}).length}),
-      el('td', null, [getNickDisplay(c.uid, c.author)]) 
-    ]));
-  });
-  
-  if(!Object.keys(state.chats).length) body.appendChild(el('tr', null, [el('td', {colspan:'3', text:t('no_chats'), style:'text-align:center;color:#666'})]));
-
-  out.push(el('div', {class:'tablebox'}, [el('table', null, [
-    el('thead', null, [el('tr', null, [el('th', {text:t('chats')}), el('th', {text:t('comments')}), el('th', {text:t('author')})])]),
-    body
+  out.push(el('div', {class: 'tablebox'}, [el('table', null, [
+    el('thead', null, [el('tr', null, ['Заголовок', 'Комменты', 'Просмотры', 'Автор', 'Дата'].map((t, i) => el('th', {text: t, class: i===1 || i===2 ? 'num' : i===4 ? 'date' : ''})))]),
+    tbody
   ])]));
+
+  return out;
+}
+
+function threadView() {
+  const th = S.threads.find(x => x.id === S.open);
+  if(!th) return [el('div', {text: 'Не найдено'})];
+
+  const out = [el('button', {class: 'btn', text: '← Назад', onclick: () => { S.view = 'list'; draw(); }, style: 'align-self:flex-start'}), el('h2', {text: th.title, style: 'margin:16px 0;color:#fff'})];
+  const posts = Object.values(th.posts || {}).sort((a,b) => a.date - b.date);
+
+  posts.forEach(p => {
+    out.push(el('div', {class: 'post'}, [
+      el('div', {class: 'who'}, [avatar(p.uid, 48), nick(p.uid, p.author)]),
+      el('div', {class: 'body'}, [
+        el('div', {class: 'meta'}, [
+          el('span', {text: fmt(p.date)}),
+          (p.uid === S.user?.uid || isAdmin()) ? el('button', {class: 'btn small danger', text: '✕', onclick: () => {
+            if(confirm('Удалить?')) del(`threads/${th.id}/posts/${Object.keys(th.posts).find(k => th.posts[k].date === p.date)}`);
+          }}) : null
+        ]),
+        el('div', {class: 'text', text: p.text}),
+        p.media ? el('img', {src: p.media, style: 'max-width:100%;margin-top:10px;border:1px solid #222'}) : null
+      ])
+    ]));
+  });
+
+  if(S.user) {
+    const ta = el('textarea', {placeholder: 'Ответ...'});
+    out.push(el('div', {class: 'compose'}, [
+      ta,
+      el('button', {class: 'btn primary', text: t('send'), onclick: async () => {
+        if(!ta.value.trim()) return;
+        await set(`threads/${th.id}/posts/p${Date.now()}`, { uid: S.user.uid, author: S.user.nick, text: ta.value.trim(), date: Date.now() });
+        draw();
+      }})
+    ]));
+  }
+  return out;
+}
+
+function profileView() {
+  if(!S.user) return [el('div', {text: 'Войдите'})];
+  const uid = S.profile || S.user.uid;
+  const u = getUser(uid) || S.user;
+  const isMe = u.uid === S.user.uid;
+  const pf = u.profile || {};
+
+  let topics = 0;
+  S.threads.forEach(th => { if(th.uid === u.uid || th.author === u.nick) topics++; });
+
+  const out = [
+    el('div', {class: 'profile-container'}, [
+      el('div', {class: 'profile-banner', html: pf.banner ? `<img src="${pf.banner}">` : ''}),
+      el('div', {class: 'profile-main'}, [
+        el('div', {class: 'profile-avatar', html: pf.avatar ? `<img src="${pf.avatar}">` : (u.nick || '?')[0].toUpperCase()}),
+        el('div', {class: 'profile-details'}, [
+          el('div', {class: 'profile-name-row'}, [
+            el('div', {class: 'profile-username'}, [nick(u.uid)]),
+            !isMe ? el('button', {class: 'btn-follow', text: 'follow'}) : el('button', {class: 'btn', text: t('edit'), onclick: () => { S.edit = !S.edit; S.draft = {...pf, nick: u.nick}; draw(); }})
+          ]),
+          el('div', {class: 'profile-stats-small', html: `<b>1</b> following &nbsp; <b>2</b> followers`})
+        ])
+      ])
+    ]),
+    el('table', {class: 'profile-table'}, [
+      el('tbody', null, [
+        el('tr', null, [el('td', {text: 'Username'}), el('td', {text: '@' + u.nick})]),
+        el('tr', null, [el('td', {text: 'Joined'}), el('td', {text: fmt(u.created)})]),
+        el('tr', null, [el('td', {text: 'Topics'}), el('td', {text: topics})])
+      ])
+    ])
+  ];
+
+  if(!isMe) {
+    out.push(el('div', {class: 'profile-private-box'}, [
+      el('div', {html: `This user's account is <b>private</b>.`}),
+      el('div', {style: 'margin-top:10px;font-size:12px', html: `Already follow <b>${u.nick}</b>? <a href="#" onclick="event.preventDefault(); S.view='auth'; draw();">Login</a> to see their pastes.`})
+    ]));
+  }
+
+  if(isMe && S.edit) {
+    const d = S.draft;
+    const aF = el('input', {type: 'file', accept: 'image/*', onchange: async e => { d.avatar = await compress(e.target.files[0]); }});
+    const bF = el('input', {type: 'file', accept: 'image/*', onchange: async e => { d.banner = await compress(e.target.files[0]); }});
+    
+    out.push(el('div', {class: 'profile-edit'}, [
+      el('h3', {text: t('edit'), style: 'color:#fff'}),
+      el('label', null, [t('nick'), el('input', {type: 'text', value: d.nick, oninput: e => d.nick = e.target.value})]),
+      el('label', null, ['Bio', el('textarea', {value: d.bio, oninput: e => d.bio = e.target.value})]),
+      el('label', null, ['Avatar', aF]),
+      el('label', null, ['Banner', bF]),
+      el('div', {style: 'display:flex;gap:10px'}, [
+        el('button', {class: 'btn primary', text: t('save'), onclick: async () => {
+          await upd('users/' + u.uid, { nick: d.nick, profile: d }); S.edit = false; draw();
+        }}),
+        el('button', {class: 'btn', text: t('cancel'), onclick: () => { S.edit = false; draw(); }})
+      ])
+    ]));
+  }
+
   return out;
 }
 
 function chatView() {
-  const c = state.chats[state.chatId];
-  if(!c || !state.chatId) return [el('div', {text:currentLang==='ru'?'Чат не найден':'Chat not found'})];
+  const c = S.chats[S.chatId];
+  if(!c) return [el('div', {text: 'Не найдено'})];
   
   const out = [
-    el('button', {class:'btn', text:'← ' + (currentLang==='ru'?'Назад':'Back'), onclick:() => { state.view = 'chatList'; render(); }, style:'align-self:flex-start'}),
-    el('h2', {text: c.name || 'Чат', style:'margin:16px 0;color:#fff'}),
-    el('div', {class:'chatwin', id:'chat-scroll'}, Object.values(c.messages || {}).sort((a,b) => (a.date||0) - (b.date||0)).map(m => 
-      el('div', {class:'chatmsg' + (m.uid === state.user?.uid ? ' self' : '')}, [
-        getAvatar(m.uid, 32),
-        el('div', {class:'bub'}, [
-          el('div', {class:'top'}, [getNickDisplay(m.uid, m.author), el('span', {text: fmtTime(m.date)})]),
-          el('div', {class:'txt', text: m.text})
+    el('button', {class: 'btn', text: '← Назад', onclick: () => { S.view = 'chatList'; draw(); }}),
+    el('h2', {text: c.name, style: 'margin:16px 0'}),
+    el('div', {class: 'chatwin'}, Object.values(c.messages || {}).sort((a,b) => a.date - b.date).map(m => 
+      el('div', {class: 'chatmsg' + (m.uid === S.user?.uid ? ' self' : '')}, [
+        avatar(m.uid, 32),
+        el('div', {class: 'bub'}, [
+          el('div', {class: 'top'}, [nick(m.uid, m.author), el('span', {text: fmt(m.date)})]),
+          el('div', {class: 'txt', text: m.text})
         ])
       ])
     ))
   ];
 
-  if(state.user) {
-    const inp = el('input', {type:'text', placeholder:t('write_msg')});
-    out.push(el('div', {class:'compose', style:'flex-direction:row;align-items:center'}, [
-      inp,
-      el('button', {class:'btn primary', text:t('send'), onclick: async () => {
-        if(!inp.value.trim()) return;
-        await fbSet(`chats/${state.chatId}/messages/m${Date.now()}`, { uid: state.user.uid, author: state.user.nick, text: inp.value.trim(), date: Date.now() });
-        inp.value = '';
+  if(S.user) {
+    const i = el('input', {placeholder: 'Сообщение...'});
+    out.push(el('div', {class: 'compose'}, [
+      i,
+      el('button', {class: 'btn primary', text: t('send'), onclick: async () => {
+        if(!i.value.trim()) return;
+        await set(`chats/${S.chatId}/messages/m${Date.now()}`, { uid: S.user.uid, author: S.user.nick, text: i.value.trim(), date: Date.now() });
+        i.value = '';
       }})
     ]));
-  } else {
-    out.push(el('div', {text:t('enter_to_write'), style:'color:#666;text-align:center'}));
   }
-  setTimeout(() => { const w = document.getElementById('chat-scroll'); if(w) w.scrollTop = w.scrollHeight; }, 100);
   return out;
 }
 
-function dmView() {
-  const d = state.dms[state.dmId];
-  if(!d) return [el('div', {text:currentLang==='ru'?'Диалог не найден':'Dialog not found'})];
-  const out = [
-    el('button', {class:'btn', text:'← ' + (currentLang==='ru'?'Назад':'Back'), onclick:() => { state.view = 'list'; render(); }, style:'align-self:flex-start'}),
-    el('h2', {text: state.users[state.dmTarget]?.nick || 'User', style:'margin:16px 0;color:#fff'}),
-    el('div', {class:'chatwin', id:'chat-scroll'}, Object.values(d.messages || {}).sort((a,b) => (a.date||0) - (b.date||0)).map(m => 
-      el('div', {class:'chatmsg' + (m.uid === state.user?.uid ? ' self' : '')}, [
-        getAvatar(m.uid, 32),
-        el('div', {class:'bub'}, [
-          el('div', {class:'top'}, [getNickDisplay(m.uid, m.author), el('span', {text: fmtTime(m.date)})]),
-          el('div', {class:'txt', text: m.text})
-        ])
-      ])
-    ))
-  ];
-
-  if(state.user) {
-    const inp = el('input', {type:'text', placeholder:t('write_msg')});
-    out.push(el('div', {class:'compose', style:'flex-direction:row;align-items:center'}, [
-      inp,
-      el('button', {class:'btn primary', text:t('send'), onclick: async () => {
-        if(!inp.value.trim()) return;
-        await fbSet(`dms/${d.id}/messages/m${Date.now()}`, { uid: state.user.uid, author: state.user.nick, text: inp.value.trim(), date: Date.now() });
-        inp.value = '';
-      }})
+function chatListView() {
+  const tbody = el('tbody');
+  Object.values(S.chats).sort((a,b) => (b.date||0) - (a.date||0)).forEach(c => {
+    tbody.appendChild(el('tr', {style: 'cursor:pointer', onclick: () => { S.view = 'chat'; S.chatId = c.id; draw(); }}, [
+      el('td', {text: c.name}),
+      el('td', {text: Object.keys(c.messages || {}).length}),
+      el('td', null, [nick(c.uid, c.author)])
     ]));
-  }
-  setTimeout(() => { const w = document.getElementById('chat-scroll'); if(w) w.scrollTop = w.scrollHeight; }, 100);
-  return out;
+  });
+  return [
+    el('h2', {text: 'Чаты'}),
+    el('div', {class: 'tablebox'}, [el('table', null, [tbody])])
+  ];
 }
 
 function membersView() {
-  const out = [el('h2', {text:t('users')})];
-  const body = el('tbody');
-  Object.values(state.users).forEach(u => {
-    if(!u || !u.nick) return; 
-    
-    body.appendChild(el('tr', null, [
-      el('td', null, [getNickDisplay(u.uid)]),
+  const tbody = el('tbody');
+  Object.values(S.users).forEach(u => {
+    if(!u.nick) return;
+    tbody.appendChild(el('tr', null, [
+      el('td', null, [nick(u.uid)]),
       el('td', {text: u.owner ? 'Owner' : (u.role || 'user')}),
-      el('td', {text: fmtTime(u.created)})
+      el('td', {text: fmt(u.created)})
     ]));
   });
-  out.push(el('div', {class:'tablebox'}, [el('table', null, [
-    el('thead', null, [el('tr', null, [el('th', {text:t('users')}), el('th', {text:'Role'}), el('th', {text:t('date')})])]),
-    body
-  ])]));
-  return out;
+  return [el('h2', {text: 'Юзеры'}), el('div', {class: 'tablebox'}, [el('table', null, [tbody])])];
 }
 
-// ================= ROUTER & RENDER =================
-function render() {
+function draw() {
   const app = document.getElementById('app');
-  app.replaceChildren();
+  app.innerHTML = '';
   
-  const who = document.getElementById('who');
-  who.replaceChildren();
-  if(state.user) {
-    who.appendChild(el('span', {text:(currentLang==='ru'?'Привет, ':'Hello, '), class:'who-name'}));
-    who.appendChild(getNickDisplay(state.user.uid));
-    who.appendChild(el('button', {text:t('logout'), onclick:() => auth.signOut()}));
+  const w = document.getElementById('who');
+  w.innerHTML = '';
+  if(S.user) {
+    w.append(nick(S.user.uid), el('button', {text: t('out'), onclick: () => auth.signOut()}));
   } else {
-    who.appendChild(el('button', {text:t('login'), onclick:() => { state.view='auth'; state.authMode='login'; render(); }}));
+    w.append(el('button', {text: t('login'), onclick: () => { S.view = 'auth'; S.authMode = 'login'; draw(); }}));
   }
-
-  document.getElementById('nav-admin').style.display = currentIsAdmin() ? '' : 'none';
+  document.getElementById('nav-admin').style.display = isAdmin() ? '' : 'none';
 
   let nodes = [];
-  try {
-    if(state.view === 'auth') nodes = authView();
-    else if(state.view === 'thread') nodes = threadView();
-    else if(state.view === 'chatList') nodes = chatListView();
-    else if(state.view === 'chat') nodes = chatView();
-    else if(state.view === 'dm') nodes = dmView();
-    else if(state.view === 'profile') nodes = profileView();
-    else if(state.view === 'members') nodes = membersView();
-    else nodes = listView(); 
-  } catch(e) {
-    console.error(e);
-    nodes = [el('div', {style:'color:red;padding:20px', text:'Ошибка рендера: ' + e.message})];
-  }
+  if(S.view === 'auth') nodes = authView();
+  else if(S.view === 'thread') nodes = threadView();
+  else if(S.view === 'chatList') nodes = chatListView();
+  else if(S.view === 'chat') nodes = chatView();
+  else if(S.view === 'profile') nodes = profileView();
+  else if(S.view === 'members') nodes = membersView();
+  else nodes = listView();
 
-  nodes.forEach(n => { if(n) app.appendChild(n); });
+  nodes.forEach(n => n && app.append(n));
 }
 
-window.router = {
-  home: () => { state.view='list'; state.open=null; render(); },
-  goAuth: () => { state.view='auth'; state.authMode='login'; render(); },
+const router = {
+  home: () => { S.view = 'list'; S.open = null; draw(); },
+  goChats: () => { S.view = 'chatList'; draw(); },
+  goMembers: () => { S.view = 'members'; draw(); },
   goNew: () => { 
-    if(!state.user) { state.view='auth'; state.authMode='login'; render(); return; } 
-    const title = prompt(currentLang==='ru'?'Заголовок темы:':'Topic title:');
-    if(!title) return;
-    const content = prompt(currentLang==='ru'?'Текст темы:':'Topic text:');
-    if(!content) return;
-    fbSet('threads/t_' + Date.now(), {
-      title, uid: state.user.uid, author: state.user.nick, date: Date.now(), views: 0, pin: false,
-      posts: { p0: { uid: state.user.uid, author: state.user.nick, text: content, date: Date.now() } }
-    }).then(() => render());
-  },
-  goChats: () => { state.view='chatList'; render(); },
-  goMembers: () => { state.view='members'; render(); },
-  goAdmin: () => { state.view='admin'; render(); }
+    if(!S.user) { S.view = 'auth'; draw(); return; }
+    const title = prompt('Заголовок:');
+    const text = prompt('Текст:');
+    if(title && text) set('threads/t' + Date.now(), { title, uid: S.user.uid, author: S.user.nick, date: Date.now(), posts: { p0: { uid: S.user.uid, text, date: Date.now() } } }).then(draw);
+  }
 };
 
-// ================= FIREBASE SYNC =================
-
-db.ref('users').on('value', snap => {
-  state.users = snap.val() || {};
-  render();
+db.ref('users').on('value', s => { S.users = s.val() || {}; draw(); });
+db.ref('threads').on('value', s => { 
+  const d = s.val() || {}; 
+  S.threads = Object.keys(d).map(k => ({ id: k, ...d[k] })).sort((a,b) => (b.date||0) - (a.date||0)); 
+  if(S.view !== 'chat') draw(); 
 });
-
-db.ref('threads').on('value', snap => {
-  const data = snap.val() || {};
-  state.threads = Object.keys(data).map(k => ({ id: k, ...data[k] })).sort((a,b) => (b.date||0) - (a.date||0));
-  if(state.view === 'list' || state.view === 'thread' || state.view === 'profile') render();
-});
-
-db.ref('chats').on('value', snap => {
-  const data = snap.val() || {};
-  state.chats = Object.keys(data).reduce((acc, key) => {
-    acc[key] = { id: key, ...data[key] };
-    return acc;
-  }, {});
-  
-  if(state.view.startsWith('chat')) render();
-});
-
-db.ref('dms').on('value', snap => {
-  state.dms = snap.val() || {};
-  if(state.view.startsWith('dm')) render();
+db.ref('chats').on('value', s => { 
+  const d = s.val() || {}; 
+  S.chats = Object.keys(d).reduce((a, k) => { a[k] = { id: k, ...d[k] }; return a; }, {}); 
+  if(S.view.includes('chat')) draw(); 
 });
 
 auth.onAuthStateChanged(async u => {
   if(u) {
-    let rec = await fbGet('users/' + u.uid);
-    
-    // Если профиля нет в базе, но он был создан по нику (старая версия), ищем по нику
+    let rec = await get('users/' + u.uid);
     if(!rec) {
-      const defaultNick = u.email.split('@')[0];
-      const usersSnap = await fbGet('users');
-      if(usersSnap) {
-         const foundByNick = Object.values(usersSnap).find(user => user.nick && user.nick.toLowerCase() === defaultNick.toLowerCase());
-         if(foundByNick) {
-           rec = foundByNick;
-           await fbSet('users/' + u.uid, { ...rec, uid: u.uid });
-         }
-      }
+      const dNick = u.email.split('@')[0];
+      const all = await get('users');
+      const found = all ? Object.values(all).find(x => x.nick?.toLowerCase() === dNick) : null;
+      if(found) { rec = found; await set('users/' + u.uid, { ...rec, uid: u.uid }); }
     }
-
-    if(rec) {
-      state.user = { uid: u.uid, email: u.email, nick: rec.nick, owner: rec.owner, role: rec.role };
-    } else {
-      const defaultNick = u.email.split('@')[0] || 'User_'+u.uid.slice(0,4);
-      await fbSet('users/' + u.uid, { uid: u.uid, email: u.email, nick: defaultNick, role: 'user', owner: false, created: Date.now(), profile: {} });
-      state.user = { uid: u.uid, email: u.email, nick: defaultNick };
-    }
-  } else {
-    state.user = null;
-  }
-  render();
+    S.user = rec ? { uid: u.uid, nick: rec.nick, owner: rec.owner, role: rec.role } : { uid: u.uid, nick: u.email.split('@')[0], role: 'user' };
+  } else S.user = null;
+  draw();
 });
 
-// INIT
-setLang(currentLang);
-render();
-
+setLang(lang);
 </script>
 </body>
 </html>
