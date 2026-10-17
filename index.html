@@ -208,7 +208,7 @@ video.nick-media{width:18px;height:18px}
     <button class="link" onclick="router.goNew()">Новая тема</button>
     <button class="link" onclick="router.goPriv()">Привилегия</button>
     <button class="link" id="nav-admin" style="display:none" onclick="router.goAdmin()">Админка</button>
-    
+
     <div class="nav-search">
       <input type="text" id="global-search" placeholder="Поиск..." autocomplete="off">
     </div>
@@ -258,29 +258,36 @@ let lang = localStorage.getItem('lang') || 'ru';
 const t = k => T[lang][k] || k;
 
 // всё состояние в одной куче
-let S = {ready:false, drafts:{}, follows:{}, fill:null, view:'list', authMode:'login', open:null, threads:[], user:null, users:{}, chats:{}, chatId:null, profile:null, edit:false, draft:null, page:1, limit:10};
+let S = {
+  ready:false, drafts:{}, follows:{}, fill:null, view:'list',
+  authMode:'login', open:null, threads:[], user:null, users:{},
+  chats:{}, chatId:null, profile:null, edit:false, draft:null,
+  page:1, limit:10, busy:false, registering:false,
+  lastSend:{}, adminTab:'users', search:''
+};
 
 // маленький помощник чтобы не писать createElement каждый раз
 function el(tag, attrs, kids) {
   const e = document.createElement(tag);
   for (const k in (attrs || {})) {
     const v = attrs[k];
-    if (k == 'class') e.className = v;
-    else if (k == 'text') e.textContent = v;
+    if (k === 'class') e.className = v;
+    else if (k === 'text') e.textContent = v;
     else if (k.startsWith('on')) e.addEventListener(k.slice(2), v);
-    else e.setAttribute(k, v);
+    else if (v != null && v !== false) e.setAttribute(k, v);
   }
   (kids || []).forEach(c => {
-    if (c) e.appendChild(typeof c == 'string' ? document.createTextNode(c) : c);
+    if (c == null || c === false) return;
+    e.appendChild(typeof c === 'string' ? document.createTextNode(c) : c);
   });
   return e;
 }
 
 function fmt(ts) {
   if (!ts) return '—';
-  return new Date(ts).toLocaleDateString(lang == 'ru' ? 'ru-RU' : 'en-GB', {day:'numeric', month:'short', year:'numeric'});
+  return new Date(ts).toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'en-GB', {day:'numeric', month:'short', year:'numeric'});
 }
-const isStaff = u => !!u && (u.owner === true || u.role == 'admin' || u.role == 'moderator');
+const isStaff = u => !!u && (u.owner === true || u.role === 'admin' || u.role === 'moderator');
 function isAdmin() { return isStaff(S.user); }
 // привилегия: премиум, овнер или админ
 const canPriv = u => !!u && (isStaff(u) || u.premium === true);
@@ -288,9 +295,9 @@ const canPriv = u => !!u && (isStaff(u) || u.premium === true);
 function setLang(l) {
   lang = l;
   localStorage.setItem('lang', l);
-  document.getElementById('btn-ru').className = l == 'ru' ? 'active' : '';
-  document.getElementById('btn-en').className = l == 'en' ? 'active' : '';
-  document.getElementById('footer-rights').textContent = l == 'ru' ? 'Все права защищены' : 'All rights reserved';
+  document.getElementById('btn-ru').className = l === 'ru' ? 'active' : '';
+  document.getElementById('btn-en').className = l === 'en' ? 'active' : '';
+  document.getElementById('footer-rights').textContent = l === 'ru' ? 'Все права защищены' : 'All rights reserved';
   draw();
 }
 
@@ -304,8 +311,8 @@ const COLORS = [
 ];
 const PEMOJI = ['😀','😎','🔥','⚡','💀','👑','🎯','🚀','💎','🌙','⭐','❤️','💚','💙','🧡','💜','🖤','🤍','🐉','🦅','🎮','🎧','🍀','☄️','✨','🏆','🗡️','🛡️','🧿','🔮','🎸','🎬','📸','💻','🌊','🍁','🌸','❄️','☀️','🔱','⚔️','🤖','👾','👽','🐺'];
 const BAD_PREFIX = /admin|админ|mod|мод|owner|владел|root|system|support|саппорт|official|60tdel/i;
-const okImg = x => typeof x == 'string' && /^data:image\/(jpeg|png|webp);base64,/.test(x);
-const okVid = x => typeof x == 'string' && /^data:video\/(mp4|webm);base64,/.test(x);
+const okImg = x => typeof x === 'string' && /^data:image\/(jpeg|png|webp);base64,/.test(x);
+const okVid = x => typeof x === 'string' && /^data:video\/(mp4|webm);base64,/.test(x);
 const TS = firebase.database.ServerValue.TIMESTAMP;
 
 // номер берётся из users/<uid>/phone и виден всем в профиле
@@ -346,12 +353,11 @@ function getUser(id) {
   if (!id) return null;
   if (S.users[id]) return S.users[id];
   // это мы сами, а в базе записи нет (или она не прочиталась)
-  if (S.user && S.user.uid == id) return S.user;
+  if (S.user && S.user.uid === id) return S.user;
   const low = String(id).toLowerCase();
-  return Object.values(S.users).find(u => u.nick && u.nick.toLowerCase() == low) || null;
+  return Object.values(S.users).find(u => u.nick && u.nick.toLowerCase() === low) || null;
 }
 
-// второй аргумент - ник из самого поста, на случай если юзера в базе нет
 function mediaEl(m) {
   if (!m) return null;
   if (okVid(m.s)) {
@@ -366,17 +372,17 @@ function mediaEl(m) {
 
 // рисуем ник по объекту юзера (так работает и превью в редакторе)
 function nickOf(u, fallback) {
-  const pf = u.profile || {};
+  const pf = (u && u.profile) || {};
   const priv = canPriv(u);
   let label = priv ? (pf.prefix || '') : '';
   let cls = 'prefix-custom';
   if (u.owner) { cls = 'prefix-owner'; label = label || 'Founder'; }
-  else if (u.role == 'admin') { cls = 'prefix-admin'; label = label || 'Admin'; }
-  else if (u.role == 'moderator') { cls = 'prefix-moderator'; label = label || 'Mod'; }
+  else if (u.role === 'admin') { cls = 'prefix-admin'; label = label || 'Admin'; }
+  else if (u.role === 'moderator') { cls = 'prefix-moderator'; label = label || 'Mod'; }
   const pre = label ? el('span', {class:'nick-prefix ' + cls, text:'[' + label + ']'}) : null;
   if (pre && priv && /^#[0-9a-fA-F]{6}$/.test(pf.prefixColor || '')) pre.style.color = pf.prefixColor;
 
-  const col = COLORS.find(c => c.id == pf.color);
+  const col = COLORS.find(c => c.id === pf.color);
   const name = el('span', {class:'nick-glow ' + (priv && col ? col.cls : '')}, [u.nick || fallback || 'User']);
   if (priv && pf.emoji) name.append(el('span', {class:'nick-emoji', text: pf.emoji}));
 
@@ -406,7 +412,7 @@ function avatar(id, sz) {
 // ---------- вход / регистрация ----------
 
 function authView() {
-  const isLogin = S.authMode == 'login';
+  const isLogin = S.authMode === 'login';
   const err = el('div', {class:'err'});
   const n = el('input', {type:'text', placeholder: t('nick'), maxlength:'15'});
   const p = el('input', {type:'password', placeholder: t('pass'), minlength:'6'});
@@ -498,19 +504,29 @@ function listView() {
 ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░  ░▒▓█▓▒░   ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        
  ░▒▓██████▓▒░░▒▓████████▓▒░  ░▒▓█▓▒░   ░▒▓███████▓▒░░▒▓████████▓▒░▒▓████████▓▒░ `;
 
+  const searchIn = el('input', {type:'text', placeholder:'Search...', value: S.search || ''});
+  const doSearch = () => { S.search = searchIn.value.trim(); S.page = 1; draw(); };
+  searchIn.onkeydown = e => { if (e.key === 'Enter') doSearch(); };
+
   const out = [el('div', {class:'hero anim-fade'}, [
     el('div', {class:'hero-art', text: art}),
     el('div', {class:'links'}, [
-      el('a', {href:'https://t.me/B2L3NC1AGA', target:'_blank', text:'Official Telegram Channel'}),
-      el('a', {href:'https://t.me/+ogE4l7ZAQ-g3NDZl', target:'_blank', text:'Official Telegram Chat'})
+      el('a', {href:'https://t.me/B2L3NC1AGA', target:'_blank', rel:'noopener noreferrer', text:'Official Telegram Channel'}),
+      el('a', {href:'https://t.me/+ogE4l7ZAQ-g3NDZl', target:'_blank', rel:'noopener noreferrer', text:'Official Telegram Chat'})
     ]),
     el('div', {class:'search'}, [
-      el('div', {class:'sf'}, [el('input', {type:'text', placeholder:'Search...'}), el('button', {text:'Search'})])
+      el('div', {class:'sf'}, [searchIn, el('button', {text:'Search', onclick: doSearch})])
     ])
   ])];
 
+  let rows = S.threads;
+  if (S.search) {
+    const q = S.search.toLowerCase();
+    rows = rows.filter(th => (th.title || '').toLowerCase().includes(q) || (th.author || '').toLowerCase().includes(q));
+  }
+
   const tbody = el('tbody');
-  const page = S.threads.slice((S.page - 1) * S.limit, S.page * S.limit);
+  const page = rows.slice((S.page - 1) * S.limit, S.page * S.limit);
 
   if (!page.length) {
     tbody.appendChild(el('tr', null, [el('td', {colspan:'5', text:'Нет тем.', style:'text-align:center;padding:20px;color:#666'})]));
@@ -532,12 +548,23 @@ function listView() {
   });
 
   const heads = ['Заголовок', 'Комменты', 'Просмотры', 'Автор', 'Дата'].map((x, i) =>
-    el('th', {text: x, class: (i == 1 || i == 2) ? 'num' : (i == 4 ? 'date' : '')}));
+    el('th', {text: x, class: (i === 1 || i === 2) ? 'num' : (i === 4 ? 'date' : '')}));
 
   out.push(el('div', {class:'tablebox'}, [el('table', null, [
     el('thead', null, [el('tr', null, heads)]),
     tbody
   ])]));
+
+  // pager
+  const pages = Math.max(1, Math.ceil(rows.length / S.limit));
+  if (pages > 1) {
+    const pager = el('div', {class:'pager'});
+    for (let i = 1; i <= pages; i++) {
+      pager.append(el('button', {class: i === S.page ? 'active' : '', text: String(i), onclick: () => { S.page = i; draw(); }}));
+    }
+    out.push(pager);
+  }
+
   return out;
 }
 
@@ -566,8 +593,9 @@ function composer(key, ph, onSend) {
   async function send() {
     const text = ta.value.trim();
     if ((!text && !pic) || busy) return;
-    if (Date.now() - (S.lastSend || 0) < 1500) return; // не чаще раза в 1.5 сек
-    S.lastSend = Date.now();
+    const now = Date.now();
+    if (now - (S.lastSend[key] || 0) < 1500) return; // не чаще раза в 1.5 сек на поле
+    S.lastSend[key] = now;
     busy = true;
     try {
       await onSend(text, pic);
@@ -576,10 +604,10 @@ function composer(key, ph, onSend) {
     busy = false;
     ta.focus();
   }
-  ta.onkeydown = e => { if (e.key == 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } };
+  ta.onkeydown = e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } };
 
   return el('div', {class:'compose'}, [prev, ta, panel, el('div', {class:'bar'}, [
-    el('button', {class:'btn small', type:'button', text:'😊', onclick: () => { panel.style.display = panel.style.display == 'none' ? 'flex' : 'none'; }}),
+    el('button', {class:'btn small', type:'button', text:'😊', onclick: () => { panel.style.display = panel.style.display === 'none' ? 'flex' : 'none'; }}),
     el('button', {class:'btn small', type:'button', text:'📷', onclick: () => file.click()}),
     file,
     el('button', {class:'btn primary', type:'button', text: t('send'), onclick: send})
@@ -589,17 +617,17 @@ function composer(key, ph, onSend) {
 function picEl(src) { return okImg(src) ? el('img', {class:'msgimg', src: src}) : null; }
 
 function threadView() {
-  const th0 = S.threads.find(x => x.id == S.open);
+  const th0 = S.threads.find(x => x.id === S.open);
   if (!th0) return [el('div', {text:'Не найдено'})];
   const box = el('div', {style:'display:flex;flex-direction:column;gap:12px'});
 
   S.fill = () => {
-    const th = S.threads.find(x => x.id == S.open);
+    const th = S.threads.find(x => x.id === S.open);
     if (!th) return;
     const y = window.scrollY;
     box.innerHTML = '';
     Object.entries(th.posts || {}).map(([key, p]) => ({...p, key})).sort((a, b) => a.date - b.date).forEach(p => {
-      const mine = S.user && p.uid == S.user.uid;
+      const mine = S.user && p.uid === S.user.uid;
       box.append(el('div', {class:'post'}, [
         el('div', {class:'who'}, [avatar(p.uid, 48), nick(p.uid, p.author || th.author)]),
         el('div', {class:'body'}, [
@@ -618,19 +646,20 @@ function threadView() {
   };
   S.fill();
 
-  const idx = S.threads.findIndex(x => x.id == th0.id);
+  const idx = S.threads.findIndex(x => x.id === th0.id);
   const prevTh = idx > 0 ? S.threads[idx - 1] : null;
   const nextTh = idx >= 0 && idx < S.threads.length - 1 ? S.threads[idx + 1] : null;
 
   const navBtn = (th, arrow) => {
     const label = th ? (th.title.length > 28 ? th.title.slice(0, 28) + '…' : th.title) : '—';
-    return el('button', {
-      class: 'btn small',
-      disabled: th ? null : 'disabled',
+    const b = el('button', {
+      class:'btn small',
       title: th ? th.title : '',
       text: arrow + ' ' + label,
       onclick: th ? () => { S.open = th.id; draw(); } : null
     });
+    if (!th) b.disabled = true;
+    return b;
   };
 
   const out = [
@@ -666,8 +695,8 @@ function privBox(d) {
   const emg = el('div', {class:'emg'});
   function fill() {
     dots.innerHTML = ''; emg.innerHTML = '';
-    COLORS.forEach(c => dots.append(el('span', {class:'dot' + (d.color == c.id ? ' on' : ''), title: c.n, style:'background:' + c.dot, onclick: () => { d.color = c.id; fill(); show(); }})));
-    PEMOJI.forEach(em => emg.append(el('button', {type:'button', class: d.emoji == em ? 'on' : '', text: em, onclick: () => { d.emoji = d.emoji == em ? '' : em; fill(); show(); }})));
+    COLORS.forEach(c => dots.append(el('span', {class:'dot' + (d.color === c.id ? ' on' : ''), title: c.n, style:'background:' + c.dot, onclick: () => { d.color = c.id; fill(); show(); }})));
+    PEMOJI.forEach(em => emg.append(el('button', {type:'button', class: d.emoji === em ? 'on' : '', text: em, onclick: () => { d.emoji = d.emoji === em ? '' : em; fill(); show(); }})));
   }
   fill(); show();
   const body = el('div', {class: ok ? '' : 'lock', style:'display:grid;gap:14px'}, [
@@ -694,7 +723,12 @@ function privView() {
   ];
   if (canPriv(me)) {
     out.push(el('div', {style:'color:#4dd47e;margin-bottom:12px', text:'✔ Привилегия активна'}));
-    out.push(el('button', {class:'btn primary', text:'Настроить префикс', style:'margin-bottom:14px', onclick: () => { S.view = 'profile'; S.profile = me.uid; S.edit = true; const pf = me.profile || {}; S.draft = {bio: pf.bio || '', avatar: pf.avatar, banner: pf.banner, nickMedia: pf.nickMedia, nick: me.nick, prefix: pf.prefix || '', prefixColor: pf.prefixColor || '', color: pf.color || '', emoji: pf.emoji || ''}; draw(); }}));
+    out.push(el('button', {class:'btn primary', text:'Настроить префикс', style:'margin-bottom:14px', onclick: () => {
+      S.view = 'profile'; S.profile = me.uid; S.edit = true;
+      const pf = me.profile || {};
+      S.draft = {bio: pf.bio || '', avatar: pf.avatar, banner: pf.banner, nickMedia: pf.nickMedia, nick: me.nick, prefix: pf.prefix || '', prefixColor: pf.prefixColor || '', color: pf.color || '', emoji: pf.emoji || ''};
+      draw();
+    }}));
   } else {
     out.push(el('a', {class:'btn primary', href:'https://t.me/uhrap', target:'_blank', rel:'noopener noreferrer', text:'Приобрести привилегию', style:'display:inline-block;margin-bottom:14px'}));
   }
@@ -723,7 +757,7 @@ function adminUsers() {
   const rows = Object.entries(S.users).sort((a, b) => String(a[1].nick).localeCompare(String(b[1].nick))).map(([k, u]) => {
     const isOwn = u.owner === true;
     const follCount = u.followers ? u.followers : (u.owner ? 666 : Object.keys(S.follows[u.uid] || {}).length);
-    
+
     return [
       nickOf(u),
       abtn(u.role || 'user', '', () => {
@@ -731,7 +765,7 @@ function adminUsers() {
         if (['user', 'moderator', 'admin'].includes(v)) db.ref('users/' + k + '/role').set(v).catch(fail);
       }),
       abtn(u.premium ? 'Снять' : 'Выдать', u.premium ? '' : 'primary', () => db.ref('users/' + k + '/premium').set(!u.premium).catch(fail)),
-      
+
       // НОМЕР
       el('div', {class:'phone-cell'}, [
         el('span', {class:'val', text: phoneOf(u) || '—', style:'color:' + (phoneOf(u) ? '#fff' : '#555')}),
@@ -752,8 +786,8 @@ function adminUsers() {
           const cur = u.followers || follCount;
           const v = prompt('Кол-во подписчиков (пусто — сбросить):', cur);
           if (v === null) return;
-          const val = parseInt(v.trim());
           if (!v.trim()) { db.ref('users/' + k + '/followers').remove().catch(fail); return; }
+          const val = parseInt(v.trim(), 10);
           if (isNaN(val) || val < 0) return alert('Нужно положительное число');
           db.ref('users/' + k + '/followers').set(val).catch(fail);
         })
@@ -761,7 +795,7 @@ function adminUsers() {
 
       iOwner
         ? abtn(isOwn ? 'Снять' : 'Выдать', isOwn ? 'danger' : 'primary', () => {
-            if (isOwn && k == S.user.uid) return alert('Себя лишить овнера нельзя');
+            if (isOwn && k === S.user.uid) return alert('Себя лишить овнера нельзя');
             db.ref('users/' + k + '/owner').set(!isOwn).catch(fail);
           })
         : el('span', {text: isOwn ? 'Да' : 'Нет'}),
@@ -806,8 +840,8 @@ function adminView() {
   const names = {users:'Пользователи', threads:'Темы', chats:'Чаты'};
   return [
     el('h2', {text:'Админ-панель', style:'color:#fff'}),
-    el('div', {class:'admin-tabs'}, Object.keys(names).map(k => el('button', {class: tab == k ? 'active' : '', text: names[k], onclick: () => { S.adminTab = k; draw(); }}))),
-    tab == 'threads' ? adminThreads() : tab == 'chats' ? adminChats() : adminUsers()
+    el('div', {class:'admin-tabs'}, Object.keys(names).map(k => el('button', {class: tab === k ? 'active' : '', text: names[k], onclick: () => { S.adminTab = k; draw(); }}))),
+    tab === 'threads' ? adminThreads() : tab === 'chats' ? adminChats() : adminUsers()
   ];
 }
 
@@ -815,14 +849,13 @@ function profileView() {
   const uid = S.profile || (S.user && S.user.uid);
   const u = getUser(uid);
   if (!u) return [el('div', {text:'Профиль не найден'})];
-  const isMe = S.user && u.uid == S.user.uid;
+  const isMe = S.user && u.uid === S.user.uid;
   const pf = u.profile || {};
 
-  const mine = S.threads.filter(th => th.uid == u.uid || th.author == u.nick);
+  const mine = S.threads.filter(th => th.uid === u.uid || th.author === u.nick);
   let posts = 0;
-  S.threads.forEach(th => Object.values(th.posts || {}).forEach(p => { if (p.uid == u.uid) posts++; }));
-  
-  // Если админ задал кол-во подписчиков, показываем его. Иначе реальное.
+  S.threads.forEach(th => Object.values(th.posts || {}).forEach(p => { if (p.uid === u.uid) posts++; }));
+
   const followers = u.followers !== undefined ? u.followers : (u.owner ? 666 : Object.keys(S.follows[u.uid] || {}).length);
   const following = Object.values(S.follows).filter(f => f[u.uid]).length;
   const iFollow = S.user && S.follows[u.uid] && S.follows[u.uid][S.user.uid];
@@ -834,7 +867,11 @@ function profileView() {
   else av.textContent = (u.nick || '?')[0].toUpperCase();
 
   const btn = isMe
-    ? el('button', {class:'btn', text: t('edit'), onclick: () => { S.edit = !S.edit; S.draft = {bio: pf.bio || '', avatar: pf.avatar, banner: pf.banner, nickMedia: pf.nickMedia, nick: u.nick, prefix: pf.prefix || '', prefixColor: pf.prefixColor || '', color: pf.color || '', emoji: pf.emoji || ''}; draw(); }})
+    ? el('button', {class:'btn', text: t('edit'), onclick: () => {
+        S.edit = !S.edit;
+        S.draft = {bio: pf.bio || '', avatar: pf.avatar, banner: pf.banner, nickMedia: pf.nickMedia, nick: u.nick, prefix: pf.prefix || '', prefixColor: pf.prefixColor || '', color: pf.color || '', emoji: pf.emoji || ''};
+        draw();
+      }})
     : el('button', {class: 'btn ' + (iFollow ? '' : 'primary'), text: iFollow ? 'Отписаться' : 'Подписаться', onclick: () => {
         if (!S.user) { S.view = 'auth'; draw(); return; }
         const r = db.ref('follows/' + u.uid + '/' + S.user.uid);
@@ -928,8 +965,8 @@ function profileView() {
           if (!/^[A-Za-z0-9_]{3,15}$/.test(n)) { err.textContent = 'Ник: 3-15 символов, латиница, цифры, _'; return; }
           if (d.prefix && !isStaff(S.user) && BAD_PREFIX.test(d.prefix)) { err.textContent = 'Этот префикс запрещён'; return; }
           const oldLow = (u.nick || '').toLowerCase();
-          if (n.toLowerCase() != oldLow) {
-            const busy = Object.entries(S.users).some(([k, x]) => k != u.uid && x.uid != u.uid && x.nick && x.nick.toLowerCase() == n.toLowerCase());
+          if (n.toLowerCase() !== oldLow) {
+            const busy = Object.entries(S.users).some(([k, x]) => k !== u.uid && x.uid !== u.uid && x.nick && x.nick.toLowerCase() === n.toLowerCase());
             if (busy) { err.textContent = 'Ник занят'; return; }
             let ok = false;
             try { ok = await claimNick(n, u.uid); } catch (x) { console.error(x); }
@@ -937,7 +974,7 @@ function profileView() {
           }
           try {
             await upd('users/' + u.uid, {nick: n, profile: {bio: d.bio || '', avatar: d.avatar || null, banner: d.banner || null, nickMedia: d.nickMedia || null, prefix: d.prefix || null, prefixColor: d.prefixColor || null, color: d.color || null, emoji: d.emoji || null}});
-            if (n.toLowerCase() != oldLow) db.ref('nicks/' + oldLow).remove().catch(() => {});
+            if (n.toLowerCase() !== oldLow) db.ref('nicks/' + oldLow).remove().catch(() => {});
             S.user.nick = n; S.edit = false; draw();
           } catch (x) { err.textContent = 'Не сохранилось: ' + x.message; }
         }}),
@@ -963,7 +1000,7 @@ function chatView() {
     const near = stick || win.scrollHeight - win.scrollTop - win.clientHeight < 80;
     win.innerHTML = '';
     Object.entries(cc.messages || {}).map(([key, m]) => ({...m, key})).sort((a, b) => a.date - b.date).forEach(m => {
-      const mine = S.user && m.uid == S.user.uid;
+      const mine = S.user && m.uid === S.user.uid;
       win.append(el('div', {class:'chatmsg' + (mine ? ' self' : '')}, [
         avatar(m.uid, 32),
         el('div', {class:'bub'}, [
@@ -997,7 +1034,7 @@ function chatView() {
 function chatListView() {
   const tbody = el('tbody');
   Object.values(S.chats).sort((a, b) => (b.date || 0) - (a.date || 0)).forEach(c => {
-    const canDel = S.user && (c.uid == S.user.uid || isAdmin());
+    const canDel = S.user && (c.uid === S.user.uid || isAdmin());
     tbody.appendChild(el('tr', {style:'cursor:pointer', onclick: () => {
       S.view = 'chat';
       S.chatId = c.id;
@@ -1027,7 +1064,7 @@ function chatListView() {
         .then(() => { inp.value = ''; })
         .catch(fail);
     };
-    inp.onkeydown = e => { if (e.key == 'Enter') create(); };
+    inp.onkeydown = e => { if (e.key === 'Enter') create(); };
     out.push(el('div', {class:'create-chat'}, [
       inp,
       el('button', {class:'btn primary', text:'+ Создать чат', onclick: create})
@@ -1119,13 +1156,13 @@ function draw() {
 function refresh() {
   drawWho();
   if (!S.ready) return;
-  if (S.fill && (S.view == 'chat' || S.view == 'thread')) S.fill();
-  else if (S.view == 'auth' || (S.view == 'profile' && S.edit)) return;
+  if (S.fill && (S.view === 'chat' || S.view === 'thread')) S.fill();
+  else if (S.view === 'auth' || (S.view === 'profile' && S.edit)) return;
   else draw();
 }
 
 const router = {
-  home: () => { S.view = 'list'; S.open = null; draw(); },
+  home: () => { S.view = 'list'; S.open = null; S.search = ''; draw(); },
   goChats: () => { S.view = 'chatList'; draw(); },
   goMembers: () => { S.view = 'members'; draw(); },
   goAdmin: () => { S.view = 'admin'; draw(); },
@@ -1175,6 +1212,8 @@ db.ref('chats').on('value', s => {
   refresh();
 }, err => console.error('chats:', err.message));
 
+db.ref('follows').on('value', s => { S.follows = s.val() || {}; refresh(); }, err => console.error('follows:', err.message));
+
 // ---------- кто залогинен ----------
 
 async function loadUser(u) {
@@ -1190,8 +1229,10 @@ async function loadUser(u) {
     if (!rec) {
       try {
         const all = await get('users');
-        if (all) rec = Object.values(all).find(x => x.nick && x.nick.toLowerCase() == fromMail.toLowerCase());
-        viaNick = !!rec;
+        if (all) {
+          rec = Object.values(all).find(x => x.nick && x.nick.toLowerCase() === fromMail.toLowerCase());
+          viaNick = !!rec;
+        }
       } catch (e) {
         console.warn('список юзеров не прочитать', e.message);
       }
@@ -1209,15 +1250,24 @@ async function loadUser(u) {
 
     if (OWNERS.includes(fromMail.toLowerCase())) {
       me.owner = true;
-      if (get_has(rec, u.uid) && rec.owner !== true) db.ref('users/' + u.uid + '/owner').set(true).catch(e => console.warn('owner:', e.message));
+      if (rec && rec.uid === u.uid && rec.owner !== true) {
+        db.ref('users/' + u.uid + '/owner').set(true).catch(e => console.warn('owner:', e.message));
+      }
     }
 
-    if (get_has(rec, u.uid)) claimNick(me.nick, u.uid).catch(() => {});
+    // всегда занимаем текущий ник за текущим uid
+    if (rec && rec.uid === u.uid) {
+      claimNick(me.nick, u.uid).catch(() => {});
+    }
 
-    if (!get_has(rec, u.uid)) {
+    // если записи именно для этого uid нет — создаём её (не трогая чужую)
+    if (!rec || rec.uid !== u.uid) {
       try {
         await claimNick(me.nick, u.uid);
-        await set('users/' + u.uid, {uid: u.uid, nick: me.nick, role: me.role, owner: me.owner, premium: false, created: me.created || TS, profile: me.profile || {}});
+        await set('users/' + u.uid, {
+          uid: u.uid, nick: me.nick, role: me.role, owner: me.owner,
+          premium: false, created: me.created || TS, profile: me.profile || {}
+        });
       } catch (e) {
         console.warn('не смог создать запись юзера', e.message);
       }
@@ -1229,19 +1279,13 @@ async function loadUser(u) {
   S.user = me;
 }
 
-function get_has(rec, uid) {
-  return !!(rec && rec.uid == uid);
-}
-
-db.ref('follows').on('value', s => { S.follows = s.val() || {}; refresh(); }, err => console.error('follows:', err.message));
-
 (function () {
   const [v, i] = location.hash.slice(1).split('/');
   if (['thread', 'chat', 'chatList', 'profile', 'members', 'admin', 'priv'].includes(v)) {
     S.view = v;
-    if (v == 'thread') S.open = i;
-    if (v == 'chat') S.chatId = i;
-    if (v == 'profile') S.profile = i;
+    if (v === 'thread') S.open = i;
+    if (v === 'chat') S.chatId = i;
+    if (v === 'profile') S.profile = i;
   }
 })();
 
@@ -1253,6 +1297,21 @@ auth.onAuthStateChanged(async u => {
   S.ready = true;
   draw();
 });
+
+// поиск в шапке
+(function () {
+  const inp = document.getElementById('global-search');
+  let tm = null;
+  inp.addEventListener('input', () => {
+    clearTimeout(tm);
+    tm = setTimeout(() => {
+      S.search = inp.value.trim();
+      S.page = 1;
+      if (S.view !== 'list') S.view = 'list';
+      draw();
+    }, 250);
+  });
+})();
 
 setLang(lang);
 </script>
