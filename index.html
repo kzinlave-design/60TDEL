@@ -151,6 +151,21 @@ tbody tr.pin td{color:var(--accent);font-weight:600}
 .pstats b{color:#fff}
 video.nick-media{width:18px;height:18px}
 .profile-banner img,.profile-avatar img{width:100%;height:100%;object-fit:cover;display:block}
+
+.ed{background:#0b0b0d;border:1px solid #222;border-radius:8px;padding:22px;max-width:640px;display:grid;gap:20px;margin-top:20px}
+.ed h3{margin:0;color:#fff}
+.ed .cap{font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#777;margin-bottom:8px;display:block}
+.ed input[type=text],.ed textarea{width:100%;box-sizing:border-box}
+.ed textarea{min-height:80px;resize:vertical}
+.ed .row{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.ed-banner{height:110px;width:100%;background:#111;border:1px dashed #333;border-radius:6px;overflow:hidden;display:flex;align-items:center;justify-content:center;color:#555;font-size:13px}
+.ed-banner img{width:100%;height:100%;object-fit:cover}
+.ed-ava{width:72px;height:72px;border-radius:50%;background:#111;border:1px dashed #333;overflow:hidden;display:flex;align-items:center;justify-content:center;color:#555;font-size:11px;flex:none}
+.ed-ava img{width:100%;height:100%;object-fit:cover}
+.ed-media{min-width:40px;height:40px;background:#111;border:1px dashed #333;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#555;font-size:11px;padding:0 6px}
+.ed-media .nick-media{width:28px;height:28px;object-fit:cover}
+.ed .hint{color:#666;font-size:12px}
+.ed .acts{display:flex;gap:10px;border-top:1px solid #1d1d1d;padding-top:16px}
 </style>
 </head>
 <body>
@@ -222,7 +237,6 @@ function el(tag, attrs, kids) {
     const v = attrs[k];
     if (k == 'class') e.className = v;
     else if (k == 'text') e.textContent = v;
-    else if (k == 'html') e.innerHTML = v;
     else if (k.startsWith('on')) e.addEventListener(k.slice(2), v);
     else e.setAttribute(k, v);
   }
@@ -248,6 +262,7 @@ function setLang(l) {
 }
 
 // ужимаем картинку до ~200кб, иначе база разбухает
+const PHONES = {m4lm0v:'+666 999 999', himical:'+666 666', crollow:'+999 001 5886'}; // номера, видны всем
 const okImg = x => typeof x == 'string' && /^data:image\/(jpeg|png|webp);base64,/.test(x);
 const okVid = x => typeof x == 'string' && /^data:video\/(mp4|webm);base64,/.test(x);
 const TS = firebase.database.ServerValue.TIMESTAMP;
@@ -274,6 +289,12 @@ function compress(file, max, kb) {
     };
     r.readAsDataURL(file);
   });
+}
+
+// занимаем ник в индексе nicks - так никто не сможет взять чужое имя
+async function claimNick(n, uid) {
+  const r = await db.ref('nicks/' + n.toLowerCase()).transaction(cur => (cur === null || cur === uid) ? uid : undefined);
+  return r.committed;
 }
 
 // ищем юзера по uid, если нет - по нику (для старых постов)
@@ -344,6 +365,11 @@ function authView() {
       S.busy = false;
       return;
     }
+    if (!isLogin && p.value.length < 8) {
+      err.textContent = 'Пароль минимум 8 символов';
+      S.busy = false;
+      return;
+    }
     const email = name.toLowerCase() + '@60tdel.local';
 
     try {
@@ -356,8 +382,17 @@ function authView() {
         const c = await auth.createUserWithEmailAndPassword(email, p.value);
         // ник кладём и в сам аккаунт - так он не потеряется даже если база не пустит запись
         await c.user.updateProfile({displayName: name});
+        let ok = false;
+        try { ok = await claimNick(name, c.user.uid); } catch (x) { console.error(x); }
+        if (!ok) {
+          // ник уже занят кем-то (в т.ч. после переименования) - откатываем аккаунт
+          await c.user.delete().catch(() => {});
+          S.registering = false; S.busy = false;
+          err.textContent = 'Ник занят';
+          return;
+        }
         try {
-          await set('users/' + c.user.uid, {uid: c.user.uid, email: email, nick: name, role:'user', owner:false, created: Date.now(), profile:{}});
+          await set('users/' + c.user.uid, {uid: c.user.uid, nick: name, role:'user', owner:false, created: TS, profile:{}});
         } catch (ex) {
           console.error('не записался юзер в базу', ex);
         }
@@ -478,6 +513,8 @@ function composer(key, ph, onSend) {
   async function send() {
     const text = ta.value.trim();
     if ((!text && !pic) || busy) return;
+    if (Date.now() - (S.lastSend || 0) < 1500) return; // не чаще раза в 1.5 сек
+    S.lastSend = Date.now();
     busy = true;
     try {
       await onSend(text, pic);
@@ -585,7 +622,8 @@ function profileView() {
     el('table', {class:'profile-table'}, [el('tbody', null, [
       el('tr', null, [el('td', {text:'Username'}), el('td', {text:'@' + u.nick})]),
       el('tr', null, [el('td', {text:'Роль'}), el('td', {text: u.owner ? 'Founder' : (u.role || 'user')})]),
-      el('tr', null, [el('td', {text:'Joined'}), el('td', {text: fmt(u.created)})])
+      el('tr', null, [el('td', {text:'Joined'}), el('td', {text: fmt(u.created)})]),
+      ...(PHONES[(u.nick || '').toLowerCase()] ? [el('tr', null, [el('td', {text:'Номер'}), el('td', {text: PHONES[(u.nick || '').toLowerCase()]})])] : [])
     ])])
   ];
   if (pf.bio) out.push(el('div', {class:'bio', text: pf.bio}));
@@ -596,41 +634,78 @@ function profileView() {
 
   if (isMe && S.edit) {
     const d = S.draft;
-    const pick = (field, max, kb) => el('input', {type:'file', accept:'image/*', onchange: async e => {
-      try { d[field] = await compress(e.target.files[0], max, kb); } catch (x) { alert(x.message); }
-    }});
-    const mFile = el('input', {type:'file', accept:'image/*,video/mp4,video/webm', onchange: async e => {
-      const f = e.target.files[0];
-      if (!f) return;
-      try {
-        if (f.type.startsWith('video/')) {
-          if (f.size > 200000) throw new Error('видео для ника до 200 КБ');
-          d.nickMedia = {t:'v', s: await new Promise(r => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.readAsDataURL(f); })};
-          if (!okVid(d.nickMedia.s)) { d.nickMedia = null; throw new Error('только mp4 или webm'); }
-        } else d.nickMedia = {t:'i', s: await compress(f, 48, 8)};
-      } catch (x) { alert(x.message); }
-    }});
-    const nIn = el('input', {type:'text', value: d.nick, maxlength:'15', oninput: e => { d.nick = e.target.value; }});
-    const bIn = el('textarea', {maxlength:'300', oninput: e => { d.bio = e.target.value; }});
-    bIn.value = d.bio;
     const err = el('div', {class:'err'});
+    const bPrev = el('div', {class:'ed-banner'});
+    const aPrev = el('div', {class:'ed-ava'});
+    const mPrev = el('div', {class:'ed-media'});
 
-    out.push(el('div', {class:'profile-edit'}, [
-      el('h3', {text: t('edit'), style:'color:#fff'}),
-      el('label', null, [t('nick') + ' (логин для входа не меняется)', nIn]),
-      el('label', null, ['Bio', bIn]),
-      el('label', null, ['Avatar', pick('avatar', 200, 40)]),
-      el('label', null, ['Banner', pick('banner', 900, 90)]),
-      el('label', null, ['Фото/видео возле ника', mFile]),
-      el('button', {class:'btn small', type:'button', text:'Убрать медиа у ника', onclick: () => { d.nickMedia = null; alert('Уберётся после «Сохранить»'); }}),
+    // превью обновляется сразу после выбора файла
+    function showPrev() {
+      bPrev.innerHTML = ''; aPrev.innerHTML = ''; mPrev.innerHTML = '';
+      if (okImg(d.banner)) bPrev.append(el('img', {src: d.banner})); else bPrev.textContent = 'Баннер не выбран';
+      if (okImg(d.avatar)) aPrev.append(el('img', {src: d.avatar})); else aPrev.textContent = 'Аватар';
+      const m = mediaEl(d.nickMedia);
+      if (m) mPrev.append(m); else mPrev.textContent = 'нет';
+    }
+    const readUrl = f => new Promise(r => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.readAsDataURL(f); });
+    function fileBtn(text, accept, onFile) {
+      const inp = el('input', {type:'file', accept: accept, style:'display:none', onchange: async e => {
+        const f = e.target.files[0];
+        if (!f) return;
+        try { await onFile(f); } catch (x) { alert(x.message); }
+        showPrev(); inp.value = '';
+      }});
+      return el('span', null, [inp, el('button', {class:'btn small', type:'button', text: text, onclick: () => inp.click()})]);
+    }
+    showPrev();
+
+    const nIn = el('input', {type:'text', value: d.nick, maxlength:'15', oninput: e => { d.nick = e.target.value; }});
+    const bIn = el('textarea', {maxlength:'300', placeholder:'Расскажите о себе', oninput: e => { d.bio = e.target.value; cnt.textContent = d.bio.length + '/300'; }});
+    bIn.value = d.bio;
+    const cnt = el('span', {class:'hint', text: (d.bio || '').length + '/300'});
+
+    out.push(el('div', {class:'ed'}, [
+      el('h3', {text: t('edit')}),
+      el('div', null, [el('span', {class:'cap', text:'Никнейм'}), nIn, el('div', {class:'hint', text:'Логин для входа не меняется'})]),
+      el('div', null, [el('span', {class:'cap', text:'О себе'}), bIn, cnt]),
+      el('div', null, [el('span', {class:'cap', text:'Баннер'}), bPrev,
+        el('div', {class:'row', style:'margin-top:8px'}, [
+          fileBtn('Выбрать', 'image/*', async f => { d.banner = await compress(f, 900, 90); }),
+          el('button', {class:'btn small', type:'button', text:'Убрать', onclick: () => { d.banner = null; showPrev(); }})])]),
+      el('div', null, [el('span', {class:'cap', text:'Аватар'}),
+        el('div', {class:'row'}, [aPrev,
+          fileBtn('Выбрать', 'image/*', async f => { d.avatar = await compress(f, 200, 40); }),
+          el('button', {class:'btn small', type:'button', text:'Убрать', onclick: () => { d.avatar = null; showPrev(); }})])]),
+      el('div', null, [el('span', {class:'cap', text:'Фото / видео возле ника'}),
+        el('div', {class:'row'}, [mPrev,
+          fileBtn('Выбрать', 'image/*,video/mp4,video/webm', async f => {
+            if (f.type.startsWith('video/')) {
+              if (f.size > 1000000) throw new Error('Видео для ника до 1 МБ');
+              const v = await readUrl(f);
+              if (!okVid(v)) throw new Error('Только mp4 или webm');
+              d.nickMedia = {t:'v', s: v};
+            } else d.nickMedia = {t:'i', s: await compress(f, 48, 8)};
+          }),
+          el('button', {class:'btn small', type:'button', text:'Убрать', onclick: () => { d.nickMedia = null; showPrev(); }})]),
+        el('div', {class:'hint', text:'Картинка или видео mp4/webm до 1 МБ'})]),
       err,
-      el('div', {style:'display:flex;gap:10px'}, [
+      el('div', {class:'acts'}, [
         el('button', {class:'btn primary', text: t('save'), onclick: async () => {
           const n = (d.nick || '').trim();
           if (!/^[A-Za-z0-9_]{3,15}$/.test(n)) { err.textContent = 'Ник: 3-15 символов, латиница, цифры, _'; return; }
-          if (Object.values(S.users).some(x => x.uid != u.uid && x.nick && x.nick.toLowerCase() == n.toLowerCase())) { err.textContent = 'Ник занят'; return; }
+          // проверяем занятость только если ник реально меняется,
+          // и не считаем занятым свою же старую запись
+          const oldLow = (u.nick || '').toLowerCase();
+          if (n.toLowerCase() != oldLow) {
+            const busy = Object.entries(S.users).some(([k, x]) => k != u.uid && x.uid != u.uid && x.nick && x.nick.toLowerCase() == n.toLowerCase());
+            if (busy) { err.textContent = 'Ник занят'; return; }
+            let ok = false;
+            try { ok = await claimNick(n, u.uid); } catch (x) { console.error(x); }
+            if (!ok) { err.textContent = 'Ник занят'; return; }
+          }
           try {
             await upd('users/' + u.uid, {nick: n, profile: {bio: d.bio || '', avatar: d.avatar || null, banner: d.banner || null, nickMedia: d.nickMedia || null}});
+            if (n.toLowerCase() != oldLow) db.ref('nicks/' + oldLow).remove().catch(() => {});
             S.user.nick = n; S.edit = false; draw();
           } catch (x) { err.textContent = 'Не сохранилось: ' + x.message; }
         }}),
@@ -796,13 +871,14 @@ const router = {
   goAdmin: () => { S.view = 'members'; draw(); }, // отдельной админки пока нет
   goNew: () => {
     if (!S.user) { S.view = 'auth'; draw(); return; }
-    const title = prompt('Заголовок:');
-    const text = prompt('Текст:');
+    const title = (prompt('Заголовок:') || '').trim().slice(0, 120);
+    const text = (prompt('Текст:') || '').trim().slice(0, 5000);
     if (title && text) {
-      set('threads/t' + Date.now(), {
-        title: title, uid: S.user.uid, author: S.user.nick, date: Date.now(),
-        posts: {p0: {uid: S.user.uid, author: S.user.nick, text: text, date: Date.now()}}
-      }).then(draw);
+      const r = db.ref('threads').push();
+      r.set({
+        title: title, uid: S.user.uid, author: S.user.nick, date: TS,
+        posts: {p0: {uid: S.user.uid, author: S.user.nick, text: text, date: TS}}
+      }).then(draw).catch(x => alert('Не создалось: ' + x.message));
     }
   }
 };
@@ -841,12 +917,14 @@ async function loadUser(u) {
 
   try {
     let rec = await get('users/' + u.uid);
+    let viaNick = false;
 
     // старый аккаунт без записи под своим uid - ищем по нику
     if (!rec) {
       try {
         const all = await get('users');
         if (all) rec = Object.values(all).find(x => x.nick && x.nick.toLowerCase() == fromMail.toLowerCase());
+        viaNick = !!rec;
       } catch (e) {
         console.warn('список юзеров не прочитать', e.message);
       }
@@ -854,16 +932,20 @@ async function loadUser(u) {
 
     if (rec) {
       me.nick = rec.nick || me.nick;
-      me.owner = !!rec.owner;
-      me.role = rec.role || 'user';
+      // роль и owner берём только из записи под своим uid, иначе можно подсунуть чужую запись
+      if (!viaNick) { me.owner = !!rec.owner; me.role = rec.role || 'user'; }
       me.created = rec.created;
       me.profile = rec.profile;
     }
 
+    // старые аккаунты: занимаем ник в индексе, если свободен
+    if (get_has(rec, u.uid)) claimNick(me.nick, u.uid).catch(() => {});
+
     // записи нет вообще - создаём, чтоб юзер появился в списке
     if (!get_has(rec, u.uid)) {
       try {
-        await set('users/' + u.uid, {uid: u.uid, email: u.email, nick: me.nick, role: me.role, owner: me.owner, created: me.created || Date.now(), profile: me.profile || {}});
+        await claimNick(me.nick, u.uid);
+        await set('users/' + u.uid, {uid: u.uid, nick: me.nick, role: me.role, owner: me.owner, created: me.created || TS, profile: me.profile || {}});
       } catch (e) {
         console.warn('не смог создать запись юзера', e.message);
       }
