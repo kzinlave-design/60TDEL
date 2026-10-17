@@ -434,16 +434,12 @@ function authView() {
       if (isLogin) {
         await auth.signInWithEmailAndPassword(email, p.value);
       } else {
-        // пока идёт регистрация onAuthStateChanged не трогаем, иначе он
-        // раньше времени подхватит юзера без записи в базе и поставит "user"
         S.registering = true;
         const c = await auth.createUserWithEmailAndPassword(email, p.value);
-        // ник кладём и в сам аккаунт - так он не потеряется даже если база не пустит запись
         await c.user.updateProfile({displayName: name});
         let ok = false;
         try { ok = await claimNick(name, c.user.uid); } catch (x) { console.error(x); }
         if (!ok) {
-          // ник уже занят кем-то (в т.ч. после переименования) - откатываем аккаунт
           await c.user.delete().catch(() => {});
           S.registering = false; S.busy = false;
           err.textContent = 'Ник занят';
@@ -464,7 +460,6 @@ function authView() {
       console.error(ex);
       const code = ex.code || '';
       let m = ex.message;
-      // firebase сейчас на любую ошибку логина отдаёт invalid-credential
       if (/wrong-password|user-not-found|invalid-credential|invalid-login/.test(code)) m = 'Неверный ник или пароль';
       else if (code.includes('email-already')) m = 'Ник занят';
       else if (code.includes('weak-password')) m = 'Пароль минимум 6 символов';
@@ -581,7 +576,6 @@ function composer(key, ph, onSend) {
     busy = false;
     ta.focus();
   }
-  // Enter - отправить, Shift+Enter - новая строка
   ta.onkeydown = e => { if (e.key == 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } };
 
   return el('div', {class:'compose'}, [prev, ta, panel, el('div', {class:'bar'}, [
@@ -599,7 +593,6 @@ function threadView() {
   if (!th0) return [el('div', {text:'Не найдено'})];
   const box = el('div', {style:'display:flex;flex-direction:column;gap:12px'});
 
-  // перерисовываем только посты, поле ввода не трогаем - иначе пропадает текст
   S.fill = () => {
     const th = S.threads.find(x => x.id == S.open);
     if (!th) return;
@@ -625,7 +618,6 @@ function threadView() {
   };
   S.fill();
 
-  // навигация по темам: соседи в текущем отсортированном списке
   const idx = S.threads.findIndex(x => x.id == th0.id);
   const prevTh = idx > 0 ? S.threads[idx - 1] : null;
   const nextTh = idx >= 0 && idx < S.threads.length - 1 ? S.threads[idx + 1] : null;
@@ -662,7 +654,6 @@ function threadView() {
 
 // ---------- профиль ----------
 
-// настройки привилегии в редакторе профиля
 function privBox(d) {
   const ok = canPriv(S.user);
   const prev = el('div', {class:'bio', style:'min-height:42px'});
@@ -731,6 +722,8 @@ function adminUsers() {
   const iOwner = S.user.owner === true;
   const rows = Object.entries(S.users).sort((a, b) => String(a[1].nick).localeCompare(String(b[1].nick))).map(([k, u]) => {
     const isOwn = u.owner === true;
+    const follCount = u.followers ? u.followers : (u.owner ? 666 : Object.keys(S.follows[u.uid] || {}).length);
+    
     return [
       nickOf(u),
       abtn(u.role || 'user', '', () => {
@@ -738,6 +731,7 @@ function adminUsers() {
         if (['user', 'moderator', 'admin'].includes(v)) db.ref('users/' + k + '/role').set(v).catch(fail);
       }),
       abtn(u.premium ? 'Снять' : 'Выдать', u.premium ? '' : 'primary', () => db.ref('users/' + k + '/premium').set(!u.premium).catch(fail)),
+      
       // НОМЕР
       el('div', {class:'phone-cell'}, [
         el('span', {class:'val', text: phoneOf(u) || '—', style:'color:' + (phoneOf(u) ? '#fff' : '#555')}),
@@ -750,6 +744,21 @@ function adminUsers() {
           db.ref('users/' + k + '/phone').set(val).catch(fail);
         })
       ]),
+
+      // ПОДПИСЧИКИ
+      el('div', {class:'phone-cell'}, [
+        el('span', {class:'val', text: String(follCount), style:'color:' + (u.followers ? '#f5b842' : '#fff')}),
+        abtn(u.followers ? '✕' : 'Задать', u.followers ? 'danger' : 'primary', () => {
+          const cur = u.followers || follCount;
+          const v = prompt('Кол-во подписчиков (пусто — сбросить):', cur);
+          if (v === null) return;
+          const val = parseInt(v.trim());
+          if (!v.trim()) { db.ref('users/' + k + '/followers').remove().catch(fail); return; }
+          if (isNaN(val) || val < 0) return alert('Нужно положительное число');
+          db.ref('users/' + k + '/followers').set(val).catch(fail);
+        })
+      ]),
+
       iOwner
         ? abtn(isOwn ? 'Снять' : 'Выдать', isOwn ? 'danger' : 'primary', () => {
             if (isOwn && k == S.user.uid) return alert('Себя лишить овнера нельзя');
@@ -762,7 +771,7 @@ function adminUsers() {
       }) : el('span')
     ];
   });
-  return adminTable(['Ник', 'Роль', 'Премиум', 'Номер', 'Овнер', 'Действия'], rows);
+  return adminTable(['Ник', 'Роль', 'Премиум', 'Номер', 'Подписчики', 'Овнер', 'Действия'], rows);
 }
 
 function adminThreads() {
@@ -812,7 +821,9 @@ function profileView() {
   const mine = S.threads.filter(th => th.uid == u.uid || th.author == u.nick);
   let posts = 0;
   S.threads.forEach(th => Object.values(th.posts || {}).forEach(p => { if (p.uid == u.uid) posts++; }));
-  const followers = u.owner ? 666 : Object.keys(S.follows[u.uid] || {}).length;
+  
+  // Если админ задал кол-во подписчиков, показываем его. Иначе реальное.
+  const followers = u.followers !== undefined ? u.followers : (u.owner ? 666 : Object.keys(S.follows[u.uid] || {}).length);
   const following = Object.values(S.follows).filter(f => f[u.uid]).length;
   const iFollow = S.user && S.follows[u.uid] && S.follows[u.uid][S.user.uid];
 
@@ -860,7 +871,6 @@ function profileView() {
     const aPrev = el('div', {class:'ed-ava'});
     const mPrev = el('div', {class:'ed-media'});
 
-    // превью обновляется сразу после выбора файла
     function showPrev() {
       bPrev.innerHTML = ''; aPrev.innerHTML = ''; mPrev.innerHTML = '';
       if (okImg(d.banner)) bPrev.append(el('img', {src: d.banner})); else bPrev.textContent = 'Баннер не выбран';
@@ -916,8 +926,6 @@ function profileView() {
         el('button', {class:'btn primary', text: t('save'), onclick: async () => {
           const n = (d.nick || '').trim();
           if (!/^[A-Za-z0-9_]{3,15}$/.test(n)) { err.textContent = 'Ник: 3-15 символов, латиница, цифры, _'; return; }
-          // проверяем занятость только если ник реально меняется,
-          // и не считаем занятым свою же старую запись
           if (d.prefix && !isStaff(S.user) && BAD_PREFIX.test(d.prefix)) { err.textContent = 'Этот префикс запрещён'; return; }
           const oldLow = (u.nick || '').toLowerCase();
           if (n.toLowerCase() != oldLow) {
@@ -948,7 +956,6 @@ function chatView() {
   const win = el('div', {class:'chatwin'});
   let stick = true; // прилипать к низу
 
-  // обновляем только окно сообщений, чтобы не сбрасывало на первое сообщение
   S.fill = () => {
     const cc = S.chats[S.chatId];
     if (!cc) return;
@@ -1011,7 +1018,6 @@ function chatListView() {
 
   const out = [el('h2', {text:'Чаты'})];
 
-  // форма создания чата — доступна любому авторизованному
   if (S.user) {
     const inp = el('input', {type:'text', maxlength:'60', placeholder:'Название нового чата'});
     const create = () => {
@@ -1044,12 +1050,10 @@ function chatListView() {
 function membersView() {
   const all = new Map();
 
-  // сначала те кто есть в базе
   Object.values(S.users).forEach(u => {
     if (u.nick) all.set(u.nick.toLowerCase(), u);
   });
 
-  // кто писал, но записи нет - добавляем по имени из поста
   function addAuthor(name, uid, date) {
     if (!name) return;
     const k = name.toLowerCase();
@@ -1063,7 +1067,6 @@ function membersView() {
     addAuthor(c.author, c.uid, c.date);
     Object.values(c.messages || {}).forEach(m => addAuthor(m.author, m.uid, m.date));
   });
-  // и мы сами
   if (S.user) addAuthor(S.user.nick, S.user.uid, Date.now());
 
   const tbody = el('tbody');
@@ -1095,7 +1098,6 @@ function draw() {
   drawWho();
   if (!S.ready) { app.append(el('div', {class:'muted', style:'text-align:center;padding:40px'}, [el('span', {class:'spinner'}), 'Загрузка...'])); return; }
 
-  // запоминаем где мы, чтобы после F5 открылось то же самое
   const id = {thread: S.open, chat: S.chatId, profile: S.profile}[S.view];
   history.replaceState(null, '', '#' + S.view + (id ? '/' + id : ''));
 
@@ -1114,7 +1116,6 @@ function draw() {
   nodes.forEach(n => { if (n) app.append(n); });
 }
 
-// событие из базы: не трогаем формы, а чат/тему обновляем точечно
 function refresh() {
   drawWho();
   if (!S.ready) return;
@@ -1147,18 +1148,17 @@ const router = {
 
 db.ref('users').on('value', s => {
   S.users = s.val() || {};
-  // роли и премиум обновляются сразу, без перезахода
   const mine = S.user && S.users[S.user.uid];
   if (mine) {
     S.user.role = mine.role || 'user';
     S.user.premium = mine.premium === true;
     S.user.profile = mine.profile;
     S.user.phone = mine.phone;
+    S.user.followers = mine.followers;
     S.user.owner = mine.owner === true || OWNERS.includes(S.user.login || '');
   }
   refresh();
 }, err => {
-  // если сюда попали - правила базы не дают читать users, отсюда и все "User"
   console.error('users не читаются:', err.message);
 });
 
@@ -1180,7 +1180,6 @@ db.ref('chats').on('value', s => {
 async function loadUser(u) {
   if (!u) { S.user = null; return; }
 
-  // ник по умолчанию: из аккаунта, иначе из почты
   const fromMail = (u.email || '').split('@')[0];
   let me = {uid: u.uid, login: fromMail, nick: u.displayName || fromMail, role:'user', owner:false};
 
@@ -1188,7 +1187,6 @@ async function loadUser(u) {
     let rec = await get('users/' + u.uid);
     let viaNick = false;
 
-    // старый аккаунт без записи под своим uid - ищем по нику
     if (!rec) {
       try {
         const all = await get('users');
@@ -1201,24 +1199,21 @@ async function loadUser(u) {
 
     if (rec) {
       me.nick = rec.nick || me.nick;
-      // роль и owner берём только из записи под своим uid, иначе можно подсунуть чужую запись
       if (!viaNick) { me.owner = !!rec.owner; me.role = rec.role || 'user'; }
       me.created = rec.created;
       if (!viaNick) me.premium = rec.premium === true;
       me.profile = rec.profile;
       me.phone = rec.phone;
+      me.followers = rec.followers;
     }
 
-    // овнеры из списка всегда овнеры (и в базу это тоже пишем)
     if (OWNERS.includes(fromMail.toLowerCase())) {
       me.owner = true;
       if (get_has(rec, u.uid) && rec.owner !== true) db.ref('users/' + u.uid + '/owner').set(true).catch(e => console.warn('owner:', e.message));
     }
 
-    // старые аккаунты: занимаем ник в индексе, если свободен
     if (get_has(rec, u.uid)) claimNick(me.nick, u.uid).catch(() => {});
 
-    // записи нет вообще - создаём, чтоб юзер появился в списке
     if (!get_has(rec, u.uid)) {
       try {
         await claimNick(me.nick, u.uid);
@@ -1228,21 +1223,18 @@ async function loadUser(u) {
       }
     }
   } catch (e) {
-    // база не отвечает - всё равно пускаем, ник возьмём из аккаунта
     console.error('loadUser:', e.message);
   }
 
   S.user = me;
 }
 
-// была ли запись именно под этим uid
 function get_has(rec, uid) {
   return !!(rec && rec.uid == uid);
 }
 
 db.ref('follows').on('value', s => { S.follows = s.val() || {}; refresh(); }, err => console.error('follows:', err.message));
 
-// после F5 открываем то же место
 (function () {
   const [v, i] = location.hash.slice(1).split('/');
   if (['thread', 'chat', 'chatList', 'profile', 'members', 'admin', 'priv'].includes(v)) {
@@ -1253,11 +1245,10 @@ db.ref('follows').on('value', s => { S.follows = s.val() || {}; refresh(); }, er
   }
 })();
 
-// держим вход в браузере (на file:// это может не работать - открывайте через http/https)
 auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(e => console.warn('persistence:', e.code));
 
 auth.onAuthStateChanged(async u => {
-  if (S.registering) return; // регистрация сама вызовет loadUser
+  if (S.registering) return;
   await loadUser(u);
   S.ready = true;
   draw();
