@@ -236,14 +236,14 @@ const I18N = {
     search_paste:'Search for by topics', title:'Заголовок', comments:'Комменты', views:'Просмотры', author:'Автор', date:'Дата',
     login:'Войти', reg:'Регистрация', logout:'Выйти', nick:'Никнейм', pass:'Пароль', create_acc:'Создать аккаунт', no_acc:'Нет аккаунта?', has_acc:'Есть аккаунт?',
     send:'Отправить', save:'Сохранить', cancel:'Отмена', msg:'Написать ЛС', edit_prof:'Редактировать профиль',
-    bio:'О себе', avatar:'Аватар', banner:'Баннер', emoji:'Смайлик', write_msg:'Написать...', enter_to_write:'Войдите, чтобы писать', no_chats:'Нет чатов', new_chat:'Название нового чата', anonymous:'Аноним'
+    bio:'О себе', avatar:'Аватар', banner:'Баннер', emoji:'Смайлик', write_msg:'Написать...', enter_to_write:'Войдите, чтобы писать', no_chats:'Нет чатов', new_chat:'Название нового чата'
   },
   en: {
     home:'Home', chats:'Chats', users:'Users', admin:'Admin', new_topic:'New Topic', rights:'All rights reserved',
     search_paste:'Search for by topics', title:'Title', comments:'Comments', views:'Views', author:'Author', date:'Added',
     login:'Login', reg:'Register', logout:'Logout', nick:'Nickname', pass:'Password', create_acc:'Create account', no_acc:'No account?', has_acc:'Have an account?',
     send:'Send', save:'Save', cancel:'Cancel', msg:'Message', edit_prof:'Edit Profile',
-    bio:'Bio', avatar:'Avatar', banner:'Banner', emoji:'Emoji', write_msg:'Write...', enter_to_write:'Login to write', no_chats:'No chats', new_chat:'New chat name', anonymous:'Anonymous'
+    bio:'Bio', avatar:'Avatar', banner:'Banner', emoji:'Emoji', write_msg:'Write...', enter_to_write:'Login to write', no_chats:'No chats', new_chat:'New chat name'
   }
 };
 let currentLang = localStorage.getItem('60_lang') || 'ru';
@@ -319,18 +319,17 @@ function openLightbox(url) {
 }
 
 // ================= USER HELPERS =================
-// Если база хранит записи под ником (а не UID), эта функция найдет их
 function getUserRecord(uidOrNick) {
   if (!uidOrNick) return null;
   if (state.users[uidOrNick]) return state.users[uidOrNick];
-  // Ищем по нику, если uid не совпал
+  // Поиск по нику (для старых записей)
   return Object.values(state.users).find(u => u.nick && u.nick.toLowerCase() === String(uidOrNick).toLowerCase());
 }
 
 function getNickDisplay(uid, fallbackNick) {
   const u = getUserRecord(uid);
   
-  // Выводим фолбек (сохраненное имя), если профиль не найден
+  // Если профиль не найден, используем сохраненное имя
   if(!u) {
     return el('span', {text: fallbackNick || 'User', style:'color:#aaa'});
   }
@@ -389,7 +388,6 @@ function authView() {
       } else {
         const cred = await auth.createUserWithEmailAndPassword(fakeEmail, passInp.value);
         const uid = cred.user.uid;
-        // ВАЖНО: Сохраняем профиль по UID
         await fbSet('users/' + uid, {
           uid, email: fakeEmail, nick, role: 'user', owner: OWNERS.includes(nick.toLowerCase()), created: Date.now(),
           profile: { avatar: '', banner: '', bio: '', color: '', prefix: '', emojis: [], mediaUrl: '' }
@@ -516,7 +514,7 @@ function threadView() {
         if(!ta.value.trim()) return;
         const postId = 'p' + Date.now();
         await fbSet(`threads/${th.id}/posts/${postId}`, {
-          uid: state.user.uid, author: state.users[state.user.uid]?.nick || 'User', text: ta.value.trim(), date: Date.now(), media: ta.dataset.media || null
+          uid: state.user.uid, author: state.user.nick, text: ta.value.trim(), date: Date.now(), media: ta.dataset.media || null
         });
         render();
       }})
@@ -529,7 +527,7 @@ function threadView() {
 function profileView() {
   if(!state.user) return [el('div', {text:currentLang==='ru'?'Войдите, чтобы просмотреть профиль':'Login to view profile'})];
   const uid = state.profileUser || state.user.uid;
-  const u = getUserRecord(uid) || {};
+  const u = getUserRecord(uid) || state.user;
   const isMe = u.uid === state.user.uid || uid === state.user.uid;
   const prof = u.profile || {};
 
@@ -623,7 +621,7 @@ function chatListView() {
       el('button', {class:'btn primary', text:'+', onclick: async () => {
         const name = document.getElementById('new-chat-name').value.trim();
         if(!name) return;
-        await fbSet('chats/c_' + Date.now(), { name, uid: state.user.uid, author: state.users[state.user.uid]?.nick, date: Date.now(), messages: {} });
+        await fbSet('chats/c_' + Date.now(), { name, uid: state.user.uid, author: state.user.nick, date: Date.now(), messages: {} });
       }})
     ]);
     out.push(form);
@@ -675,7 +673,7 @@ function chatView() {
       inp,
       el('button', {class:'btn primary', text:t('send'), onclick: async () => {
         if(!inp.value.trim()) return;
-        await fbSet(`chats/${state.chatId}/messages/m${Date.now()}`, { uid: state.user.uid, author: state.users[state.user.uid]?.nick, text: inp.value.trim(), date: Date.now() });
+        await fbSet(`chats/${state.chatId}/messages/m${Date.now()}`, { uid: state.user.uid, author: state.user.nick, text: inp.value.trim(), date: Date.now() });
         inp.value = '';
       }})
     ]));
@@ -709,7 +707,7 @@ function dmView() {
       inp,
       el('button', {class:'btn primary', text:t('send'), onclick: async () => {
         if(!inp.value.trim()) return;
-        await fbSet(`dms/${d.id}/messages/m${Date.now()}`, { uid: state.user.uid, author: state.users[state.user.uid]?.nick, text: inp.value.trim(), date: Date.now() });
+        await fbSet(`dms/${d.id}/messages/m${Date.now()}`, { uid: state.user.uid, author: state.user.nick, text: inp.value.trim(), date: Date.now() });
         inp.value = '';
       }})
     ]));
@@ -782,8 +780,8 @@ window.router = {
     const content = prompt(currentLang==='ru'?'Текст темы:':'Topic text:');
     if(!content) return;
     fbSet('threads/t_' + Date.now(), {
-      title, uid: state.user.uid, author: state.users[state.user.uid]?.nick, date: Date.now(), views: 0, pin: false,
-      posts: { p0: { uid: state.user.uid, author: state.users[state.user.uid]?.nick, text: content, date: Date.now() } }
+      title, uid: state.user.uid, author: state.user.nick, date: Date.now(), views: 0, pin: false,
+      posts: { p0: { uid: state.user.uid, author: state.user.nick, text: content, date: Date.now() } }
     }).then(() => render());
   },
   goChats: () => { state.view='chatList'; render(); },
@@ -821,10 +819,9 @@ db.ref('dms').on('value', snap => {
 
 auth.onAuthStateChanged(async u => {
   if(u) {
-    // Ищем профиль по UID. Если не нашли — создаем
     let rec = await fbGet('users/' + u.uid);
     
-    // Если профиля нет, но раньше сохраняли под ником, попробуем найти по нику
+    // Если профиля нет в базе, но он был создан по нику (старая версия), ищем по нику
     if(!rec) {
       const defaultNick = u.email.split('@')[0];
       const usersSnap = await fbGet('users');
@@ -832,7 +829,6 @@ auth.onAuthStateChanged(async u => {
          const foundByNick = Object.values(usersSnap).find(user => user.nick && user.nick.toLowerCase() === defaultNick.toLowerCase());
          if(foundByNick) {
            rec = foundByNick;
-           // Мигрируем запись на UID
            await fbSet('users/' + u.uid, { ...rec, uid: u.uid });
          }
       }
