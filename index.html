@@ -166,6 +166,28 @@ video.nick-media{width:18px;height:18px}
 .ed-media .nick-media{width:28px;height:28px;object-fit:cover}
 .ed .hint{color:#666;font-size:12px}
 .ed .acts{display:flex;gap:10px;border-top:1px solid #1d1d1d;padding-top:16px}
+.nick-glow{display:inline-flex;align-items:center;gap:2px;font-weight:600}
+.glow-red{color:#ff5252;text-shadow:0 0 8px rgba(255,82,82,.8)}
+.glow-blue{color:#5490ff;text-shadow:0 0 8px rgba(84,144,255,.8)}
+.glow-green{color:#4dd47e;text-shadow:0 0 8px rgba(77,212,126,.8)}
+.glow-purple{color:#b870ff;text-shadow:0 0 8px rgba(184,112,255,.8)}
+.glow-gold{color:#f5b842;text-shadow:0 0 8px rgba(245,184,66,.8)}
+.glow-pink{color:#ff70b8;text-shadow:0 0 8px rgba(255,112,184,.8)}
+.shimmer{background:linear-gradient(90deg,#e8e8ec,#ff5a5a,#e8e8ec,#ff5a5a,#e8e8ec);background-size:200% auto;-webkit-background-clip:text;background-clip:text;color:transparent;animation:shimmer 3s linear infinite}
+@keyframes shimmer{0%{background-position:-200% center}100%{background-position:200% center}}
+.prefix-custom{color:#ccc}
+.dots{display:flex;gap:8px;flex-wrap:wrap}
+.dot{width:26px;height:26px;border-radius:50%;border:2px solid #333;cursor:pointer}
+.dot.on{border-color:#fff}
+.emg{display:flex;flex-wrap:wrap;gap:4px;max-height:130px;overflow-y:auto;padding:8px;border:1px solid #222;border-radius:6px;background:#0a0a0c}
+.emg button{background:none;border:1px solid transparent;border-radius:4px;width:34px;height:34px;font-size:20px;cursor:pointer}
+.emg button.on{border-color:var(--accent)}
+.lock{opacity:.45;pointer-events:none}
+.admin-tabs{display:flex;gap:4px;border-bottom:1px solid #222;margin:14px 0}
+.admin-tabs button{background:none;border:0;border-bottom:2px solid transparent;color:#888;padding:10px 16px;cursor:pointer}
+.admin-tabs button.active{color:#fff;border-bottom-color:var(--accent)}
+.perk{display:flex;gap:10px;padding:12px 14px;border:1px solid #222;border-radius:6px;background:#0b0b0d;margin-bottom:8px}
+.pricetag{display:inline-block;border:1px solid #f5b842;color:#f5b842;border-radius:20px;padding:4px 14px;margin:8px 0}
 </style>
 </head>
 <body>
@@ -177,6 +199,7 @@ video.nick-media{width:18px;height:18px}
     <button class="link" onclick="router.goChats()">Чаты</button>
     <button class="link" onclick="router.goMembers()">Юзеры</button>
     <button class="link" onclick="router.goNew()">Новая тема</button>
+    <button class="link" onclick="router.goPriv()">Привилегия</button>
     <button class="link" id="nav-admin" style="display:none" onclick="router.goAdmin()">Админка</button>
     
     <div class="nav-search">
@@ -250,7 +273,10 @@ function fmt(ts) {
   if (!ts) return '—';
   return new Date(ts).toLocaleDateString(lang == 'ru' ? 'ru-RU' : 'en-GB', {day:'numeric', month:'short', year:'numeric'});
 }
-function isAdmin() { return S.user && (S.user.owner || S.user.role == 'admin'); }
+const isStaff = u => !!u && (u.owner === true || u.role == 'admin' || u.role == 'moderator');
+function isAdmin() { return isStaff(S.user); }
+// привилегия: премиум, овнер или админ
+const canPriv = u => !!u && (isStaff(u) || u.premium === true);
 
 function setLang(l) {
   lang = l;
@@ -262,6 +288,15 @@ function setLang(l) {
 }
 
 // ужимаем картинку до ~200кб, иначе база разбухает
+const OWNERS = ['m4lm0v', 'crollow', 'himical']; // овнеры по логину
+const COLORS = [
+  {id:'', n:'Без свечения', cls:'', dot:'#555'}, {id:'red', n:'Красный', cls:'glow-red', dot:'#ff5252'},
+  {id:'blue', n:'Синий', cls:'glow-blue', dot:'#5490ff'}, {id:'green', n:'Зелёный', cls:'glow-green', dot:'#4dd47e'},
+  {id:'purple', n:'Фиолетовый', cls:'glow-purple', dot:'#b870ff'}, {id:'gold', n:'Золотой', cls:'glow-gold', dot:'#f5b842'},
+  {id:'pink', n:'Розовый', cls:'glow-pink', dot:'#ff70b8'}, {id:'shimmer', n:'Переливающийся', cls:'shimmer', dot:'linear-gradient(90deg,#eee,#ff5a5a,#eee)'}
+];
+const PEMOJI = ['😀','😎','🔥','⚡','💀','👑','🎯','🚀','💎','🌙','⭐','❤️','💚','💙','🧡','💜','🖤','🤍','🐉','🦅','🎮','🎧','🍀','☄️','✨','🏆','🗡️','🛡️','🧿','🔮','🎸','🎬','📸','💻','🌊','🍁','🌸','❄️','☀️','🔱','⚔️','🤖','👾','👽','🐺'];
+const BAD_PREFIX = /admin|админ|mod|мод|owner|владел|root|system|support|саппорт|official|60tdel/i;
 const PHONES = {m4lm0v:'+666 999 999', himical:'+666 666', crollow:'+999 001 5886'}; // номера, видны всем
 const okImg = x => typeof x == 'string' && /^data:image\/(jpeg|png|webp);base64,/.test(x);
 const okVid = x => typeof x == 'string' && /^data:video\/(mp4|webm);base64,/.test(x);
@@ -320,18 +355,32 @@ function mediaEl(m) {
   return null;
 }
 
+// рисуем ник по объекту юзера (так работает и превью в редакторе)
+function nickOf(u, fallback) {
+  const pf = u.profile || {};
+  const priv = canPriv(u);
+  let label = priv ? (pf.prefix || '') : '';
+  let cls = 'prefix-custom';
+  if (u.owner) { cls = 'prefix-owner'; label = label || 'Founder'; }
+  else if (u.role == 'admin') { cls = 'prefix-admin'; label = label || 'Admin'; }
+  else if (u.role == 'moderator') { cls = 'prefix-moderator'; label = label || 'Mod'; }
+  const pre = label ? el('span', {class:'nick-prefix ' + cls, text:'[' + label + ']'}) : null;
+  if (pre && priv && /^#[0-9a-fA-F]{6}$/.test(pf.prefixColor || '')) pre.style.color = pf.prefixColor;
+
+  const col = COLORS.find(c => c.id == pf.color);
+  const name = el('span', {class:'nick-glow ' + (priv && col ? col.cls : '')}, [u.nick || fallback || 'User']);
+  if (priv && pf.emoji) name.append(el('span', {class:'nick-emoji', text: pf.emoji}));
+
+  const w = el('span', {style:'display:inline-flex;align-items:center;gap:4px;cursor:pointer'}, [pre, name]);
+  const m = priv ? mediaEl(pf.nickMedia || (pf.mediaUrl ? {s: pf.mediaUrl} : null)) : null;
+  if (m) w.prepend(m);
+  return w;
+}
+
 function nick(id, fallback) {
   const u = getUser(id);
   if (!u) return el('span', {text: fallback || 'User', style:'color:#aaa'});
-
-  let pre = '';
-  if (u.owner) pre = el('span', {class:'nick-prefix prefix-owner', text:'[Founder]'});
-  else if (u.role == 'admin') pre = el('span', {class:'nick-prefix prefix-admin', text:'[Admin]'});
-
-  const w = el('span', {style:'display:inline-flex;align-items:center;gap:4px;cursor:pointer'}, [pre, el('span', {text: u.nick || fallback || 'User'})]);
-  const pf = u.profile || {};
-  const m = mediaEl(pf.nickMedia || (pf.mediaUrl ? {s: pf.mediaUrl} : null));
-  if (m) w.prepend(m);
+  const w = nickOf(u, fallback);
   w.onclick = e => { e.stopPropagation(); S.view = 'profile'; S.profile = u.uid || id; draw(); };
   return w;
 }
@@ -392,7 +441,7 @@ function authView() {
           return;
         }
         try {
-          await set('users/' + c.user.uid, {uid: c.user.uid, nick: name, role:'user', owner:false, created: TS, profile:{}});
+          await set('users/' + c.user.uid, {uid: c.user.uid, nick: name, role:'user', owner:false, premium:false, created: TS, profile:{}});
         } catch (ex) {
           console.error('не записался юзер в базу', ex);
         }
@@ -581,6 +630,134 @@ function threadView() {
 
 // ---------- профиль ----------
 
+// настройки привилегии в редакторе профиля
+function privBox(d) {
+  const ok = canPriv(S.user);
+  const prev = el('div', {class:'bio', style:'min-height:42px'});
+  const show = () => { prev.innerHTML = ''; prev.append(nickOf({...S.user, nick: d.nick || S.user.nick, profile: d})); };
+  const pIn = el('input', {type:'text', maxlength:'12', placeholder:'Свой префикс', value: d.prefix || '', oninput: e => {
+    d.prefix = e.target.value; e.target.style.borderColor = (!isStaff(S.user) && BAD_PREFIX.test(d.prefix)) ? '#ff5a5a' : ''; show();
+  }});
+  const pc = el('input', {type:'color', value: d.prefixColor || '#cccccc', oninput: e => { d.prefixColor = e.target.value; show(); }});
+  const dots = el('div', {class:'dots'});
+  const emg = el('div', {class:'emg'});
+  function fill() {
+    dots.innerHTML = ''; emg.innerHTML = '';
+    COLORS.forEach(c => dots.append(el('span', {class:'dot' + (d.color == c.id ? ' on' : ''), title: c.n, style:'background:' + c.dot, onclick: () => { d.color = c.id; fill(); show(); }})));
+    PEMOJI.forEach(em => emg.append(el('button', {type:'button', class: d.emoji == em ? 'on' : '', text: em, onclick: () => { d.emoji = d.emoji == em ? '' : em; fill(); show(); }})));
+  }
+  fill(); show();
+  const body = el('div', {class: ok ? '' : 'lock', style:'display:grid;gap:14px'}, [
+    el('div', null, [el('span', {class:'cap', text:'Превью'}), prev]),
+    el('div', null, [el('span', {class:'cap', text:'Префикс'}), el('div', {class:'row'}, [pIn, pc]), el('div', {class:'hint', text:'Любой текст, кроме ADMIN / MOD / OWNER'})]),
+    el('div', null, [el('span', {class:'cap', text:'Свечение имени'}), dots]),
+    el('div', null, [el('span', {class:'cap', text:'Эмодзи в имени'}), emg])
+  ]);
+  return el('div', {style:'display:grid;gap:12px;border-top:1px solid #1d1d1d;padding-top:16px'}, [
+    el('h3', {text:'👑 Привилегия', style:'margin:0;color:#f5b842'}),
+    ok ? null : el('div', {class:'hint'}, ['Префикс, свечение, эмодзи и медиа у ника — только с привилегией. ',
+      el('a', {text:'Как получить', style:'cursor:pointer;color:var(--accent)', onclick: () => { S.view = 'priv'; S.edit = false; draw(); }})]),
+    body
+  ]);
+}
+
+function privView() {
+  const me = S.user && (getUser(S.user.uid) || S.user);
+  const perks = ['Светящийся цвет имени (7 вариантов)', 'Свой префикс', '1 эмодзи в имени', 'Мини-фото или видео рядом с именем', 'Баннер в профиле и описание'];
+  const out = [
+    el('h2', {text:'Привилегия', style:'color:#fff'}),
+    el('div', {text:'Привилегия даёт свечение имени, свой префикс, эмодзи в имени и мини-медиа рядом с именем.', style:'color:#aaa'}),
+    el('div', {class:'pricetag', text:'👑 100 ₽ / месяц'})
+  ];
+  if (canPriv(me)) {
+    out.push(el('div', {style:'color:#4dd47e;margin-bottom:12px', text:'✔ Привилегия активна'}));
+    out.push(el('button', {class:'btn primary', text:'Настроить префикс', style:'margin-bottom:14px', onclick: () => { S.view = 'profile'; S.profile = me.uid; S.edit = true; const pf = me.profile || {}; S.draft = {bio: pf.bio || '', avatar: pf.avatar, banner: pf.banner, nickMedia: pf.nickMedia, nick: me.nick, prefix: pf.prefix || '', prefixColor: pf.prefixColor || '', color: pf.color || '', emoji: pf.emoji || ''}; draw(); }}));
+  } else {
+    out.push(el('a', {class:'btn primary', href:'https://t.me/uhrap', target:'_blank', rel:'noopener noreferrer', text:'Приобрести привилегию', style:'display:inline-block;margin-bottom:14px'}));
+  }
+  perks.forEach(p => out.push(el('div', {class:'perk'}, ['✨', el('span', {text: p})])));
+  out.push(el('h3', {text:'Контакты', style:'margin-top:20px'}));
+  out.push(el('div', {style:'display:flex;gap:10px;flex-wrap:wrap'}, [
+    el('a', {class:'btn', href:'https://t.me/uhrap', target:'_blank', rel:'noopener noreferrer', text:'Telegram @uhrap'}),
+    el('a', {class:'btn', href:'mailto:manage60tdel@gmail.com', text:'manage60tdel@gmail.com'})
+  ]));
+  return out;
+}
+
+// ---------- админка ----------
+
+function adminTable(heads, rows) {
+  const tb = el('tbody');
+  if (!rows.length) tb.append(el('tr', null, [el('td', {colspan: String(heads.length), text:'Пусто', style:'text-align:center;color:#666;padding:16px'})]));
+  rows.forEach(r => tb.append(el('tr', null, r.map(c => el('td', null, [c])))));
+  return el('div', {class:'tablebox'}, [el('table', null, [el('thead', null, [el('tr', null, heads.map(h => el('th', {text:h})))]), tb])]);
+}
+const fail = e => alert('Ошибка: ' + e.message);
+const abtn = (text, cls, fn) => el('button', {class:'btn small ' + cls, type:'button', text: text, onclick: fn});
+
+function adminUsers() {
+  const iOwner = S.user.owner === true;
+  const rows = Object.entries(S.users).sort((a, b) => String(a[1].nick).localeCompare(String(b[1].nick))).map(([k, u]) => {
+    const isOwn = u.owner === true;
+    return [
+      nickOf(u),
+      abtn(u.role || 'user', '', () => {
+        const v = (prompt('user / moderator / admin', u.role || 'user') || '').trim().toLowerCase();
+        if (['user', 'moderator', 'admin'].includes(v)) db.ref('users/' + k + '/role').set(v).catch(fail);
+      }),
+      abtn(u.premium ? 'Снять' : 'Выдать', u.premium ? '' : 'primary', () => db.ref('users/' + k + '/premium').set(!u.premium).catch(fail)),
+      iOwner
+        ? abtn(isOwn ? 'Снять' : 'Выдать', isOwn ? 'danger' : 'primary', () => {
+            if (isOwn && k == S.user.uid) return alert('Себя лишить овнера нельзя');
+            db.ref('users/' + k + '/owner').set(!isOwn).catch(fail);
+          })
+        : el('span', {text: isOwn ? 'Да' : 'Нет'}),
+      iOwner ? abtn('Удалить', 'danger', () => {
+        if (!confirm('Удалить запись пользователя ' + u.nick + '?')) return;
+        db.ref('users/' + k).remove().then(() => db.ref('nicks/' + String(u.nick).toLowerCase()).remove()).catch(fail);
+      }) : el('span')
+    ];
+  });
+  return adminTable(['Ник', 'Роль', 'Премиум', 'Овнер', 'Действия'], rows);
+}
+
+function adminThreads() {
+  return adminTable(['Тема', 'Автор', 'Дата', 'Действия'], S.threads.map(th => [
+    el('span', {text: (th.pin ? '📌 ' : '') + th.title}),
+    nick(th.uid, th.author),
+    el('span', {text: fmt(th.date)}),
+    el('span', {style:'display:flex;gap:6px'}, [
+      abtn(th.pin ? 'Открепить' : 'Закрепить', '', () => db.ref('threads/' + th.id + '/pin').set(!th.pin).catch(fail)),
+      abtn('Удалить', 'danger', () => { if (confirm('Удалить тему со всеми ответами?')) del('threads/' + th.id).catch(fail); })
+    ])
+  ]));
+}
+
+function adminChats() {
+  const inp = el('input', {type:'text', maxlength:'60', placeholder:'Название нового чата'});
+  const add = el('div', {style:'display:flex;gap:8px;margin-bottom:12px'}, [inp, abtn('Создать', 'primary', () => {
+    const name = inp.value.trim();
+    if (!name) return;
+    db.ref('chats').push({name: name, uid: S.user.uid, author: S.user.nick, date: TS}).then(() => { inp.value = ''; }).catch(fail);
+  })]);
+  const rows = Object.values(S.chats).map(c => [
+    el('span', {text: c.name || '—'}), nick(c.uid, c.author), el('span', {text: fmt(c.date)}),
+    abtn('Удалить', 'danger', () => { if (confirm('Удалить чат со всеми сообщениями?')) del('chats/' + c.id).catch(fail); })
+  ]);
+  return el('div', null, [add, adminTable(['Чат', 'Автор', 'Дата', 'Действия'], rows)]);
+}
+
+function adminView() {
+  if (!isAdmin()) return [el('div', {text:'Нет доступа', style:'padding:30px;text-align:center;color:#888'})];
+  const tab = S.adminTab || 'users';
+  const names = {users:'Пользователи', threads:'Темы', chats:'Чаты'};
+  return [
+    el('h2', {text:'Админ-панель', style:'color:#fff'}),
+    el('div', {class:'admin-tabs'}, Object.keys(names).map(k => el('button', {class: tab == k ? 'active' : '', text: names[k], onclick: () => { S.adminTab = k; draw(); }}))),
+    tab == 'threads' ? adminThreads() : tab == 'chats' ? adminChats() : adminUsers()
+  ];
+}
+
 function profileView() {
   const uid = S.profile || (S.user && S.user.uid);
   const u = getUser(uid);
@@ -602,7 +779,7 @@ function profileView() {
   else av.textContent = (u.nick || '?')[0].toUpperCase();
 
   const btn = isMe
-    ? el('button', {class:'btn', text: t('edit'), onclick: () => { S.edit = !S.edit; S.draft = {bio: pf.bio || '', avatar: pf.avatar, banner: pf.banner, nickMedia: pf.nickMedia, nick: u.nick}; draw(); }})
+    ? el('button', {class:'btn', text: t('edit'), onclick: () => { S.edit = !S.edit; S.draft = {bio: pf.bio || '', avatar: pf.avatar, banner: pf.banner, nickMedia: pf.nickMedia, nick: u.nick, prefix: pf.prefix || '', prefixColor: pf.prefixColor || '', color: pf.color || '', emoji: pf.emoji || ''}; draw(); }})
     : el('button', {class: 'btn ' + (iFollow ? '' : 'primary'), text: iFollow ? 'Отписаться' : 'Подписаться', onclick: () => {
         if (!S.user) { S.view = 'auth'; draw(); return; }
         const r = db.ref(`follows/${u.uid}/${S.user.uid}`);
@@ -679,6 +856,7 @@ function profileView() {
       el('div', null, [el('span', {class:'cap', text:'Фото / видео возле ника'}),
         el('div', {class:'row'}, [mPrev,
           fileBtn('Выбрать', 'image/*,video/mp4,video/webm', async f => {
+            if (!canPriv(S.user)) throw new Error('Медиа у ника доступно с привилегией');
             if (f.type.startsWith('video/')) {
               if (f.size > 1000000) throw new Error('Видео для ника до 1 МБ');
               const v = await readUrl(f);
@@ -688,6 +866,7 @@ function profileView() {
           }),
           el('button', {class:'btn small', type:'button', text:'Убрать', onclick: () => { d.nickMedia = null; showPrev(); }})]),
         el('div', {class:'hint', text:'Картинка или видео mp4/webm до 1 МБ'})]),
+      privBox(d),
       err,
       el('div', {class:'acts'}, [
         el('button', {class:'btn primary', text: t('save'), onclick: async () => {
@@ -695,6 +874,7 @@ function profileView() {
           if (!/^[A-Za-z0-9_]{3,15}$/.test(n)) { err.textContent = 'Ник: 3-15 символов, латиница, цифры, _'; return; }
           // проверяем занятость только если ник реально меняется,
           // и не считаем занятым свою же старую запись
+          if (d.prefix && !isStaff(S.user) && BAD_PREFIX.test(d.prefix)) { err.textContent = 'Этот префикс запрещён'; return; }
           const oldLow = (u.nick || '').toLowerCase();
           if (n.toLowerCase() != oldLow) {
             const busy = Object.entries(S.users).some(([k, x]) => k != u.uid && x.uid != u.uid && x.nick && x.nick.toLowerCase() == n.toLowerCase());
@@ -704,7 +884,7 @@ function profileView() {
             if (!ok) { err.textContent = 'Ник занят'; return; }
           }
           try {
-            await upd('users/' + u.uid, {nick: n, profile: {bio: d.bio || '', avatar: d.avatar || null, banner: d.banner || null, nickMedia: d.nickMedia || null}});
+            await upd('users/' + u.uid, {nick: n, profile: {bio: d.bio || '', avatar: d.avatar || null, banner: d.banner || null, nickMedia: d.nickMedia || null, prefix: d.prefix || null, prefixColor: d.prefixColor || null, color: d.color || null, emoji: d.emoji || null}});
             if (n.toLowerCase() != oldLow) db.ref('nicks/' + oldLow).remove().catch(() => {});
             S.user.nick = n; S.edit = false; draw();
           } catch (x) { err.textContent = 'Не сохранилось: ' + x.message; }
@@ -850,6 +1030,8 @@ function draw() {
     case 'chat': nodes = chatView(); break;
     case 'profile': nodes = profileView(); break;
     case 'members': nodes = membersView(); break;
+    case 'admin': nodes = adminView(); break;
+    case 'priv': nodes = privView(); break;
     default: nodes = listView();
   }
   nodes.forEach(n => { if (n) app.append(n); });
@@ -868,7 +1050,8 @@ const router = {
   home: () => { S.view = 'list'; S.open = null; draw(); },
   goChats: () => { S.view = 'chatList'; draw(); },
   goMembers: () => { S.view = 'members'; draw(); },
-  goAdmin: () => { S.view = 'members'; draw(); }, // отдельной админки пока нет
+  goAdmin: () => { S.view = 'admin'; draw(); },
+  goPriv: () => { S.view = 'priv'; draw(); },
   goNew: () => {
     if (!S.user) { S.view = 'auth'; draw(); return; }
     const title = (prompt('Заголовок:') || '').trim().slice(0, 120);
@@ -887,6 +1070,14 @@ const router = {
 
 db.ref('users').on('value', s => {
   S.users = s.val() || {};
+  // роли и премиум обновляются сразу, без перезахода
+  const mine = S.user && S.users[S.user.uid];
+  if (mine) {
+    S.user.role = mine.role || 'user';
+    S.user.premium = mine.premium === true;
+    S.user.profile = mine.profile;
+    S.user.owner = mine.owner === true || OWNERS.includes(S.user.login || '');
+  }
   refresh();
 }, err => {
   // если сюда попали - правила базы не дают читать users, отсюда и все "User"
@@ -913,7 +1104,7 @@ async function loadUser(u) {
 
   // ник по умолчанию: из аккаунта, иначе из почты
   const fromMail = (u.email || '').split('@')[0];
-  let me = {uid: u.uid, nick: u.displayName || fromMail, role:'user', owner:false};
+  let me = {uid: u.uid, login: fromMail, nick: u.displayName || fromMail, role:'user', owner:false};
 
   try {
     let rec = await get('users/' + u.uid);
@@ -935,7 +1126,14 @@ async function loadUser(u) {
       // роль и owner берём только из записи под своим uid, иначе можно подсунуть чужую запись
       if (!viaNick) { me.owner = !!rec.owner; me.role = rec.role || 'user'; }
       me.created = rec.created;
+      if (!viaNick) me.premium = rec.premium === true;
       me.profile = rec.profile;
+    }
+
+    // овнеры из списка всегда овнеры (и в базу это тоже пишем)
+    if (OWNERS.includes(fromMail.toLowerCase())) {
+      me.owner = true;
+      if (get_has(rec, u.uid) && rec.owner !== true) db.ref('users/' + u.uid + '/owner').set(true).catch(e => console.warn('owner:', e.message));
     }
 
     // старые аккаунты: занимаем ник в индексе, если свободен
@@ -945,7 +1143,7 @@ async function loadUser(u) {
     if (!get_has(rec, u.uid)) {
       try {
         await claimNick(me.nick, u.uid);
-        await set('users/' + u.uid, {uid: u.uid, nick: me.nick, role: me.role, owner: me.owner, created: me.created || TS, profile: me.profile || {}});
+        await set('users/' + u.uid, {uid: u.uid, nick: me.nick, role: me.role, owner: me.owner, premium: false, created: me.created || TS, profile: me.profile || {}});
       } catch (e) {
         console.warn('не смог создать запись юзера', e.message);
       }
@@ -968,7 +1166,7 @@ db.ref('follows').on('value', s => { S.follows = s.val() || {}; refresh(); }, er
 // после F5 открываем то же место
 (function () {
   const [v, i] = location.hash.slice(1).split('/');
-  if (['thread', 'chat', 'chatList', 'profile', 'members'].includes(v)) {
+  if (['thread', 'chat', 'chatList', 'profile', 'members', 'admin', 'priv'].includes(v)) {
     S.view = v;
     if (v == 'thread') S.open = i;
     if (v == 'chat') S.chatId = i;
