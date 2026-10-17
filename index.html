@@ -397,7 +397,7 @@ function nick(id, fallback) {
 function avatar(id, sz) {
   sz = sz || 40;
   const u = getUser(id);
-  const a = el('div', {class:'avatar', style:`width:${sz}px;height:${sz}px;font-size:${sz*0.4}px`});
+  const a = el('div', {class:'avatar', style:'width:'+sz+'px;height:'+sz+'px;font-size:'+(sz*0.4)+'px'});
   if (u && u.profile && okImg(u.profile.avatar)) a.appendChild(el('img', {src: u.profile.avatar}));
   else a.textContent = ((u && u.nick) || '?')[0].toUpperCase();
   return a;
@@ -613,7 +613,7 @@ function threadView() {
           el('div', {class:'meta'}, [
             el('span', {text: fmt(p.date)}),
             (mine || isAdmin()) ? el('button', {class:'btn small danger', text:'✕', onclick: () => {
-              if (confirm('Удалить?')) del(`threads/${th.id}/posts/${p.key}`);
+              if (confirm('Удалить?')) del('threads/' + th.id + '/posts/' + p.key);
             }}) : null
           ]),
           el('div', {class:'text', text: p.text || ''}),
@@ -655,7 +655,7 @@ function threadView() {
   ];
   if (S.user) {
     out.push(composer('t' + th0.id, 'Ответ... (Enter - отправить)', (text, pic) =>
-      db.ref(`threads/${th0.id}/posts`).push({uid: S.user.uid, author: S.user.nick, text: text, media: pic || null, date: TS})));
+      db.ref('threads/' + th0.id + '/posts').push({uid: S.user.uid, author: S.user.nick, text: text, media: pic || null, date: TS})));
   } else out.push(el('div', {class:'muted', text:'Войдите, чтобы отвечать'}));
   return out;
 }
@@ -826,7 +826,7 @@ function profileView() {
     ? el('button', {class:'btn', text: t('edit'), onclick: () => { S.edit = !S.edit; S.draft = {bio: pf.bio || '', avatar: pf.avatar, banner: pf.banner, nickMedia: pf.nickMedia, nick: u.nick, prefix: pf.prefix || '', prefixColor: pf.prefixColor || '', color: pf.color || '', emoji: pf.emoji || ''}; draw(); }})
     : el('button', {class: 'btn ' + (iFollow ? '' : 'primary'), text: iFollow ? 'Отписаться' : 'Подписаться', onclick: () => {
         if (!S.user) { S.view = 'auth'; draw(); return; }
-        const r = db.ref(`follows/${u.uid}/${S.user.uid}`);
+        const r = db.ref('follows/' + u.uid + '/' + S.user.uid);
         iFollow ? r.remove() : r.set(true);
       }});
 
@@ -961,7 +961,7 @@ function chatView() {
         avatar(m.uid, 32),
         el('div', {class:'bub'}, [
           el('div', {class:'top'}, [nick(m.uid, m.author), el('span', {text: fmt(m.date)}),
-            (mine || isAdmin()) ? el('button', {class:'btn small danger', text:'✕', onclick: () => { if (confirm('Удалить?')) del(`chats/${cc.id}/messages/${m.key}`); }}) : null]),
+            (mine || isAdmin()) ? el('button', {class:'btn small danger', text:'✕', onclick: () => { if (confirm('Удалить?')) del('chats/' + cc.id + '/messages/' + m.key); }}) : null]),
           el('div', {class:'txt', text: m.text || ''}),
           picEl(m.media)
         ])
@@ -981,7 +981,7 @@ function chatView() {
   if (S.user) {
     out.push(composer('c' + c.id, 'Сообщение... (Enter - отправить)', (text, pic) => {
       stick = true;
-      return db.ref(`chats/${c.id}/messages`).push({uid: S.user.uid, author: S.user.nick, text: text, media: pic || null, date: TS});
+      return db.ref('chats/' + c.id + '/messages').push({uid: S.user.uid, author: S.user.nick, text: text, media: pic || null, date: TS});
     }));
   } else out.push(el('div', {class:'muted', text:'Войдите, чтобы писать'}));
   return out;
