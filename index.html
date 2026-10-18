@@ -1456,7 +1456,7 @@ function profileView() {
       ...(phoneOf(u) ? [el('tr', null, [el('td', {text:'Номер'}), el('td', {text: phoneOf(u)})])] : []),
       ...(pf.location ? [el('tr', null, [el('td', {text:'Место жительства'}), el('td', {text: pf.location})])] : []),
       ...(usesOf(u).length ? [el('tr', null, [el('td', {text:'Юзы'}), el('td', null, [el('div', {class:'chips', style:'justify-content:flex-end'}, usesOf(u).map(x => el('span', {class:'chip', text:'💎 @' + x})))])])] : [])
-    ])])]
+    ])])
   ];
   if (pf.bio) out.push(el('div', {class:'bio', text: pf.bio}));
   if (okAud(pf.song)) out.push(el('div', {class:'profile-song'}, [
