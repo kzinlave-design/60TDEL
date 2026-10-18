@@ -25,6 +25,7 @@ button,input,select,textarea{font:inherit;color:inherit;background:var(--bg-2);b
 h1,h2,h3{margin:0;font-weight:600}
 .muted{color:var(--muted)}
 .err{color:var(--err);font-size:12px;min-height:16px;margin-top:4px}
+.conn-warn{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;background:#140808;border:1px solid #5a1a1a;color:#ff9a9a;padding:12px 16px;border-radius:4px;font-size:13px}
 .spinner{width:14px;height:14px;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite;display:inline-block;vertical-align:-2px;margin-right:6px}
 @keyframes spin{to{transform:rotate(360deg)}}
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -250,6 +251,7 @@ button.chip{cursor:pointer}
 .row-item .sub{color:#777;font-size:12px;overflow-wrap:anywhere}
 .row-item .peer{display:flex;gap:10px;align-items:center;min-width:0}
 </style>
+<base target="_blank">
 </head>
 <body>
 
@@ -288,6 +290,18 @@ button.chip{cursor:pointer}
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 
 <script>
+if (!window.firebase || !firebase.initializeApp) {
+  const _app = document.getElementById('app');
+  const _box = document.createElement('div');
+  _box.style.cssText = 'max-width:440px;margin:60px auto;background:#0a0a0c;border:1px solid #333;padding:24px;text-align:center;display:grid;gap:12px;justify-items:center;color:#888;font-size:13px';
+  _box.innerHTML = '<b style="color:#ff5a5a">\u26a0 Не удалось загрузить Firebase</b><span>Проверьте интернет. В некоторых сетях серверы Firebase недоступны (нужен VPN) — подключите его и обновите страницу.</span>';
+  const _btn = document.createElement('button');
+  _btn.className = 'btn primary'; _btn.textContent = '\u041e\u0431\u043d\u043e\u0432\u0438\u0442\u044c';
+  _btn.onclick = () => location.reload();
+  _box.appendChild(_btn);
+  _app.appendChild(_box);
+  throw new Error('firebase SDK not loaded');
+}
 firebase.initializeApp({
   apiKey: "AIzaSyDEndaUeUIw_b7iPMvw63JLqz7oNl0-8Qg",
   authDomain: "tdel-45a78.firebaseapp.com",
@@ -300,10 +314,16 @@ firebase.initializeApp({
 const auth = firebase.auth();
 const db = firebase.database();
 
-const get = p => db.ref(p).once('value').then(s => s.exists() ? s.val() : null);
-const set = (p, v) => db.ref(p).set(v);
-const upd = (p, v) => db.ref(p).update(v);
-const del = p => db.ref(p).remove();
+// если база недоступна (блокировка/нет сети), промис не должен висеть вечно
+const withTimeout = (p, ms, what) => Promise.race([
+  p,
+  new Promise((_, rej) => setTimeout(() => rej(new Error((what || 'db') + ': timeout ' + Math.round(ms / 1000) + 's')), ms))
+]);
+const DB_TIMEOUT = 20000;
+const get = p => withTimeout(db.ref(p).once('value'), DB_TIMEOUT, 'db.get').then(s => s.exists() ? s.val() : null);
+const set = (p, v) => withTimeout(db.ref(p).set(v), DB_TIMEOUT, 'db.set');
+const upd = (p, v) => withTimeout(db.ref(p).update(v), DB_TIMEOUT, 'db.update');
+const del = p => withTimeout(db.ref(p).remove(), DB_TIMEOUT, 'db.remove');
 
 const T = {
   ru: {login:'Войти', reg:'Регистрация', out:'Выйти', send:'Отправить', save:'Сохранить', cancel:'Отмена', edit:'Редактировать профиль', pass:'Пароль', nick:'Никнейм', auth:'Вход', reg_title:'Регистрация', no_acc:'Нет аккаунта? ', has_acc:'Есть аккаунт? '},
@@ -403,7 +423,7 @@ function compress(file, max, kb) {
 
 // занимаем ник в индексе nicks - так никто не сможет взять чужое имя
 async function claimNick(n, uid) {
-  const r = await db.ref('nicks/' + n.toLowerCase()).transaction(cur => (cur === null || cur === uid) ? uid : undefined);
+  const r = await withTimeout(db.ref('nicks/' + n.toLowerCase()).transaction(cur => (cur === null || cur === uid) ? uid : undefined), DB_TIMEOUT, 'nicks');
   return r.committed;
 }
 
@@ -1763,6 +1783,13 @@ function draw() {
   drawWho();
   if (!S.ready) { app.append(el('div', {class:'muted', style:'text-align:center;padding:40px'}, [el('span', {class:'spinner'}), 'Загрузка...'])); return; }
 
+  if (S.bootStalled) {
+    app.append(el('div', {class:'conn-warn'}, [
+      el('span', {text:'⚠ Нет связи с сервером — данные не загружаются. Проверьте интернет или включите VPN.'}),
+      el('button', {class:'btn small', type:'button', text:'Обновить', onclick: () => location.reload()})
+    ]));
+  }
+
   const id = {thread: S.open, chat: S.chatId, profile: S.profile, dm: S.dmWith}[S.view];
   history.replaceState(null, '', '#' + S.view + (id ? '/' + id : ''));
 
@@ -2006,24 +2033,38 @@ async function loadUser(u) {
   S.user = me;
 }
 
+let bootDone = false;
 async function boot(u) {
-  await loadUser(u);
-  if (u && S.user) {
-    const ok = await startSession(u);
-    if (!ok) {
-      S.user = null;
-      alert('Сессия завершена. Войдите снова.');
-      await auth.signOut().catch(() => {});
-      return;
+  try {
+    await loadUser(u);
+    if (u && S.user) {
+      const ok = await startSession(u);
+      if (!ok) {
+        S.user = null;
+        alert('Сессия завершена. Войдите снова.');
+        await auth.signOut().catch(() => {});
+        return;
+      }
+      bindUser(u.uid);
+    } else {
+      stopSession();
+      unbindUser();
     }
-    bindUser(u.uid);
-  } else {
-    stopSession();
-    unbindUser();
+  } catch (e) {
+    console.error('boot:', e.message);
   }
   S.ready = true;
+  bootDone = true;
+  S.bootStalled = false;
   draw();
 }
+// сторож: boot завис (база/сеть недоступны) — рисуем сайт в режиме просмотра с предупреждением
+setTimeout(() => {
+  if (bootDone) return;
+  console.error('boot: timeout, offline-mode render');
+  S.user = null; S.ready = true; S.bootStalled = true;
+  draw();
+}, 25000);
 
 (function () {
   const [v, i] = location.hash.slice(1).split('/');
@@ -2042,6 +2083,8 @@ auth.onAuthStateChanged(async u => {
   if (S.registering) return;
   await boot(u);
 });
+// если событие авторизации не пришло (зависший SDK/сеть) — показываем сайт как гостю
+setTimeout(() => { if (!bootDone) boot(null); }, 15000);
 
 // поиск в шапке
 (function () {
