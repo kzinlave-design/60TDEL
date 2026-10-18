@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://apis.google.com https://www.google.com/recaptcha/ https://*.firebasedatabase.app; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; media-src data: blob:; connect-src https://*.googleapis.com https://www.google.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebasedatabase.app wss://*.firebasedatabase.app; frame-src https://tdel-45a78.firebaseapp.com https://*.firebasedatabase.app https://www.google.com/recaptcha/ https://recaptcha.google.com; base-uri 'none'; form-action 'self'; object-src 'none'; worker-src 'none'; manifest-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://apis.google.com https://www.google.com/recaptcha/ https://*.firebasedatabase.app; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; media-src data: blob:; connect-src https://*.googleapis.com https://www.google.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebasedatabase.app wss://*.firebasedatabase.app https://translate.googleapis.com; frame-src https://tdel-45a78.firebaseapp.com https://*.firebasedatabase.app https://www.google.com/recaptcha/ https://recaptcha.google.com; base-uri 'none'; form-action 'self'; object-src 'none'; worker-src 'none'; manifest-src 'none'">
 <meta name="referrer" content="no-referrer">
 <title>60TDEL</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -249,6 +249,19 @@ button.chip{cursor:pointer}
 .row-item.unread{border-color:var(--accent-dim);background:#140808}
 .row-item .sub{color:#777;font-size:12px;overflow-wrap:anywhere}
 .row-item .peer{display:flex;gap:10px;align-items:center;min-width:0}
+
+/* ==== NEW: действия над сообщением ==== */
+.msg-actions{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px}
+.msg-actions .btn{font-size:10px;padding:2px 6px}
+.trans-box{border-left:2px solid #5490ff;background:#080814;padding:6px 10px;margin-top:6px;font-size:12px;color:#9bb8ff;border-radius:2px;white-space:pre-wrap}
+.trans-box .lbl{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:#6a83c0;display:block;margin-bottom:2px}
+.loc-line{color:#aaa;font-size:13px;margin-top:4px}
+.profile-song{background:#0d0d0d;border:1px solid #222;border-radius:4px;padding:12px 14px;margin-top:10px;display:flex;flex-direction:column;gap:6px}
+.profile-song .cap{font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#777}
+.profile-song audio{width:100%;height:40px}
+.fwd-list{display:grid;gap:6px;max-height:50vh;overflow:auto}
+.fwd-list button{text-align:left;padding:8px 12px}
+.fwd-mark{font-size:11px;color:#9bb8ff;margin-bottom:4px;font-family:var(--font-mono)}
 </style>
 </head>
 <body>
@@ -298,7 +311,6 @@ firebase.initializeApp({
   messagingSenderId: "246430149246",
   appId: "1:246430149246:web:a6a5802ff2f6166a70862f"
 });
-// App Check: вставь сюда публичный ключ reCAPTCHA v3 (Firebase Console -> App Check). Пока пусто - выключено.
 const APPCHECK_KEY = '';
 if (APPCHECK_KEY) { try { firebase.appCheck().activate(APPCHECK_KEY, true); } catch (e) { console.warn('appcheck:', e.message); } }
 const auth = firebase.auth();
@@ -317,17 +329,16 @@ const T = {
 let lang = localStorage.getItem('lang') || 'ru';
 const t = k => T[lang][k] || k;
 
-// всё состояние в одной куче
 let S = {
   ready:false, drafts:{}, follows:{}, fill:null, view:'list',
   authMode:'login', open:null, threads:[], user:null, users:{},
   chats:{}, chatId:null, profile:null, edit:false, draft:null,
   page:1, limit:10, busy:false, registering:false,
   lastSend:{}, adminTab:'users', search:'',
-  dmIndex:{}, dmRead:{}, dmMsgs:{}, dmWith:null, notifs:{}, sessions:{}, jump:null, modalRefresh:null
+  dmIndex:{}, dmRead:{}, dmMsgs:{}, dmWith:null, notifs:{}, sessions:{}, jump:null, modalRefresh:null,
+  reports:{}, fwd:null
 };
 
-// маленький помощник чтобы не писать createElement каждый раз
 function el(tag, attrs, kids) {
   const e = document.createElement(tag);
   for (const k in (attrs || {})) {
@@ -350,11 +361,8 @@ function fmt(ts) {
 }
 const isStaff = u => !!u && (u.owner === true || u.role === 'admin' || u.role === 'moderator');
 function isAdmin() { return isStaff(S.user); }
-// админ или овнер: премиум, номера, юзы, подписчики (модератор сюда не входит)
 const isTop = u => !!u && (u.owner === true || u.role === 'admin');
-// юзы лежат в 30 слотах s0..s29: так лимит 30 держит сама база
 const usesOf = u => Object.values((u && u.uses) || {}).filter(x => typeof x === 'string').sort();
-// привилегия: премиум, овнер или админ
 const canPriv = u => !!u && (isStaff(u) || u.premium === true);
 
 function setLang(l) {
@@ -366,7 +374,6 @@ function setLang(l) {
   draw();
 }
 
-// ужимаем картинку до ~200кб, иначе база разбухает
 const COLORS = [
   {id:'', n:'Без свечения', cls:'', dot:'#555'}, {id:'red', n:'Красный', cls:'glow-red', dot:'#ff5252'},
   {id:'blue', n:'Синий', cls:'glow-blue', dot:'#5490ff'}, {id:'green', n:'Зелёный', cls:'glow-green', dot:'#4dd47e'},
@@ -378,16 +385,13 @@ const BAD_PREFIX = /admin|админ|mod|мод|owner|владел|root|system|s
 const isUrl = () => false;
 const okImg = x => isUrl(x) || (typeof x === 'string' && x.length < 700000 && /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+\/=]+$/.test(x));
 const okVid = x => isUrl(x) || (typeof x === 'string' && x.length < 1500000 && /^data:video\/(mp4|webm);base64,[A-Za-z0-9+\/=]+$/.test(x));
+const okAud = x => isUrl(x) || (typeof x === 'string' && x.length < 6900000 && /^data:audio\/(webm|ogg|mp4|mpeg|mp3);base64,[A-Za-z0-9+\/=]+$/.test(x));
 const TS = firebase.database.ServerValue.TIMESTAMP;
 const LIM = () => 'limits/' + S.user.uid + '/last';
 
-// номер берётся из users/<uid>/phone и виден всем в профиле
 const phoneOf = u => (u && u.phone) ? String(u.phone) : '';
-
-// медиа хранится прямо в базе (data: URL), размер ограничен сжатием и правилами базы
 const uploadMedia = async v => v;
 
-// ужимаем картинку: max - сторона в пикселях, kb - предел размера
 function compress(file, max, kb) {
   return new Promise((res, rej) => {
     if (!file || !file.type.startsWith('image/') || file.size > 10e6) return rej(new Error('нужна картинка до 10 МБ'));
@@ -411,17 +415,14 @@ function compress(file, max, kb) {
   });
 }
 
-// занимаем ник в индексе nicks - так никто не сможет взять чужое имя
 async function claimNick(n, uid) {
   const r = await db.ref('nicks/' + n.toLowerCase()).transaction(cur => (cur === null || cur === uid) ? uid : undefined);
   return r.committed;
 }
 
-// ищем юзера по uid, если нет - по нику (для старых постов)
 function getUser(id) {
   if (!id) return null;
   if (S.users[id]) return S.users[id];
-  // это мы сами, а в базе записи нет (или она не прочиталась)
   if (S.user && S.user.uid === id) return S.user;
   const low = String(id).toLowerCase();
   return Object.values(S.users).find(u => u.nick && u.nick.toLowerCase() === low) || null;
@@ -439,7 +440,6 @@ function mediaEl(m) {
   return null;
 }
 
-// рисуем ник по объекту юзера (так работает и превью в редакторе)
 function nickOf(u, fallback) {
   const pf = (u && u.profile) || {};
   const priv = canPriv(u);
@@ -478,9 +478,6 @@ function avatar(id, sz) {
   return a;
 }
 
-// ---------- звук, уведомления, реплаи ----------
-
-const okAud = x => isUrl(x) || (typeof x === 'string' && x.length < 500000 && /^data:audio\/(webm|ogg|mp4);base64,[A-Za-z0-9+\/=]+$/.test(x));
 const dmKey = (a, b) => a < b ? a + '_' + b : b + '_' + a;
 const snip = (m, n) => (m.voice ? '🎤 Голосовое' : (m.text || (m.media ? '📷 Фото' : ''))).slice(0, n || 100);
 const tm = ts => ts ? new Date(ts).toLocaleTimeString(lang === 'ru' ? 'ru-RU' : 'en-GB', {hour:'2-digit', minute:'2-digit'}) : '';
@@ -495,7 +492,6 @@ function unlockAudio() {
 }
 ['click', 'keydown', 'touchstart'].forEach(ev => document.addEventListener(ev, unlockAudio, {passive:true}));
 
-// короткий двойной «блюп», как в телеграме / вк
 function ding(kind) {
   if (!SND.on || !_ac || _ac.state !== 'running') return;
   const notes = kind === 'dm' ? [1046, 1397] : [880, 1319];
@@ -520,7 +516,6 @@ function updateBadges() {
   document.title = (un + nf ? '(' + (un + nf) + ') ' : '') + '60TDEL';
 }
 
-// уведомление «вам ответили»
 async function notify(to, data) {
   if (!S.user || !to || to === S.user.uid) return;
   try {
@@ -547,7 +542,6 @@ function doJump(root) {
   S.jump = null;
 }
 
-// цитата над сообщением; текст берём из живых данных, а не из того, что прислал отправитель
 function quoteEl(map, r) {
   if (!r || !r.key) return null;
   const o = map && map[r.key];
@@ -560,7 +554,6 @@ function quoteEl(map, r) {
 
 const COMP = {};
 
-// просмотры: +1 за тему один раз за сессию вкладки
 let VIEWED = new Set();
 try { VIEWED = new Set(JSON.parse(sessionStorage.getItem('viewed') || '[]')); } catch (e) {}
 function countView(id) {
@@ -571,7 +564,6 @@ function countView(id) {
     .catch(e => console.warn('views:', e.message));
 }
 
-// правка своего сообщения (темы и чаты)
 function startEdit(key, text) {
   S.editing = key; S.editDraft = text || '';
   if (S.fill) S.fill();
@@ -605,6 +597,188 @@ const editBtn = (key, m) => el('button', {class:'btn small', type:'button', titl
 const replyBtn = (ck, key, m) => el('button', {class:'btn small', type:'button', title:'Ответить', text:'↩', onclick: () => {
   if (COMP[ck]) COMP[ck].setReply({key: key, uid: m.uid, text: snip(m, 100), nick: (getUser(m.uid) || {}).nick || m.author || 'User'});
 }});
+
+// ---------- копирование / перевод / жалоба / пересылка ----------
+
+const LANGS = [
+  {id:'ru', n:'Русский'}, {id:'en', n:'English'}, {id:'uk', n:'Українська'},
+  {id:'de', n:'Deutsch'}, {id:'fr', n:'Français'}, {id:'es', n:'Español'},
+  {id:'it', n:'Italiano'}, {id:'pl', n:'Polski'}, {id:'tr', n:'Türkçe'},
+  {id:'zh', n:'中文'}, {id:'ja', n:'日本語'}, {id:'ko', n:'한국어'}
+];
+
+async function copyText(txt) {
+  const s = String(txt || '');
+  try { await navigator.clipboard.writeText(s); return true; }
+  catch (e) {
+    try {
+      const ta = el('textarea', {style:'position:fixed;opacity:0'});
+      ta.value = s; document.body.append(ta); ta.select();
+      const ok = document.execCommand('copy'); ta.remove(); return ok;
+    } catch (x) { return false; }
+  }
+}
+
+async function translateText(text, to) {
+  const src = String(text || '').trim();
+  if (!src) throw new Error('Пусто');
+  try {
+    const url = 'https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=' +
+      encodeURIComponent(to) + '&dt=t&q=' + encodeURIComponent(src.slice(0, 4500));
+    const r = await fetch(url, {method:'GET'});
+    if (!r.ok) throw new Error('http ' + r.status);
+    const j = await r.json();
+    if (!Array.isArray(j) || !Array.isArray(j[0])) throw new Error('bad json');
+    return j[0].map(x => (x && x[0]) ? x[0] : '').join('');
+  } catch (e) {
+    throw new Error('Перевод недоступен. ' + e.message);
+  }
+}
+
+function translateModal(text, onDone) {
+  modal((box, close) => {
+    box.innerHTML = '';
+    const err = el('div', {class:'err'});
+    const sel = el('select', {style:'padding:8px;background:#000;border:1px solid #333'});
+    LANGS.forEach(l => sel.append(el('option', {value:l.id, text:l.n, selected: l.id === (lang || 'en') ? '' : null})));
+    const out = el('div', {class:'trans-box', style:'display:none'});
+    const btn = abtn('Перевести', 'primary', async () => {
+      btn.disabled = true; err.textContent = ''; out.style.display = 'none';
+      try {
+        const tr = await translateText(text, sel.value);
+        out.innerHTML = ''; out.style.display = 'block';
+        out.append(el('span', {class:'lbl', text:'Перевод · ' + sel.value}), el('span', {text: tr}));
+        onDone && onDone(tr, sel.value);
+      } catch (e) { err.textContent = e.message; }
+      btn.disabled = false;
+    });
+    box.append(
+      el('h3', {text:'🌐 Перевести сообщение', style:'color:#fff'}),
+      el('div', {class:'muted', style:'font-size:12px;max-height:120px;overflow:auto;white-space:pre-wrap;border:1px solid #222;padding:8px;border-radius:4px'}, [String(text || '').slice(0, 1000)]),
+      el('div', {style:'display:flex;gap:8px;align-items:center'}, [sel, btn]),
+      err, out,
+      abtn('Закрыть', '', close)
+    );
+  });
+}
+
+function reportModal(target) {
+  if (!S.user) { S.view = 'auth'; draw(); return; }
+  modal((box, close) => {
+    box.innerHTML = '';
+    const err = el('div', {class:'err'});
+    const ta = el('textarea', {maxlength:'300', placeholder:'Почему жалуетесь? (необязательно)', style:'min-height:70px'});
+    const send = abtn('Отправить жалобу', 'danger', async () => {
+      const reason = ta.value.trim().slice(0, 300);
+      try {
+        const r = db.ref('reports').push();
+        await r.set({
+          type: target.view,
+          targetId: target.id || null,
+          msgKey: target.key || null,
+          targetUid: target.uid || null,
+          targetNick: target.nick || null,
+          text: String(target.text || '').slice(0, 300),
+          reason: reason,
+          from: S.user.uid,
+          fromNick: S.user.nick,
+          date: TS,
+          status: 'new'
+        });
+        close();
+        alert('Жалоба отправлена');
+      } catch (e) { err.textContent = 'Не отправилось: ' + e.message; }
+    });
+    box.append(
+      el('h3', {text:'⚠ Пожаловаться на сообщение', style:'color:var(--err)'}),
+      el('div', {class:'muted', style:'font-size:12px'}, ['Автор: ', target.nick || 'User']),
+      el('div', {class:'muted', style:'font-size:12px;max-height:100px;overflow:auto;white-space:pre-wrap;border:1px solid #222;padding:6px;border-radius:4px'}, [String(target.text || '📷 медиа').slice(0, 500)]),
+      ta, err, send,
+      abtn('Отмена', '', close)
+    );
+  });
+}
+
+function forwardModal(original) {
+  if (!S.user) { S.view = 'auth'; draw(); return; }
+  modal((box, close) => {
+    box.innerHTML = '';
+    const list = el('div', {class:'fwd-list'});
+
+    const chats = Object.values(S.chats);
+    if (chats.length) {
+      list.append(el('div', {class:'cap', text:'Чаты', style:'color:#777;font-size:11px;text-transform:uppercase'}));
+      chats.forEach(c => list.append(el('button', {class:'btn', type:'button', text:'💬 ' + (c.name || '—'), onclick: async () => {
+        try {
+          const r = db.ref('chats/' + c.id + '/messages').push();
+          const msg = {uid: S.user.uid, author: S.user.nick, text: original.text || '', date: TS,
+            forwarded: {fromNick: original.fromNick || 'User', view: original.view, id: original.id}};
+          if (original.media) msg.media = original.media;
+          if (original.voice) { msg.voice = original.voice; msg.dur = original.dur; }
+          await db.ref().update({['chats/' + c.id + '/messages/' + r.key]: msg, [LIM()]: TS});
+          close(); alert('Переслано в «' + c.name + '»');
+        } catch (e) { alert('Ошибка: ' + e.message); }
+      }})));
+    }
+
+    const peers = Object.entries(S.dmIndex);
+    if (peers.length) {
+      list.append(el('div', {class:'cap', text:'Личные сообщения', style:'color:#777;font-size:11px;text-transform:uppercase;margin-top:8px'}));
+      peers.forEach(([p]) => {
+        const u = getUser(p);
+        list.append(el('button', {class:'btn', type:'button', text:'✉ ' + ((u && u.nick) || p), onclick: async () => {
+          try {
+            const me = S.user.uid, key = dmKey(me, p);
+            const id = db.ref('dms/' + key + '/messages').push().key;
+            const msg = {uid: me, text: original.text || '', date: TS,
+              forwarded: {fromNick: original.fromNick || 'User', view: original.view, id: original.id}};
+            if (original.media) msg.media = original.media;
+            if (original.voice) { msg.voice = original.voice; msg.dur = original.dur; }
+            const idx = {last: '↪ ' + (snip(msg, 80) || '…'), date: TS, from: me};
+            await db.ref().update({
+              ['dms/' + key + '/messages/' + id]: msg,
+              ['dmIndex/' + me + '/' + p]: idx,
+              ['dmIndex/' + p + '/' + me]: idx,
+              [LIM()]: TS
+            });
+            close(); alert('Переслано в ЛС');
+          } catch (e) { alert('Ошибка: ' + e.message); }
+        }}));
+      });
+    }
+
+    if (!chats.length && !peers.length) list.append(el('div', {class:'muted', text:'Некуда переслать: нет чатов и диалогов'}));
+
+    box.append(
+      el('h3', {text:'↪ Переслать сообщение', style:'color:#fff'}),
+      el('div', {class:'muted', style:'font-size:12px;white-space:pre-wrap;border:1px solid #222;padding:6px;border-radius:4px;max-height:100px;overflow:auto'}, [String(original.text || '📷 медиа').slice(0, 300)]),
+      list,
+      abtn('Отмена', '', close)
+    );
+  });
+}
+
+function msgActions(o) {
+  const bar = el('div', {class:'msg-actions'});
+  bar.append(el('button', {class:'btn small', type:'button', title:'Копировать', text:'⧉ Копировать', onclick: async e => {
+    e.stopPropagation();
+    const ok = await copyText(o.text || (o.voice ? '🎤 Голосовое' : '📷 Фото'));
+    if (!ok) alert('Не удалось скопировать');
+  }}));
+  bar.append(el('button', {class:'btn small', type:'button', title:'Перевести', text:'🌐 Перевести', onclick: e => {
+    e.stopPropagation();
+    translateModal(o.text || '', null);
+  }}));
+  bar.append(el('button', {class:'btn small', type:'button', title:'Переслать', text:'↪ Переслать', onclick: e => {
+    e.stopPropagation();
+    forwardModal(o);
+  }}));
+  if (S.user && o.uid !== S.user.uid) bar.append(el('button', {class:'btn small danger', type:'button', title:'Пожаловаться', text:'⚠ Жалоба', onclick: e => {
+    e.stopPropagation();
+    reportModal(o);
+  }}));
+  return bar;
+}
 
 // ---------- вход / регистрация ----------
 
@@ -752,7 +926,6 @@ function listView() {
     tbody
   ])]));
 
-  // pager
   const pages = Math.max(1, Math.ceil(rows.length / S.limit));
   if (pages > 1) {
     const pager = el('div', {class:'pager'});
@@ -765,7 +938,7 @@ function listView() {
   return out;
 }
 
-// ---------- поле ввода (тема и чат) ----------
+// ---------- поле ввода ----------
 
 const EMO = ['😀','😂','😍','😎','😭','😡','👍','👎','🔥','💀','❤️','🎉','🤔','😱','🙏','👀'];
 
@@ -791,7 +964,6 @@ function composer(key, ph, onSend, opts) {
 
   const panel = el('div', {class:'emo', style:'display:none'}, EMO.map(e =>
     el('span', {text: e, onclick: () => { ta.value += e; S.drafts[key] = ta.value; ta.focus(); }})));
-  // общая функция: берём файл-картинку (из диалога, буфера или drag&drop), ужимаем и показываем превью
   const setPic = async f => {
     if (!f) return;
     try { pic = await compress(f, 900, 120); }
@@ -804,7 +976,6 @@ function composer(key, ph, onSend, opts) {
     file.value = '';
     await setPic(f);
   }});
-  // Ctrl+V: если в буфере картинка (скриншот, копия из браузера) - прикрепляем её, текст вставляется как обычно
   const imgFrom = dt => {
     if (!dt) return null;
     const it = [...(dt.items || [])].find(x => x.kind === 'file' && /^image\/(png|jpeg|webp|gif|bmp)$/.test(x.type));
@@ -825,7 +996,6 @@ function composer(key, ph, onSend, opts) {
     setPic(f);
   });
 
-  // ---- голосовые ----
   const showVo = () => {
     vbox.innerHTML = '';
     if (vo) vbox.append(el('audio', {controls:'', src: vo.s}), el('span', {class:'muted', text: vo.d + ' c'}),
@@ -874,7 +1044,7 @@ function composer(key, ph, onSend, opts) {
     const text = ta.value.trim();
     if ((!text && !pic && !vo) || busy || rec) return;
     const now = Date.now();
-    if (now - (S.lastSend.g || 0) < 2300) { alert('Не так быстро, подожди пару секунд'); return; } // сервер тоже режет чаще раза в 2 сек
+    if (now - (S.lastSend.g || 0) < 2300) { alert('Не так быстро, подожди пару секунд'); return; }
     S.lastSend.g = now;
     busy = true;
     try {
@@ -925,9 +1095,11 @@ function threadView() {
               }}) : null
             ])
           ]),
+          p.forwarded ? el('div', {class:'fwd-mark', text:'↪ Переслано от ' + (p.forwarded.fromNick || 'User')}) : null,
           quoteEl(th.posts, p.reply),
           S.editing === p.key ? editBox('threads/' + th.id + '/posts/' + p.key, p, 5000) : el('div', {class:'text', text: p.text || ''}),
-          picEl(p.media)
+          picEl(p.media),
+          msgActions({view:'thread', id: th.id, key: p.key, uid: p.uid, text: p.text, nick: (getUser(p.uid) || {}).nick || p.author, media: p.media})
         ])
       ]));
     });
@@ -1012,7 +1184,7 @@ function privBox(d) {
 
 function privView() {
   const me = S.user && (getUser(S.user.uid) || S.user);
-  const perks = ['Светящийся цвет имени (7 вариантов)', 'Свой префикс', '1 эмодзи в имени', 'Мини-фото или видео рядом с именем', 'Баннер в профиле и описание'];
+  const perks = ['Светящийся цвет имени (7 вариантов)', 'Свой префикс', '1 эмодзи в имени', 'Мини-фото или видео рядом с именем', 'Баннер в профиле и описание', 'Песня в профиле до 5 МБ'];
   const out = [
     el('h2', {text:'Привилегия', style:'color:#fff'}),
     el('div', {text:'Привилегия даёт свечение имени, свой префикс, эмодзи в имени и мини-медиа рядом с именем.', style:'color:#aaa'}),
@@ -1023,7 +1195,7 @@ function privView() {
     out.push(el('button', {class:'btn primary', text:'Настроить префикс', style:'margin-bottom:14px', onclick: () => {
       S.view = 'profile'; S.profile = me.uid; S.edit = true;
       const pf = me.profile || {};
-      S.draft = {bio: pf.bio || '', avatar: pf.avatar, banner: pf.banner, nickMedia: pf.nickMedia, nick: me.nick, prefix: pf.prefix || '', prefixColor: pf.prefixColor || '', color: pf.color || '', emoji: pf.emoji || ''};
+      S.draft = {bio: pf.bio || '', avatar: pf.avatar, banner: pf.banner, nickMedia: pf.nickMedia, nick: me.nick, prefix: pf.prefix || '', prefixColor: pf.prefixColor || '', color: pf.color || '', emoji: pf.emoji || '', location: pf.location || '', song: pf.song || null};
       draw();
     }}));
   } else {
@@ -1056,7 +1228,6 @@ async function removeUse(k, x) {
   if (String(u.nick || '').toLowerCase() !== x) await db.ref('nicks/' + x).remove();
 }
 
-// «юзы» — зарезервированные ники на человека, до 30 штук
 function usesModal(k) {
   modal((box, close) => {
     const u = S.users[k] || {};
@@ -1110,7 +1281,6 @@ function adminUsers() {
       }) : el('span', {text: u.role || 'user'}),
       abtn(u.premium ? 'Снять' : 'Выдать', u.premium ? '' : 'primary', () => db.ref('users/' + k + '/premium').set(!u.premium).catch(fail)),
 
-      // НОМЕР
       el('div', {class:'phone-cell'}, [
         el('span', {class:'val', text: phoneOf(u) || '—', style:'color:' + (phoneOf(u) ? '#fff' : '#555')}),
         abtn(u.phone ? '✕' : 'Выдать', u.phone ? 'danger' : 'primary', () => {
@@ -1123,7 +1293,6 @@ function adminUsers() {
         })
       ]),
 
-      // ПОДПИСЧИКИ
       el('div', {class:'phone-cell'}, [
         el('span', {class:'val', text: String(follCount), style:'color:' + (u.followers ? '#f5b842' : '#fff')}),
         abtn(u.followers ? '✕' : 'Задать', u.followers ? 'danger' : 'primary', () => {
@@ -1137,7 +1306,6 @@ function adminUsers() {
         })
       ]),
 
-      // ЮЗЫ
       el('div', {class:'phone-cell'}, [
         el('span', {class:'val', text: nUses + '/30', style:'color:' + (nUses ? '#f5b842' : '#555')}),
         abtn('Юзы', 'primary', () => usesModal(k))
@@ -1189,16 +1357,48 @@ function adminChats() {
   return el('div', null, [add, adminTable(['Чат', 'Автор', 'Дата', 'Действия'], rows)]);
 }
 
+function adminReports() {
+  const items = Object.entries(S.reports || {}).sort((a, b) => (b[1].date || 0) - (a[1].date || 0));
+  if (!items.length) return [el('div', {class:'muted', text:'Жалоб нет', style:'padding:20px;text-align:center'})];
+  const rows = items.map(([id, r]) => {
+    const typeName = r.type === 'thread' ? 'Тема' : r.type === 'chat' ? 'Чат' : r.type === 'dm' ? 'ЛС' : (r.type || '—');
+    const go = el('span', {style:'display:flex;gap:6px;flex-wrap:wrap'}, [
+      abtn('Открыть', '', () => {
+        if (r.type === 'thread') { S.view = 'thread'; S.open = r.targetId; S.jump = r.msgKey || null; }
+        else if (r.type === 'chat') { S.view = 'chat'; S.chatId = r.targetId; S.jump = r.msgKey || null; }
+        else if (r.type === 'dm') { S.view = 'dm'; S.dmWith = r.targetUid; S.jump = r.msgKey || null; }
+        else return;
+        draw();
+      }),
+      abtn('Решено', 'primary', () => db.ref('reports/' + id + '/status').set('resolved').catch(fail)),
+      abtn('Удалить', 'danger', () => { if (confirm('Удалить жалобу?')) del('reports/' + id).catch(fail); })
+    ]);
+    return [
+      el('div', {style:'display:flex;flex-direction:column;gap:2px;min-width:160px'}, [
+        el('span', {text: typeName + (r.status === 'resolved' ? ' · решено' : ''), style:'color:' + (r.status === 'resolved' ? '#4dd47e' : '#fff')}),
+        el('span', {class:'muted', style:'font-size:11px', text: fmt(r.date) + ' ' + tm(r.date)})
+      ]),
+      el('span', {text: (r.fromNick || 'User') + ' → ' + (r.targetNick || '—'), style:'font-size:12px'}),
+      el('div', {style:'min-width:0;font-size:12px'}, [
+        el('div', {class:'muted', style:'font-size:11px', text:'Текст: ' + (r.text || '—')}),
+        r.reason ? el('div', {style:'color:#ff9a9a;font-size:11px', text:'Причина: ' + r.reason}) : null
+      ]),
+      go
+    ];
+  });
+  return [el('h3', {text:'Жалобы (' + items.length + ')', style:'color:#fff'}), adminTable(['Тип', 'Кто → на кого', 'Сообщение / причина', 'Действия'], rows)];
+}
+
 function adminView() {
   if (!isAdmin()) return [el('div', {text:'Нет доступа', style:'padding:30px;text-align:center;color:#888'})];
   const top = isTop(S.user);
-  const names = top ? {users:'Пользователи', threads:'Темы', chats:'Чаты'} : {threads:'Темы', chats:'Чаты'};
+  const names = top ? {users:'Пользователи', threads:'Темы', chats:'Чаты', reports:'Жалобы'} : {threads:'Темы', chats:'Чаты', reports:'Жалобы'};
   let tab = S.adminTab || 'users';
   if (!names[tab]) tab = 'threads';
   return [
     el('h2', {text:'Админ-панель', style:'color:#fff'}),
     el('div', {class:'admin-tabs'}, Object.keys(names).map(k => el('button', {class: tab === k ? 'active' : '', text: names[k], onclick: () => { S.adminTab = k; draw(); }}))),
-    tab === 'threads' ? adminThreads() : tab === 'chats' ? adminChats() : adminUsers()
+    tab === 'threads' ? adminThreads() : tab === 'chats' ? adminChats() : tab === 'reports' ? adminReports() : adminUsers()
   ];
 }
 
@@ -1226,7 +1426,7 @@ function profileView() {
   const btn = isMe
     ? el('button', {class:'btn', text: t('edit'), onclick: () => {
         S.edit = !S.edit;
-        S.draft = {bio: pf.bio || '', avatar: pf.avatar, banner: pf.banner, nickMedia: pf.nickMedia, nick: u.nick, prefix: pf.prefix || '', prefixColor: pf.prefixColor || '', color: pf.color || '', emoji: pf.emoji || ''};
+        S.draft = {bio: pf.bio || '', avatar: pf.avatar, banner: pf.banner, nickMedia: pf.nickMedia, nick: u.nick, prefix: pf.prefix || '', prefixColor: pf.prefixColor || '', color: pf.color || '', emoji: pf.emoji || '', location: pf.location || '', song: pf.song || null};
         draw();
       }})
     : el('button', {class: 'btn ' + (iFollow ? '' : 'primary'), text: iFollow ? 'Отписаться' : 'Подписаться', onclick: () => {
@@ -1254,10 +1454,15 @@ function profileView() {
       el('tr', null, [el('td', {text:'Роль'}), el('td', {text: u.owner ? 'Founder' : (u.role || 'user')})]),
       el('tr', null, [el('td', {text:'Joined'}), el('td', {text: fmt(u.created)})]),
       ...(phoneOf(u) ? [el('tr', null, [el('td', {text:'Номер'}), el('td', {text: phoneOf(u)})])] : []),
+      ...(pf.location ? [el('tr', null, [el('td', {text:'Место жительства'}), el('td', {text: pf.location})])] : []),
       ...(usesOf(u).length ? [el('tr', null, [el('td', {text:'Юзы'}), el('td', null, [el('div', {class:'chips', style:'justify-content:flex-end'}, usesOf(u).map(x => el('span', {class:'chip', text:'💎 @' + x})))])])] : [])
-    ])])
+    ])])]
   ];
   if (pf.bio) out.push(el('div', {class:'bio', text: pf.bio}));
+  if (okAud(pf.song)) out.push(el('div', {class:'profile-song'}, [
+    el('span', {class:'cap', text:'🎵 Песня профиля'}),
+    el('audio', {controls:'', preload:'metadata', src: pf.song})
+  ]));
   if (mine.length) {
     out.push(el('h3', {text:'Темы', style:'color:#fff'}));
     out.push(el('div', {class:'tlist'}, mine.slice(0, 10).map(th => el('a', {text: th.title, onclick: () => { S.view = 'thread'; S.open = th.id; draw(); }}))));
@@ -1294,11 +1499,36 @@ function profileView() {
     bIn.value = d.bio;
     const cnt = el('span', {class:'hint', text: (d.bio || '').length + '/300'});
 
+    // Песня профиля
+    const songBox = el('div', {class:'profile-song'});
+    const showSong = () => {
+      songBox.innerHTML = '';
+      if (okAud(d.song)) {
+        songBox.append(el('audio', {controls:'', preload:'metadata', src: d.song}));
+        songBox.append(el('button', {class:'btn small danger', type:'button', text:'Убрать песню', onclick: () => { d.song = null; showSong(); }}));
+      } else {
+        songBox.append(el('span', {class:'muted', style:'font-size:12px', text:'не выбрана'}));
+      }
+    };
+    const songInp = el('input', {type:'file', accept:'audio/*', style:'display:none', onchange: async e => {
+      const f = e.target.files[0]; if (!f) return;
+      if (f.size > 5 * 1024 * 1024) { alert('Файл больше 5 МБ'); songInp.value = ''; return; }
+      if (!/^audio\//.test(f.type)) { alert('Нужен аудиофайл'); songInp.value = ''; return; }
+      const url = await readUrl(f);
+      if (!okAud(url)) { alert('Формат не поддержан (mp3/ogg/webm/mp4)'); songInp.value = ''; return; }
+      if (url.length > 6800000) { alert('Слишком большой после кодирования'); songInp.value = ''; return; }
+      d.song = url; showSong(); songInp.value = '';
+    }});
+    showSong();
+
+    const locIn = el('input', {type:'text', maxlength:'80', value: d.location || '', placeholder:'Город, страна — что угодно', oninput: e => { d.location = e.target.value; }});
+
     out.push(el('div', {class:'ed'}, [
       el('h3', {text: t('edit')}),
       el('div', null, [el('span', {class:'cap', text:'Никнейм'}), nIn, el('div', {class:'hint', text:'Логин для входа не меняется'}),
         usesOf(u).length ? el('div', {class:'chips', style:'margin-top:8px'}, usesOf(u).map(x => el('button', {type:'button', class:'chip', text:'💎 @' + x, title:'Взять как ник', onclick: () => { nIn.value = x; d.nick = x; }}))) : null]),
       el('div', null, [el('span', {class:'cap', text:'О себе'}), bIn, cnt]),
+      el('div', null, [el('span', {class:'cap', text:'Место жительства'}), locIn]),
       el('div', null, [el('span', {class:'cap', text:'Баннер'}), bPrev,
         el('div', {class:'row', style:'margin-top:8px'}, [
           fileBtn('Выбрать', 'image/*', async f => { d.banner = await compress(f, 900, 90); }),
@@ -1320,6 +1550,9 @@ function profileView() {
           }),
           el('button', {class:'btn small', type:'button', text:'Убрать', onclick: () => { d.nickMedia = null; showPrev(); }})]),
         el('div', {class:'hint', text:'Картинка или видео mp4/webm до 1 МБ'})]),
+      el('div', null, [el('span', {class:'cap', text:'Песня профиля (до 5 МБ)'}),
+        el('div', {style:'display:grid;gap:8px'}, [songBox,
+          el('div', {class:'row'}, [songInp, el('button', {class:'btn small', type:'button', text:'📀 Выбрать песню', onclick: () => songInp.click()})])])]),
       privBox(d),
       err,
       el('div', {class:'acts'}, [
@@ -1341,7 +1574,7 @@ function profileView() {
             d.banner = await uploadMedia(d.banner);
             if (pv && d.nickMedia && d.nickMedia.s) d.nickMedia = {t: d.nickMedia.t, s: await uploadMedia(d.nickMedia.s)};
             if (n !== u.nick) await set('users/' + u.uid + '/nick', n);
-            await set('users/' + u.uid + '/profile', {bio: d.bio || '', avatar: d.avatar || null, banner: d.banner || null, nickMedia: pv ? (d.nickMedia || null) : null, prefix: pv ? (d.prefix || null) : null, prefixColor: pv ? (d.prefixColor || null) : null, color: pv ? (d.color || null) : null, emoji: pv ? (d.emoji || null) : null});
+            await set('users/' + u.uid + '/profile', {bio: d.bio || '', avatar: d.avatar || null, banner: d.banner || null, nickMedia: pv ? (d.nickMedia || null) : null, prefix: pv ? (d.prefix || null) : null, prefixColor: pv ? (d.prefixColor || null) : null, color: pv ? (d.color || null) : null, emoji: pv ? (d.emoji || null) : null, location: d.location || null, song: d.song || null});
             if (n.toLowerCase() !== oldLow && !usesOf(u).includes(oldLow)) db.ref('nicks/' + oldLow).remove().catch(() => {});
             S.user.nick = n; S.edit = false; draw();
           } catch (x) { err.textContent = 'Не сохранилось: ' + x.message; }
@@ -1359,7 +1592,7 @@ function chatView() {
   const c = S.chats[S.chatId];
   if (!c) return [el('div', {text:'Не найдено'})];
   const win = el('div', {class:'chatwin'});
-  let stick = true; // прилипать к низу
+  let stick = true;
 
   S.fill = () => {
     const cc = S.chats[S.chatId];
@@ -1376,10 +1609,12 @@ function chatView() {
             S.user ? replyBtn('c' + cc.id, m.key, m) : null,
             mine ? editBtn(m.key, m) : null,
             (mine || isAdmin()) ? el('button', {class:'btn small danger', text:'✕', onclick: () => { if (confirm('Удалить?')) del('chats/' + cc.id + '/messages/' + m.key); }}) : null]),
+          m.forwarded ? el('div', {class:'fwd-mark', text:'↪ Переслано от ' + (m.forwarded.fromNick || 'User')}) : null,
           quoteEl(cc.messages, m.reply),
           S.editing === m.key ? editBox('chats/' + cc.id + '/messages/' + m.key, m, 2000) : (m.text ? el('div', {class:'txt', text: m.text}) : null),
           picEl(m.media),
-          okAud(m.voice) ? el('audio', {controls:'', preload:'metadata', src: m.voice}) : null
+          okAud(m.voice) ? el('audio', {controls:'', preload:'metadata', src: m.voice}) : null,
+          msgActions({view:'chat', id: cc.id, key: m.key, uid: m.uid, text: m.text, nick: (getUser(m.uid) || {}).nick || m.author, media: m.media, voice: m.voice, dur: m.dur})
         ])
       ]));
     });
@@ -1532,10 +1767,12 @@ function dmView() {
               mine ? el('button', {class:'btn small danger', text:'✕', onclick: () => { if (confirm('Удалить?')) del('dms/' + key + '/messages/' + m.key); }}) : null
             ])
           ]),
+          m.forwarded ? el('div', {class:'fwd-mark', text:'↪ Переслано от ' + (m.forwarded.fromNick || 'User')}) : null,
           quoteEl(S.dmMsgs, m.reply),
           m.text ? el('div', {class:'txt', text: m.text}) : null,
           picEl(m.media),
-          okAud(m.voice) ? el('audio', {controls:'', preload:'metadata', src: m.voice}) : null
+          okAud(m.voice) ? el('audio', {controls:'', preload:'metadata', src: m.voice}) : null,
+          msgActions({view:'dm', id: key, key: m.key, uid: m.uid, text: m.text, nick: mine ? S.user.nick : ((getUser(other) || {}).nick || 'User'), media: m.media, voice: m.voice, dur: m.dur})
         ])
       ]));
     });
@@ -1688,7 +1925,7 @@ function membersView() {
   return [el('h2', {text:'Юзеры'}), el('div', {class:'tablebox'}, [el('table', null, [tbody])])];
 }
 
-// ---------- новая тема (в стиле vilebin: поле слева, панель справа) ----------
+// ---------- новая тема ----------
 
 const NEW_ART = String.raw`  ____ _____ ___________ _____ _
  / ___|  _  |_   _|  _  \  ___| |
@@ -1861,7 +2098,6 @@ db.ref('users').on('value', s => {
   S.users = s.val() || {};
   const mine = S.user && S.users[S.user.uid];
   if (mine) {
-    // права берём только из базы; правила базы не дадут их выдать самому себе
     S.user.role = mine.role || 'user';
     S.user.premium = mine.premium === true;
     S.user.profile = mine.profile;
@@ -1911,7 +2147,6 @@ function kicked() {
   alert('Эта сессия была завершена');
   auth.signOut();
 }
-// true — можно работать, false — сессию завершили или она истекла
 async function startSession(u) {
   stopSession();
   const k = sidKey(u.uid);
@@ -1952,13 +2187,13 @@ async function doSignOut() {
   auth.signOut();
 }
 
-// ---------- личные подписки (ЛС, уведомления, сессии) ----------
+// ---------- личные подписки ----------
 
 const subs = [];
 function sub(ref, cb) { ref.on('value', cb, e => console.warn(ref.toString(), e.message)); subs.push([ref, cb]); }
 function unbindUser() {
   subs.splice(0).forEach(([r, cb]) => r.off('value', cb));
-  S.dmIndex = {}; S.dmRead = {}; S.notifs = {}; S.sessions = {};
+  S.dmIndex = {}; S.dmRead = {}; S.notifs = {}; S.sessions = {}; S.reports = {};
   dmUnsub();
 }
 function bindUser(uid) {
@@ -1990,6 +2225,7 @@ function bindUser(uid) {
     if (S.view === 'notifs') draw();
   });
   sub(db.ref('sessions/' + uid), s => { S.sessions = s.val() || {}; if (S.view === 'sessions') draw(); });
+  sub(db.ref('reports'), s => { S.reports = s.val() || {}; if (S.view === 'admin' && S.adminTab === 'reports') draw(); });
 }
 
 // ---------- кто залогинен ----------
@@ -2027,12 +2263,10 @@ async function loadUser(u) {
       me.uses = rec.uses;
     }
 
-    // всегда занимаем текущий ник за текущим uid
     if (rec && rec.uid === u.uid) {
       claimNick(me.nick, u.uid).catch(() => {});
     }
 
-    // если записи именно для этого uid нет — создаём её с обычными правами (овнеров/админов назначают только в базе)
     if (!rec || rec.uid !== u.uid) {
       try {
         await claimNick(me.nick, u.uid);
@@ -2091,7 +2325,6 @@ auth.onAuthStateChanged(async u => {
   await boot(u);
 });
 
-// поиск в шапке
 (function () {
   const inp = document.getElementById('global-search');
   let tm = null;
