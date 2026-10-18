@@ -3,6 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline' https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; media-src data: blob:; connect-src https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebasedatabase.app wss://*.firebasedatabase.app; frame-src https://tdel-45a78.firebaseapp.com; base-uri 'none'; form-action 'self'; object-src 'none'">
+<meta name="referrer" content="no-referrer">
 <title>60TDEL</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -217,6 +219,36 @@ video.nick-media{width:18px;height:18px}
   .np-editor{min-height:40vh}
   .np-art{font-size:6.5px}
 }
+
+.badge{display:inline-block;min-width:16px;padding:0 5px;margin-left:4px;border-radius:9px;background:var(--accent);color:#fff;font-size:10px;font-weight:700;line-height:16px;text-align:center}
+.badge:empty{display:none}
+.quote{border-left:2px solid var(--accent);background:#140808;padding:4px 10px;margin:0 0 8px;font-size:12px;color:#aaa;cursor:pointer;border-radius:2px;overflow:hidden}
+.quote b{color:#ddd;font-weight:600;display:block}
+.qt{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.rbar{display:flex;align-items:center;gap:8px;border-left:2px solid var(--accent);background:#140808;padding:6px 10px;font-size:12px;color:#aaa}
+.rbar .qt{flex:1}
+.flash{animation:flash 1.7s ease}
+@keyframes flash{0%,60%{box-shadow:0 0 0 2px var(--accent)}100%{box-shadow:0 0 0 2px transparent}}
+.dmmsg{display:flex;flex-direction:column;max-width:80%;gap:2px}
+.dmmsg.self{align-self:flex-end;align-items:flex-end}
+.dmmsg .bub{background:#111;border:1px solid #222;padding:8px 12px;border-radius:10px 10px 10px 2px;min-width:90px;max-width:100%}
+.dmmsg.self .bub{border-color:var(--accent-dim);background:linear-gradient(180deg,#111,#1a0000);border-radius:10px 10px 2px 10px}
+.dmmsg .top{display:flex;gap:8px;font-size:11px;color:#666;margin-bottom:4px;font-family:var(--font-mono);align-items:center;justify-content:space-between}
+.dmmsg .txt{white-space:pre-wrap;margin:0;font-size:13px;line-height:1.5;overflow-wrap:anywhere}
+audio{max-width:100%;height:36px;margin-top:4px;display:block}
+.rec{display:flex;align-items:center;gap:8px;color:var(--err);font-family:var(--font-mono);font-size:12px}
+.rec i{width:10px;height:10px;border-radius:50%;background:var(--accent);animation:pulse 1s infinite}
+@keyframes pulse{50%{opacity:.25}}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.8);display:grid;place-items:center;z-index:1000;padding:16px}
+.modal-box{background:#0b0b0d;border:1px solid #333;border-radius:8px;padding:20px;width:min(480px,100%);max-height:85vh;overflow:auto;display:grid;gap:12px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid #f5b842;color:#f5b842;border-radius:20px;padding:3px 10px;font-size:12px;font-family:var(--font-mono);background:none}
+button.chip{cursor:pointer}
+.chip button{background:none;border:0;color:var(--err);cursor:pointer;padding:0}
+.row-item{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:12px 14px;border:1px solid #222;border-radius:6px;background:#0b0b0d;margin-bottom:8px}
+.row-item.unread{border-color:var(--accent-dim);background:#140808}
+.row-item .sub{color:#777;font-size:12px;overflow-wrap:anywhere}
+.row-item .peer{display:flex;gap:10px;align-items:center;min-width:0}
 </style>
 </head>
 <body>
@@ -226,6 +258,7 @@ video.nick-media{width:18px;height:18px}
     <div class="brand" onclick="router.home()">60<span>TDEL</span></div>
     <button class="link" onclick="router.home()">Главная</button>
     <button class="link" onclick="router.goChats()">Чаты</button>
+    <button class="link" id="nav-dm" style="display:none" onclick="router.goDMs()">ЛС<span class="badge" id="b-dm"></span></button>
     <button class="link" onclick="router.goMembers()">Юзеры</button>
     <button class="link" onclick="router.goNew()">Новая тема</button>
     <button class="link" onclick="router.goPriv()">Привилегия</button>
@@ -285,7 +318,8 @@ let S = {
   authMode:'login', open:null, threads:[], user:null, users:{},
   chats:{}, chatId:null, profile:null, edit:false, draft:null,
   page:1, limit:10, busy:false, registering:false,
-  lastSend:{}, adminTab:'users', search:''
+  lastSend:{}, adminTab:'users', search:'',
+  dmIndex:{}, dmRead:{}, dmMsgs:{}, dmWith:null, notifs:{}, sessions:{}, jump:null, modalRefresh:null
 };
 
 // маленький помощник чтобы не писать createElement каждый раз
@@ -311,6 +345,10 @@ function fmt(ts) {
 }
 const isStaff = u => !!u && (u.owner === true || u.role === 'admin' || u.role === 'moderator');
 function isAdmin() { return isStaff(S.user); }
+// админ или овнер: премиум, номера, юзы, подписчики (модератор сюда не входит)
+const isTop = u => !!u && (u.owner === true || u.role === 'admin');
+// юзы лежат в 30 слотах s0..s29: так лимит 30 держит сама база
+const usesOf = u => Object.values((u && u.uses) || {}).filter(x => typeof x === 'string').sort();
 // привилегия: премиум, овнер или админ
 const canPriv = u => !!u && (isStaff(u) || u.premium === true);
 
@@ -324,7 +362,6 @@ function setLang(l) {
 }
 
 // ужимаем картинку до ~200кб, иначе база разбухает
-const OWNERS = ['m4lm0v', 'crollow', 'himical']; // овнеры по логину
 const COLORS = [
   {id:'', n:'Без свечения', cls:'', dot:'#555'}, {id:'red', n:'Красный', cls:'glow-red', dot:'#ff5252'},
   {id:'blue', n:'Синий', cls:'glow-blue', dot:'#5490ff'}, {id:'green', n:'Зелёный', cls:'glow-green', dot:'#4dd47e'},
@@ -431,6 +468,133 @@ function avatar(id, sz) {
   return a;
 }
 
+// ---------- звук, уведомления, реплаи ----------
+
+const okAud = x => typeof x === 'string' && /^data:audio\/(webm|ogg|mp4);base64,/.test(x);
+const dmKey = (a, b) => a < b ? a + '_' + b : b + '_' + a;
+const snip = (m, n) => (m.voice ? '🎤 Голосовое' : (m.text || (m.media ? '📷 Фото' : ''))).slice(0, n || 100);
+const tm = ts => ts ? new Date(ts).toLocaleTimeString(lang === 'ru' ? 'ru-RU' : 'en-GB', {hour:'2-digit', minute:'2-digit'}) : '';
+
+let _ac = null;
+const SND = {on: localStorage.getItem('snd') !== '0'};
+function unlockAudio() {
+  try {
+    if (!_ac) _ac = new (window.AudioContext || window.webkitAudioContext)();
+    if (_ac.state === 'suspended') _ac.resume();
+  } catch (e) {}
+}
+['click', 'keydown', 'touchstart'].forEach(ev => document.addEventListener(ev, unlockAudio, {passive:true}));
+
+// короткий двойной «блюп», как в телеграме / вк
+function ding(kind) {
+  if (!SND.on || !_ac || _ac.state !== 'running') return;
+  const notes = kind === 'dm' ? [1046, 1397] : [880, 1319];
+  const t0 = _ac.currentTime;
+  notes.forEach((f, i) => {
+    const o = _ac.createOscillator(), g = _ac.createGain();
+    o.type = 'sine'; o.frequency.value = f;
+    const st = t0 + i * 0.12;
+    g.gain.setValueAtTime(0.0001, st);
+    g.gain.exponentialRampToValueAtTime(0.25, st + 0.015);
+    g.gain.exponentialRampToValueAtTime(0.0001, st + 0.3);
+    o.connect(g); g.connect(_ac.destination);
+    o.start(st); o.stop(st + 0.34);
+  });
+}
+
+function updateBadges() {
+  const un = S.user ? Object.keys(S.dmIndex).filter(dmUnread).length : 0;
+  const nf = S.user ? Object.keys(S.notifs).length : 0;
+  const b = document.getElementById('b-dm'); if (b) b.textContent = un ? String(un) : '';
+  const n = document.getElementById('b-nf'); if (n) n.textContent = nf ? String(nf) : '';
+  document.title = (un + nf ? '(' + (un + nf) + ') ' : '') + '60TDEL';
+}
+
+// уведомление «вам ответили»
+async function notify(to, data) {
+  if (!S.user || !to || to === S.user.uid) return;
+  try {
+    await db.ref('notifs/' + to).push({type:'reply', from: S.user.uid, fromNick: S.user.nick,
+      text: String(data.text || '').slice(0, 80), view: data.view, id: data.id, key: data.key || null, date: TS});
+  } catch (e) { console.warn('notify:', e.message); }
+}
+
+function modal(build) {
+  const box = el('div', {class:'modal-box'});
+  const ov = el('div', {class:'modal', onclick: e => { if (e.target === ov) close(); }}, [box]);
+  function close() { ov.remove(); S.modalRefresh = null; }
+  S.modalRefresh = () => build(box, close);
+  build(box, close);
+  document.body.append(ov);
+}
+
+function doJump(root) {
+  const k = S.jump;
+  if (!k) return;
+  const n = (root || document).querySelector('[data-k="' + String(k).replace(/[^A-Za-z0-9_-]/g, '') + '"]');
+  if (n) { n.scrollIntoView({block:'center'}); n.classList.add('flash'); setTimeout(() => n.classList.remove('flash'), 1800); }
+  S.jump = null;
+}
+
+// цитата над сообщением; текст берём из живых данных, а не из того, что прислал отправитель
+function quoteEl(map, r) {
+  if (!r || !r.key) return null;
+  const o = map && map[r.key];
+  if (!o) return el('div', {class:'quote'}, [el('span', {class:'qt muted', text:'↩ Сообщение удалено'})]);
+  const nm = (getUser(o.uid) || {}).nick || o.author || 'User';
+  return el('div', {class:'quote', onclick: () => { S.jump = r.key; doJump(); }}, [
+    el('b', {text:'↩ ' + nm}), el('span', {class:'qt', text: snip(o, 100) || '…'})
+  ]);
+}
+
+const COMP = {};
+
+// просмотры: +1 за тему один раз за сессию вкладки
+let VIEWED = new Set();
+try { VIEWED = new Set(JSON.parse(sessionStorage.getItem('viewed') || '[]')); } catch (e) {}
+function countView(id) {
+  if (!id || VIEWED.has(id)) return;
+  VIEWED.add(id);
+  try { sessionStorage.setItem('viewed', JSON.stringify([...VIEWED].slice(-200))); } catch (e) {}
+  db.ref('threads/' + id + '/views').transaction(v => (typeof v === 'number' ? v : 0) + 1)
+    .catch(e => console.warn('views:', e.message));
+}
+
+// правка своего сообщения (темы и чаты)
+function startEdit(key, text) {
+  S.editing = key; S.editDraft = text || '';
+  if (S.fill) S.fill();
+}
+function editBox(path, m, max) {
+  const ta = el('textarea', {maxlength: String(max), rows:'3', style:'width:100%'});
+  ta.value = S.editDraft || '';
+  ta.oninput = () => { S.editDraft = ta.value; };
+  const close = () => { S.editing = null; S.editDraft = ''; if (S.fill) S.fill(); };
+  const save = async () => {
+    const txt = ta.value.trim().slice(0, max);
+    if (!txt && !m.media) { alert('Сообщение не может быть пустым'); return; }
+    if (txt === (m.text || '')) { close(); return; }
+    try {
+      await db.ref(path + '/text').set(txt);
+      await db.ref(path + '/edited').set(TS);
+      close();
+    } catch (e) { alert('Не сохранилось: ' + e.message); }
+  };
+  ta.onkeydown = e => {
+    if (e.key === 'Escape') close();
+    else if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); save(); }
+  };
+  setTimeout(() => { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }, 0);
+  return el('div', {style:'display:grid;gap:6px'}, [ta, el('div', {style:'display:flex;gap:6px'}, [
+    el('button', {class:'btn small primary', type:'button', text: t('save'), onclick: save}),
+    el('button', {class:'btn small', type:'button', text: t('cancel'), onclick: close})
+  ])]);
+}
+const editBtn = (key, m) => el('button', {class:'btn small', type:'button', title:'Изменить', text:'✎', onclick: () => startEdit(key, m.text)});
+const replyBtn = (ck, key, m) => el('button', {class:'btn small', type:'button', title:'Ответить', text:'↩', onclick: () => {
+  if (COMP[ck]) COMP[ck].setReply({key: key, uid: m.uid, text: snip(m, 100), nick: (getUser(m.uid) || {}).nick || m.author || 'User'});
+}});
+
 // ---------- вход / регистрация ----------
 
 function authView() {
@@ -479,7 +643,7 @@ function authView() {
           console.error('не записался юзер в базу', ex);
         }
         S.registering = false;
-        await loadUser(auth.currentUser);
+        await boot(auth.currentUser);
       }
       S.view = 'list';
       draw();
@@ -490,7 +654,7 @@ function authView() {
       let m = ex.message;
       if (/wrong-password|user-not-found|invalid-credential|invalid-login/.test(code)) m = 'Неверный ник или пароль';
       else if (code.includes('email-already')) m = 'Ник занят';
-      else if (code.includes('weak-password')) m = 'Пароль минимум 6 символов';
+      else if (code.includes('weak-password')) m = 'Слишком простой пароль';
       else if (code.includes('too-many-requests')) m = 'Слишком много попыток, подожди пару минут';
       else if (code.includes('network')) m = 'Нет связи с сервером';
       else m = m + ' (' + code + ')';
@@ -594,12 +758,25 @@ function listView() {
 
 const EMO = ['😀','😂','😍','😎','😭','😡','👍','👎','🔥','💀','❤️','🎉','🤔','😱','🙏','👀'];
 
-function composer(key, ph, onSend) {
-  let pic = null, busy = false;
+function composer(key, ph, onSend, opts) {
+  opts = opts || {};
+  let pic = null, busy = false, rp = null, vo = null, rec = null, timer = null, stream = null, chunks = [], t0 = 0, mime = '';
   const ta = el('textarea', {placeholder: ph, maxlength:'2000', rows:'2'});
   ta.value = S.drafts[key] || '';
   ta.oninput = () => { S.drafts[key] = ta.value; };
   const prev = el('div', {class:'prev'});
+  const vbox = el('div', {class:'prev'});
+  const rbar = el('div', {class:'rbar', style:'display:none'});
+  const setReply = r => {
+    rp = r; rbar.innerHTML = '';
+    if (!r) { rbar.style.display = 'none'; return; }
+    rbar.style.display = 'flex';
+    rbar.append(el('span', {text:'↩ ' + r.nick + ':'}), el('span', {class:'qt', text: r.text || '…'}),
+      el('button', {class:'btn small', type:'button', text:'✕', onclick: () => setReply(null)}));
+    ta.focus();
+  };
+  COMP[key] = {setReply};
+
   const panel = el('div', {class:'emo', style:'display:none'}, EMO.map(e =>
     el('span', {text: e, onclick: () => { ta.value += e; S.drafts[key] = ta.value; ta.focus(); }})));
   const file = el('input', {type:'file', accept:'image/*', style:'display:none', onchange: async e => {
@@ -612,25 +789,71 @@ function composer(key, ph, onSend) {
     file.value = '';
   }});
 
+  // ---- голосовые ----
+  const showVo = () => {
+    vbox.innerHTML = '';
+    if (vo) vbox.append(el('audio', {controls:'', src: vo.s}), el('span', {class:'muted', text: vo.d + ' c'}),
+      el('button', {class:'btn small', type:'button', text:'✕', onclick: () => { vo = null; showVo(); }}));
+  };
+  function stopRec(cancel) {
+    if (rec && rec.state === 'recording') { rec._cancel = !!cancel; rec.stop(); }
+  }
+  async function startRec() {
+    if (rec) { stopRec(false); return; }
+    if (!navigator.mediaDevices || !window.MediaRecorder) { alert('Запись голоса не поддерживается в этом браузере'); return; }
+    try { stream = await navigator.mediaDevices.getUserMedia({audio:true}); }
+    catch (e) { alert('Нет доступа к микрофону'); return; }
+    mime = ['audio/webm;codecs=opus', 'audio/ogg;codecs=opus', 'audio/mp4'].find(m => MediaRecorder.isTypeSupported(m)) || '';
+    chunks = [];
+    rec = new MediaRecorder(stream, mime ? {mimeType: mime, audioBitsPerSecond: 24000} : {audioBitsPerSecond: 24000});
+    rec.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
+    rec.onstop = async () => {
+      clearInterval(timer);
+      stream.getTracks().forEach(tr => tr.stop());
+      const cancelled = rec && rec._cancel;
+      const dur = Math.round((Date.now() - t0) / 1000);
+      rec = null; vbox.innerHTML = '';
+      if (cancelled || !chunks.length) return;
+      const base = (mime || 'audio/webm').split(';')[0];
+      const url = await new Promise(r => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.readAsDataURL(new Blob(chunks, {type: base})); });
+      if (!okAud(url) || url.length > 500000) { alert('Слишком длинное сообщение'); return; }
+      vo = {s: url, d: Math.max(1, Math.min(60, dur))};
+      showVo();
+    };
+    rec.start();
+    t0 = Date.now();
+    const lbl = el('span', {text:'0:00'});
+    vbox.innerHTML = '';
+    vbox.append(el('div', {class:'rec'}, [el('i'), lbl]),
+      el('button', {class:'btn small', type:'button', text:'⏹ Стоп', onclick: () => stopRec(false)}),
+      el('button', {class:'btn small', type:'button', text:'✕', onclick: () => stopRec(true)}));
+    timer = setInterval(() => {
+      const sec = Math.floor((Date.now() - t0) / 1000);
+      lbl.textContent = Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0');
+      if (sec >= 60) stopRec(false);
+    }, 250);
+  }
+
   async function send() {
     const text = ta.value.trim();
-    if ((!text && !pic) || busy) return;
+    if ((!text && !pic && !vo) || busy || rec) return;
     const now = Date.now();
     if (now - (S.lastSend[key] || 0) < 1500) return; // не чаще раза в 1.5 сек на поле
     S.lastSend[key] = now;
     busy = true;
     try {
-      await onSend(text, pic);
-      ta.value = ''; S.drafts[key] = ''; pic = null; prev.innerHTML = '';
+      await onSend(text, pic, rp, vo);
+      ta.value = ''; S.drafts[key] = ''; pic = null; vo = null; prev.innerHTML = ''; showVo(); setReply(null);
     } catch (x) { alert('Не отправилось: ' + x.message); }
     busy = false;
     ta.focus();
   }
   ta.onkeydown = e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } };
 
-  return el('div', {class:'compose'}, [prev, ta, panel, el('div', {class:'bar'}, [
+  return el('div', {class:'compose'}, [rbar, prev, vbox, ta, panel, el('div', {class:'bar'}, [
     el('button', {class:'btn small', type:'button', text:'😊', onclick: () => { panel.style.display = panel.style.display === 'none' ? 'flex' : 'none'; }}),
     el('button', {class:'btn small', type:'button', text:'📷', onclick: () => file.click()}),
+    opts.voice ? el('button', {class:'btn small', type:'button', text:'🎤', title:'Записать голосовое', onclick: startRec}) : null,
     file,
     el('button', {class:'btn primary', type:'button', text: t('send'), onclick: send})
   ])]);
@@ -650,23 +873,30 @@ function threadView() {
     box.innerHTML = '';
     Object.entries(th.posts || {}).map(([key, p]) => ({...p, key})).sort((a, b) => a.date - b.date).forEach(p => {
       const mine = S.user && p.uid === S.user.uid;
-      box.append(el('div', {class:'post'}, [
+      box.append(el('div', {class:'post', 'data-k': p.key}, [
         el('div', {class:'who'}, [avatar(p.uid, 48), nick(p.uid, p.author || th.author)]),
         el('div', {class:'body'}, [
           el('div', {class:'meta'}, [
-            el('span', {text: fmt(p.date)}),
-            (mine || isAdmin()) ? el('button', {class:'btn small danger', text:'✕', onclick: () => {
-              if (confirm('Удалить?')) del('threads/' + th.id + '/posts/' + p.key);
-            }}) : null
+            el('span', {text: fmt(p.date) + (p.edited ? ' · изменено' : '')}),
+            el('span', {style:'display:flex;gap:6px'}, [
+              S.user ? replyBtn('t' + th.id, p.key, p) : null,
+              mine ? editBtn(p.key, p) : null,
+              (mine || isAdmin()) ? el('button', {class:'btn small danger', text:'✕', onclick: () => {
+                if (confirm('Удалить?')) del('threads/' + th.id + '/posts/' + p.key);
+              }}) : null
+            ])
           ]),
-          el('div', {class:'text', text: p.text || ''}),
+          quoteEl(th.posts, p.reply),
+          S.editing === p.key ? editBox('threads/' + th.id + '/posts/' + p.key, p, 5000) : el('div', {class:'text', text: p.text || ''}),
           picEl(p.media)
         ])
       ]));
     });
     window.scrollTo(0, y);
+    doJump(box);
   };
   S.fill();
+  countView(th0.id);
 
   const idx = S.threads.findIndex(x => x.id === th0.id);
   const prevTh = idx > 0 ? S.threads[idx - 1] : null;
@@ -697,8 +927,14 @@ function threadView() {
     box
   ];
   if (S.user) {
-    out.push(composer('t' + th0.id, 'Ответ... (Enter - отправить)', (text, pic) =>
-      db.ref('threads/' + th0.id + '/posts').push({uid: S.user.uid, author: S.user.nick, text: text, media: pic || null, date: TS})));
+    out.push(composer('t' + th0.id, 'Ответ... (Enter - отправить)', async (text, pic, rp) => {
+      const r = db.ref('threads/' + th0.id + '/posts').push();
+      const msg = {uid: S.user.uid, author: S.user.nick, text: text, date: TS};
+      if (pic) msg.media = pic;
+      if (rp) msg.reply = {key: rp.key};
+      await r.set(msg);
+      if (rp) notify(rp.uid, {view:'thread', id: th0.id, key: r.key, text: text || '📷 Фото'});
+    }));
   } else out.push(el('div', {class:'muted', text:'Войдите, чтобы отвечать'}));
   return out;
 }
@@ -774,18 +1010,65 @@ function adminTable(heads, rows) {
 const fail = e => alert('Ошибка: ' + e.message);
 const abtn = (text, cls, fn) => el('button', {class:'btn small ' + cls, type:'button', text: text, onclick: fn});
 
+async function removeUse(k, x) {
+  const slot = Object.entries((S.users[k] || {}).uses || {}).find(([, v]) => v === x);
+  if (slot) await db.ref('users/' + k + '/uses/' + slot[0]).remove();
+  const u = S.users[k] || {};
+  if (String(u.nick || '').toLowerCase() !== x) await db.ref('nicks/' + x).remove();
+}
+
+// «юзы» — зарезервированные ники на человека, до 30 штук
+function usesModal(k) {
+  modal((box, close) => {
+    const u = S.users[k] || {};
+    const list = usesOf(u);
+    box.innerHTML = '';
+    const err = el('div', {class:'err'});
+    const inp = el('input', {type:'text', maxlength:'15', placeholder:'юз: a-z, 0-9, _ (3–15)'});
+    const add = async () => {
+      const name = inp.value.trim().toLowerCase().replace(/^@/, '');
+      if (!/^[a-z0-9_]{3,15}$/.test(name)) { err.textContent = 'Только a-z, 0-9, _ ; 3–15 символов'; return; }
+      const cur = usesOf(S.users[k] || {});
+      if (cur.length >= 30) { err.textContent = 'Лимит — 30 юзов'; return; }
+      if (cur.includes(name)) { err.textContent = 'Уже выдан этому человеку'; return; }
+      err.textContent = '';
+      try {
+        const ok = await claimNick(name, k);
+        if (!ok) { err.textContent = 'Этот юз уже занят'; return; }
+        const taken = (S.users[k] || {}).uses || {};
+        let slot = null;
+        for (let i = 0; i < 30; i++) if (!taken['s' + i]) { slot = 's' + i; break; }
+        if (slot === null) { err.textContent = 'Лимит — 30 юзов'; return; }
+        await db.ref('users/' + k + '/uses/' + slot).set(name);
+        inp.value = '';
+      } catch (e) { err.textContent = e.message; }
+    };
+    inp.onkeydown = e => { if (e.key === 'Enter') add(); };
+    box.append(
+      el('h3', {text:'💎 Юзы · ' + (u.nick || ''), style:'color:#fff'}),
+      el('div', {class:'hint', style:'color:#777', text: list.length + ' / 30'}),
+      el('div', {class:'chips'}, list.map(x => el('span', {class:'chip'}, ['@' + x,
+        el('button', {type:'button', text:'✕', title:'Забрать', onclick: () => removeUse(k, x).catch(fail)})]))),
+      el('div', {class:'create-chat'}, [inp, abtn('Выдать', 'primary', add)]),
+      err,
+      abtn('Закрыть', '', close)
+    );
+  });
+}
+
 function adminUsers() {
   const iOwner = S.user.owner === true;
   const rows = Object.entries(S.users).sort((a, b) => String(a[1].nick).localeCompare(String(b[1].nick))).map(([k, u]) => {
     const isOwn = u.owner === true;
     const follCount = u.followers ? u.followers : (u.owner ? 666 : Object.keys(S.follows[u.uid] || {}).length);
+    const nUses = usesOf(u).length;
 
     return [
       nickOf(u),
-      abtn(u.role || 'user', '', () => {
+      iOwner ? abtn(u.role || 'user', '', () => {
         const v = (prompt('user / moderator / admin', u.role || 'user') || '').trim().toLowerCase();
         if (['user', 'moderator', 'admin'].includes(v)) db.ref('users/' + k + '/role').set(v).catch(fail);
-      }),
+      }) : el('span', {text: u.role || 'user'}),
       abtn(u.premium ? 'Снять' : 'Выдать', u.premium ? '' : 'primary', () => db.ref('users/' + k + '/premium').set(!u.premium).catch(fail)),
 
       // НОМЕР
@@ -795,7 +1078,7 @@ function adminUsers() {
           const cur = phoneOf(u);
           const v = prompt('Номер (пусто — снять):', cur || '+');
           if (v === null) return;
-          const val = v.trim();
+          const val = v.trim().slice(0, 24);
           if (!val) { db.ref('users/' + k + '/phone').remove().catch(fail); return; }
           db.ref('users/' + k + '/phone').set(val).catch(fail);
         })
@@ -815,19 +1098,30 @@ function adminUsers() {
         })
       ]),
 
+      // ЮЗЫ
+      el('div', {class:'phone-cell'}, [
+        el('span', {class:'val', text: nUses + '/30', style:'color:' + (nUses ? '#f5b842' : '#555')}),
+        abtn('Юзы', 'primary', () => usesModal(k))
+      ]),
+
       iOwner
         ? abtn(isOwn ? 'Снять' : 'Выдать', isOwn ? 'danger' : 'primary', () => {
             if (isOwn && k === S.user.uid) return alert('Себя лишить овнера нельзя');
             db.ref('users/' + k + '/owner').set(!isOwn).catch(fail);
           })
         : el('span', {text: isOwn ? 'Да' : 'Нет'}),
-      iOwner ? abtn('Удалить', 'danger', () => {
-        if (!confirm('Удалить запись пользователя ' + u.nick + '?')) return;
-        db.ref('users/' + k).remove().then(() => db.ref('nicks/' + String(u.nick).toLowerCase()).remove()).catch(fail);
-      }) : el('span')
+      el('span', {style:'display:flex;gap:6px'}, [
+        abtn('Выкинуть', '', () => { if (confirm('Завершить все сессии ' + u.nick + '?')) del('sessions/' + k).catch(fail); }),
+        iOwner ? abtn('Удалить', 'danger', () => {
+          if (!confirm('Удалить запись пользователя ' + u.nick + '?')) return;
+          Promise.all(usesOf(u).map(x => db.ref('nicks/' + x).remove()))
+            .then(() => db.ref('users/' + k).remove())
+            .then(() => db.ref('nicks/' + String(u.nick).toLowerCase()).remove()).catch(fail);
+        }) : null
+      ])
     ];
   });
-  return adminTable(['Ник', 'Роль', 'Премиум', 'Номер', 'Подписчики', 'Овнер', 'Действия'], rows);
+  return adminTable(['Ник', 'Роль', 'Премиум', 'Номер', 'Подписчики', 'Юзы', 'Овнер', 'Действия'], rows);
 }
 
 function adminThreads() {
@@ -858,8 +1152,10 @@ function adminChats() {
 
 function adminView() {
   if (!isAdmin()) return [el('div', {text:'Нет доступа', style:'padding:30px;text-align:center;color:#888'})];
-  const tab = S.adminTab || 'users';
-  const names = {users:'Пользователи', threads:'Темы', chats:'Чаты'};
+  const top = isTop(S.user);
+  const names = top ? {users:'Пользователи', threads:'Темы', chats:'Чаты'} : {threads:'Темы', chats:'Чаты'};
+  let tab = S.adminTab || 'users';
+  if (!names[tab]) tab = 'threads';
   return [
     el('h2', {text:'Админ-панель', style:'color:#fff'}),
     el('div', {class:'admin-tabs'}, Object.keys(names).map(k => el('button', {class: tab === k ? 'active' : '', text: names[k], onclick: () => { S.adminTab = k; draw(); }}))),
@@ -900,9 +1196,13 @@ function profileView() {
         iFollow ? r.remove() : r.set(true);
       }});
 
+  const actions = el('div', {style:'display:flex;gap:8px;flex-wrap:wrap'}, isMe
+    ? [btn, el('button', {class:'btn', type:'button', text:'Сессии', onclick: () => { S.view = 'sessions'; S.edit = false; draw(); }})]
+    : [el('button', {class:'btn', type:'button', text:'✉ Написать', onclick: () => openDM(u.uid || uid)}), btn]);
+
   const out = [
     el('div', {class:'profile-container'}, [banner, el('div', {class:'profile-main'}, [av, el('div', {class:'profile-details'}, [
-      el('div', {class:'profile-name-row'}, [el('div', {class:'profile-username'}, [nick(u.uid, u.nick)]), btn]),
+      el('div', {class:'profile-name-row'}, [el('div', {class:'profile-username'}, [nick(u.uid, u.nick)]), actions]),
       el('div', {class:'pstats'}, [
         el('span', null, [el('b', {text: String(followers)}), ' подписчиков']),
         el('span', null, [el('b', {text: String(following)}), ' подписок']),
@@ -914,7 +1214,8 @@ function profileView() {
       el('tr', null, [el('td', {text:'Username'}), el('td', {text:'@' + u.nick})]),
       el('tr', null, [el('td', {text:'Роль'}), el('td', {text: u.owner ? 'Founder' : (u.role || 'user')})]),
       el('tr', null, [el('td', {text:'Joined'}), el('td', {text: fmt(u.created)})]),
-      ...(phoneOf(u) ? [el('tr', null, [el('td', {text:'Номер'}), el('td', {text: phoneOf(u)})])] : [])
+      ...(phoneOf(u) ? [el('tr', null, [el('td', {text:'Номер'}), el('td', {text: phoneOf(u)})])] : []),
+      ...(usesOf(u).length ? [el('tr', null, [el('td', {text:'Юзы'}), el('td', null, [el('div', {class:'chips', style:'justify-content:flex-end'}, usesOf(u).map(x => el('span', {class:'chip', text:'💎 @' + x})))])])] : [])
     ])])
   ];
   if (pf.bio) out.push(el('div', {class:'bio', text: pf.bio}));
@@ -956,7 +1257,8 @@ function profileView() {
 
     out.push(el('div', {class:'ed'}, [
       el('h3', {text: t('edit')}),
-      el('div', null, [el('span', {class:'cap', text:'Никнейм'}), nIn, el('div', {class:'hint', text:'Логин для входа не меняется'})]),
+      el('div', null, [el('span', {class:'cap', text:'Никнейм'}), nIn, el('div', {class:'hint', text:'Логин для входа не меняется'}),
+        usesOf(u).length ? el('div', {class:'chips', style:'margin-top:8px'}, usesOf(u).map(x => el('button', {type:'button', class:'chip', text:'💎 @' + x, title:'Взять как ник', onclick: () => { nIn.value = x; d.nick = x; }}))) : null]),
       el('div', null, [el('span', {class:'cap', text:'О себе'}), bIn, cnt]),
       el('div', null, [el('span', {class:'cap', text:'Баннер'}), bPrev,
         el('div', {class:'row', style:'margin-top:8px'}, [
@@ -995,8 +1297,10 @@ function profileView() {
             if (!ok) { err.textContent = 'Ник занят'; return; }
           }
           try {
-            await upd('users/' + u.uid, {nick: n, profile: {bio: d.bio || '', avatar: d.avatar || null, banner: d.banner || null, nickMedia: d.nickMedia || null, prefix: d.prefix || null, prefixColor: d.prefixColor || null, color: d.color || null, emoji: d.emoji || null}});
-            if (n.toLowerCase() !== oldLow) db.ref('nicks/' + oldLow).remove().catch(() => {});
+            const pv = canPriv(S.user);
+            if (n !== u.nick) await set('users/' + u.uid + '/nick', n);
+            await set('users/' + u.uid + '/profile', {bio: d.bio || '', avatar: d.avatar || null, banner: d.banner || null, nickMedia: pv ? (d.nickMedia || null) : null, prefix: pv ? (d.prefix || null) : null, prefixColor: pv ? (d.prefixColor || null) : null, color: pv ? (d.color || null) : null, emoji: pv ? (d.emoji || null) : null});
+            if (n.toLowerCase() !== oldLow && !usesOf(u).includes(oldLow)) db.ref('nicks/' + oldLow).remove().catch(() => {});
             S.user.nick = n; S.edit = false; draw();
           } catch (x) { err.textContent = 'Не сохранилось: ' + x.message; }
         }}),
@@ -1023,21 +1327,26 @@ function chatView() {
     win.innerHTML = '';
     Object.entries(cc.messages || {}).map(([key, m]) => ({...m, key})).sort((a, b) => a.date - b.date).forEach(m => {
       const mine = S.user && m.uid === S.user.uid;
-      win.append(el('div', {class:'chatmsg' + (mine ? ' self' : '')}, [
+      win.append(el('div', {class:'chatmsg' + (mine ? ' self' : ''), 'data-k': m.key}, [
         avatar(m.uid, 32),
         el('div', {class:'bub'}, [
-          el('div', {class:'top'}, [nick(m.uid, m.author), el('span', {text: fmt(m.date)}),
+          el('div', {class:'top'}, [nick(m.uid, m.author), el('span', {text: fmt(m.date) + (m.edited ? ' · изменено' : '')}),
+            S.user ? replyBtn('c' + cc.id, m.key, m) : null,
+            mine ? editBtn(m.key, m) : null,
             (mine || isAdmin()) ? el('button', {class:'btn small danger', text:'✕', onclick: () => { if (confirm('Удалить?')) del('chats/' + cc.id + '/messages/' + m.key); }}) : null]),
-          el('div', {class:'txt', text: m.text || ''}),
+          quoteEl(cc.messages, m.reply),
+          S.editing === m.key ? editBox('chats/' + cc.id + '/messages/' + m.key, m, 2000) : el('div', {class:'txt', text: m.text || ''}),
           picEl(m.media)
         ])
       ]));
     });
     win.scrollTop = near ? win.scrollHeight : old;
     stick = false;
+    doJump(win);
   };
+  const wantJump = !!S.jump;
   S.fill();
-  setTimeout(() => { win.scrollTop = win.scrollHeight; }, 0);
+  setTimeout(() => { if (!wantJump) win.scrollTop = win.scrollHeight; }, 0);
 
   const out = [
     el('button', {class:'btn', text:'← Назад', onclick: () => { S.view = 'chatList'; draw(); }}),
@@ -1045,9 +1354,14 @@ function chatView() {
     win
   ];
   if (S.user) {
-    out.push(composer('c' + c.id, 'Сообщение... (Enter - отправить)', (text, pic) => {
+    out.push(composer('c' + c.id, 'Сообщение... (Enter - отправить)', async (text, pic, rp) => {
       stick = true;
-      return db.ref('chats/' + c.id + '/messages').push({uid: S.user.uid, author: S.user.nick, text: text, media: pic || null, date: TS});
+      const r = db.ref('chats/' + c.id + '/messages').push();
+      const msg = {uid: S.user.uid, author: S.user.nick, text: text, date: TS};
+      if (pic) msg.media = pic;
+      if (rp) msg.reply = {key: rp.key};
+      await r.set(msg);
+      if (rp) notify(rp.uid, {view:'chat', id: c.id, key: r.key, text: text || '📷 Фото'});
     }));
   } else out.push(el('div', {class:'muted', text:'Войдите, чтобы писать'}));
   return out;
@@ -1101,6 +1415,195 @@ function chatListView() {
     ])]),
     tbody
   ])]));
+  return out;
+}
+
+// ---------- личные сообщения ----------
+
+function openDM(uid) {
+  if (!S.user) { S.view = 'auth'; draw(); return; }
+  if (!uid || uid === S.user.uid) return;
+  S.view = 'dm'; S.dmWith = uid; draw();
+}
+let dmSub = null;
+function dmUnsub() {
+  if (dmSub) { dmSub.ref.off('value', dmSub.cb); dmSub = null; }
+  S.dmMsgs = {};
+}
+function dmUnread(p) {
+  const x = S.dmIndex[p];
+  return !!(S.user && x && x.from !== S.user.uid && (x.date || 0) > (S.dmRead[p] || 0));
+}
+function dmMarkRead(p) {
+  if (S.user && dmUnread(p)) db.ref('dmRead/' + S.user.uid + '/' + p).set(TS).catch(() => {});
+}
+async function sendDM(other, text, pic, replyKey, voice) {
+  const me = S.user.uid, key = dmKey(me, other);
+  const msg = {uid: me, text: text || '', date: TS};
+  if (pic) msg.media = pic;
+  if (voice) { msg.voice = voice.s; msg.dur = voice.d; }
+  if (replyKey) msg.reply = {key: replyKey};
+  const id = db.ref('dms/' + key + '/messages').push().key;
+  const idx = {last: snip(msg, 80) || '…', date: TS, from: me};
+  const up = {};
+  up['dms/' + key + '/messages/' + id] = msg;
+  up['dmIndex/' + me + '/' + other] = idx;
+  up['dmIndex/' + other + '/' + me] = idx;
+  await db.ref().update(up);
+}
+
+function dmView() {
+  const other = S.dmWith;
+  if (!other || !S.user) { S.view = 'dmList'; return dmListView(); }
+  const key = dmKey(S.user.uid, other);
+
+  if (!dmSub || dmSub.key !== key) {
+    dmUnsub();
+    const ref = db.ref('dms/' + key + '/messages').limitToLast(200);
+    const cb = sn => {
+      S.dmMsgs = sn.val() || {};
+      if (S.view === 'dm' && S.dmWith === other && S.fill) { S.fill(); dmMarkRead(other); }
+    };
+    ref.on('value', cb, e => console.warn('dm:', e.message));
+    dmSub = {ref, cb, key};
+  }
+
+  const win = el('div', {class:'chatwin'});
+  let stick = true;
+  S.fill = () => {
+    const near = stick || win.scrollHeight - win.scrollTop - win.clientHeight < 80;
+    const old = win.scrollTop;
+    win.innerHTML = '';
+    const msgs = Object.entries(S.dmMsgs).map(([k, m]) => ({...m, key: k})).sort((a, b) => (a.date || 0) - (b.date || 0));
+    if (!msgs.length) win.append(el('div', {class:'muted', text:'Сообщений пока нет. Напишите первым.', style:'text-align:center;padding:20px'}));
+    msgs.forEach(m => {
+      const mine = m.uid === S.user.uid;
+      win.append(el('div', {class:'dmmsg' + (mine ? ' self' : ''), 'data-k': m.key}, [
+        el('div', {class:'bub'}, [
+          el('div', {class:'top'}, [
+            el('span', {text: fmt(m.date) + ' ' + tm(m.date)}),
+            el('span', {style:'display:flex;gap:6px'}, [
+              replyBtn('d' + key, m.key, m),
+              mine ? el('button', {class:'btn small danger', text:'✕', onclick: () => { if (confirm('Удалить?')) del('dms/' + key + '/messages/' + m.key); }}) : null
+            ])
+          ]),
+          quoteEl(S.dmMsgs, m.reply),
+          m.text ? el('div', {class:'txt', text: m.text}) : null,
+          picEl(m.media),
+          okAud(m.voice) ? el('audio', {controls:'', preload:'metadata', src: m.voice}) : null
+        ])
+      ]));
+    });
+    win.scrollTop = near ? win.scrollHeight : old;
+    stick = false;
+    doJump(win);
+  };
+  const wantJump = !!S.jump;
+  S.fill();
+  setTimeout(() => { if (!wantJump) win.scrollTop = win.scrollHeight; }, 0);
+  dmMarkRead(other);
+
+  const ou = getUser(other);
+  return [
+    el('div', {class:'tnav'}, [
+      el('button', {class:'btn', text:'← Все диалоги', onclick: () => { S.view = 'dmList'; draw(); }}),
+      el('div', {class:'peer', style:'display:flex;gap:10px;align-items:center'}, [avatar(other, 32), nick(other, ou ? ou.nick : 'User')])
+    ]),
+    win,
+    composer('d' + key, 'Сообщение... (Enter - отправить)', async (text, pic, rp, vo) => {
+      stick = true;
+      await sendDM(other, text, pic, rp && rp.key, vo);
+    }, {voice: true})
+  ];
+}
+
+function dmListView() {
+  const me = S.user.uid;
+  const peers = Object.entries(S.dmIndex).sort((a, b) => (b[1].date || 0) - (a[1].date || 0));
+  const err = el('div', {class:'err'});
+  const inp = el('input', {type:'text', maxlength:'15', placeholder:'Ник человека'});
+  const go = () => {
+    const n = inp.value.trim().toLowerCase();
+    const f = Object.entries(S.users).find(([k, x]) => x.nick && x.nick.toLowerCase() === n);
+    if (!f) { err.textContent = 'Такого ника нет'; return; }
+    if (f[0] === me) { err.textContent = 'Это вы'; return; }
+    openDM(f[0]);
+  };
+  inp.onkeydown = e => { if (e.key === 'Enter') go(); };
+  const out = [
+    el('h2', {text:'Личные сообщения', style:'color:#fff'}),
+    el('div', {class:'create-chat'}, [inp, el('button', {class:'btn primary', type:'button', text:'✉ Написать', onclick: go})]),
+    err
+  ];
+  if (!peers.length) out.push(el('div', {class:'muted', text:'Диалогов пока нет'}));
+  peers.forEach(([p, x]) => out.push(el('div', {class:'row-item' + (dmUnread(p) ? ' unread' : ''), style:'cursor:pointer', onclick: () => openDM(p)}, [
+    el('div', {class:'peer'}, [avatar(p, 36), el('div', {style:'min-width:0'}, [
+      nick(p, (getUser(p) || {}).nick), el('div', {class:'sub qt', text: (x.from === me ? 'Вы: ' : '') + (x.last || '')})
+    ])]),
+    el('div', {style:'display:flex;gap:8px;align-items:center'}, [
+      el('span', {class:'sub', text: tm(x.date)}),
+      dmUnread(p) ? el('span', {class:'badge', text:'●'}) : null,
+      el('button', {class:'btn small danger', type:'button', title:'Убрать из списка', text:'✕', onclick: e => {
+        e.stopPropagation();
+        if (confirm('Убрать диалог из списка? Сообщения останутся у собеседника.')) del('dmIndex/' + me + '/' + p).catch(fail);
+      }})
+    ])
+  ])));
+  return out;
+}
+
+function goNotif(id, n) {
+  db.ref('notifs/' + S.user.uid + '/' + id).remove().catch(() => {});
+  if (n.view === 'thread') { S.view = 'thread'; S.open = n.id; }
+  else if (n.view === 'chat') { S.view = 'chat'; S.chatId = n.id; }
+  else return;
+  S.jump = n.key || null;
+  draw();
+}
+
+function notifsView() {
+  const items = Object.entries(S.notifs).sort((a, b) => (b[1].date || 0) - (a[1].date || 0));
+  const out = [el('div', {class:'tnav'}, [
+    el('h2', {text:'Уведомления', style:'color:#fff'}),
+    items.length ? el('button', {class:'btn small danger', type:'button', text:'Очистить', onclick: () => del('notifs/' + S.user.uid).catch(fail)}) : null
+  ])];
+  if (!items.length) out.push(el('div', {class:'muted', text:'Пока ничего нет'}));
+  items.forEach(([id, n]) => out.push(el('div', {class:'row-item unread', style:'cursor:pointer', onclick: () => goNotif(id, n)}, [
+    el('div', {style:'min-width:0'}, [
+      el('div', {style:'color:#fff', text: ((getUser(n.from) || {}).nick || n.fromNick || 'User') + ' ответил(а) вам'}),
+      el('div', {class:'sub', text: n.text || ''})
+    ]),
+    el('span', {class:'sub', text: fmt(n.date) + ' ' + tm(n.date)})
+  ])));
+  return out;
+}
+
+function sessionsView() {
+  const cur = localStorage.getItem(sidKey(S.user.uid));
+  const dt = ts => ts ? fmt(ts) + ' ' + tm(ts) : '—';
+  const rows = Object.entries(S.sessions).sort((a, b) => (b[1].last || 0) - (a[1].last || 0));
+  const out = [
+    el('div', {class:'tnav'}, [
+      el('h2', {text:'Сессии', style:'color:#fff'}),
+      el('button', {class:'btn', type:'button', text:'← Профиль', onclick: () => { S.view = 'profile'; S.profile = S.user.uid; draw(); }})
+    ]),
+    el('div', {class:'muted', text:'Устройства, где выполнен вход. Завершённая сессия выходит из аккаунта на том устройстве. Без активности 30 дней сессия истекает.'})
+  ];
+  rows.forEach(([k, s]) => out.push(el('div', {class:'row-item'}, [
+    el('div', {style:'min-width:0'}, [
+      el('div', {style:'color:#fff', text: (s.device || 'Устройство') + (k === cur ? ' · это устройство' : '')}),
+      el('div', {class:'sub', text:'Вход: ' + dt(s.created) + ' · активность: ' + dt(s.last)})
+    ]),
+    k === cur ? el('span', {text:'●', style:'color:#4dd47e'})
+      : abtn('Завершить', 'danger', () => db.ref('sessions/' + S.user.uid + '/' + k).remove().catch(fail))
+  ])));
+  if (!rows.length) out.push(el('div', {class:'muted', text:'Нет активных сессий'}));
+  if (rows.filter(([k]) => k !== cur).length) out.push(abtn('Завершить все остальные', 'danger', () => {
+    if (!confirm('Завершить все остальные сессии?')) return;
+    const u = {};
+    rows.forEach(([k]) => { if (k !== cur) u[k] = null; });
+    db.ref('sessions/' + S.user.uid).update(u).catch(fail);
+  }));
   return out;
 }
 
@@ -1232,19 +1735,35 @@ function newView() {
 function drawWho() {
   const w = document.getElementById('who');
   w.innerHTML = '';
-  if (S.user) w.append(nick(S.user.uid, S.user.nick), el('button', {text: t('out'), onclick: () => auth.signOut()}));
-  else if (S.ready) w.append(el('button', {text: t('login'), onclick: () => { S.view = 'auth'; S.authMode = 'login'; draw(); }}));
+  if (S.user) {
+    w.append(
+      el('button', {title:'Уведомления', onclick: () => { S.view = 'notifs'; draw(); }}, ['🔔', el('span', {class:'badge', id:'b-nf'})]),
+      el('button', {title: SND.on ? 'Звук включён' : 'Звук выключен', text: SND.on ? '🔊' : '🔇', onclick: () => {
+        SND.on = !SND.on;
+        localStorage.setItem('snd', SND.on ? '1' : '0');
+        if (SND.on) { unlockAudio(); ding('reply'); }
+        drawWho();
+      }}),
+      nick(S.user.uid, S.user.nick),
+      el('button', {text: t('out'), onclick: doSignOut})
+    );
+  } else if (S.ready) w.append(el('button', {text: t('login'), onclick: () => { S.view = 'auth'; S.authMode = 'login'; draw(); }}));
   document.getElementById('nav-admin').style.display = isAdmin() ? '' : 'none';
+  document.getElementById('nav-dm').style.display = S.user ? '' : 'none';
+  updateBadges();
 }
 
 function draw() {
   S.fill = null;
+  S.editing = null;
   const app = document.getElementById('app');
   app.innerHTML = '';
+  if (!S.user && ['dm', 'dmList', 'notifs', 'sessions'].includes(S.view)) S.view = 'auth';
+  if (S.view !== 'dm') dmUnsub();
   drawWho();
   if (!S.ready) { app.append(el('div', {class:'muted', style:'text-align:center;padding:40px'}, [el('span', {class:'spinner'}), 'Загрузка...'])); return; }
 
-  const id = {thread: S.open, chat: S.chatId, profile: S.profile}[S.view];
+  const id = {thread: S.open, chat: S.chatId, profile: S.profile, dm: S.dmWith}[S.view];
   history.replaceState(null, '', '#' + S.view + (id ? '/' + id : ''));
 
   let nodes;
@@ -1258,6 +1777,10 @@ function draw() {
     case 'admin': nodes = adminView(); break;
     case 'priv': nodes = privView(); break;
     case 'new': nodes = newView(); break;
+    case 'dm': nodes = dmView(); break;
+    case 'dmList': nodes = dmListView(); break;
+    case 'notifs': nodes = notifsView(); break;
+    case 'sessions': nodes = sessionsView(); break;
     default: nodes = listView();
   }
   nodes.forEach(n => { if (n) app.append(n); });
@@ -1266,8 +1789,8 @@ function draw() {
 function refresh() {
   drawWho();
   if (!S.ready) return;
-  if (S.fill && (S.view === 'chat' || S.view === 'thread')) S.fill();
-  else if (S.view === 'auth' || S.view === 'new' || (S.view === 'profile' && S.edit)) return;
+  if (S.fill && (S.view === 'chat' || S.view === 'thread' || S.view === 'dm')) S.fill();
+  else if (S.view === 'auth' || S.view === 'new' || S.view === 'dmList' || S.view === 'dm' || (S.view === 'profile' && S.edit)) return;
   else draw();
 }
 
@@ -1277,6 +1800,10 @@ const router = {
   goMembers: () => { S.view = 'members'; draw(); },
   goAdmin: () => { S.view = 'admin'; draw(); },
   goPriv: () => { S.view = 'priv'; draw(); },
+  goDMs: () => {
+    if (!S.user) { S.view = 'auth'; draw(); return; }
+    S.view = 'dmList'; draw();
+  },
   goNew: () => {
     if (!S.user) { S.view = 'auth'; draw(); return; }
     S.view = 'new'; draw();
@@ -1289,13 +1816,16 @@ db.ref('users').on('value', s => {
   S.users = s.val() || {};
   const mine = S.user && S.users[S.user.uid];
   if (mine) {
+    // права берём только из базы; правила базы не дадут их выдать самому себе
     S.user.role = mine.role || 'user';
     S.user.premium = mine.premium === true;
     S.user.profile = mine.profile;
     S.user.phone = mine.phone;
     S.user.followers = mine.followers;
-    S.user.owner = mine.owner === true || OWNERS.includes(S.user.login || '');
+    S.user.uses = mine.uses;
+    S.user.owner = mine.owner === true;
   }
+  if (S.modalRefresh) S.modalRefresh();
   refresh();
 }, err => {
   console.error('users не читаются:', err.message);
@@ -1315,6 +1845,107 @@ db.ref('chats').on('value', s => {
 }, err => console.error('chats:', err.message));
 
 db.ref('follows').on('value', s => { S.follows = s.val() || {}; refresh(); }, err => console.error('follows:', err.message));
+
+// ---------- сессии ----------
+
+const sidKey = uid => 'sid_' + uid;
+function devName() {
+  const ua = navigator.userAgent;
+  const br = /Edg\//.test(ua) ? 'Edge' : /OPR\/|Opera/.test(ua) ? 'Opera' : /Firefox\//.test(ua) ? 'Firefox' : /Chrome\//.test(ua) ? 'Chrome' : /Safari\//.test(ua) ? 'Safari' : 'Браузер';
+  const os = /Windows/.test(ua) ? 'Windows' : /Android/.test(ua) ? 'Android' : /iPhone|iPad/.test(ua) ? 'iOS' : /Mac OS/.test(ua) ? 'macOS' : /Linux/.test(ua) ? 'Linux' : '?';
+  return (br + ' · ' + os).slice(0, 60);
+}
+let hb = null, sesWatch = null;
+function stopSession() {
+  clearInterval(hb); hb = null;
+  if (sesWatch) { sesWatch.ref.off('value', sesWatch.cb); sesWatch = null; }
+}
+function kicked() {
+  stopSession();
+  if (S.user) localStorage.removeItem(sidKey(S.user.uid));
+  alert('Эта сессия была завершена');
+  auth.signOut();
+}
+// true — можно работать, false — сессию завершили или она истекла
+async function startSession(u) {
+  stopSession();
+  const k = sidKey(u.uid);
+  let sid = localStorage.getItem(k);
+  if (sid) {
+    let rec = null;
+    try { rec = await get('sessions/' + u.uid + '/' + sid); } catch (e) { return true; }
+    if (!rec || Date.now() - (rec.last || 0) > 30 * 864e5) {
+      localStorage.removeItem(k);
+      if (rec) db.ref('sessions/' + u.uid + '/' + sid).remove().catch(() => {});
+      return false;
+    }
+  } else {
+    sid = db.ref('sessions/' + u.uid).push().key;
+    try {
+      await db.ref('sessions/' + u.uid + '/' + sid).set({device: devName(), created: TS, last: TS});
+      localStorage.setItem(k, sid);
+    } catch (e) { console.warn('session:', e.message); return true; }
+  }
+  const ref = db.ref('sessions/' + u.uid + '/' + sid);
+  const cb = sn => { if (!sn.exists()) kicked(); };
+  ref.on('value', cb);
+  sesWatch = {ref, cb};
+  const beat = () => { if (!document.hidden) ref.child('last').set(TS).catch(() => {}); };
+  hb = setInterval(beat, 120000);
+  beat();
+  return true;
+}
+async function doSignOut() {
+  try {
+    if (S.user) {
+      const k = sidKey(S.user.uid), sid = localStorage.getItem(k);
+      localStorage.removeItem(k);
+      stopSession();
+      if (sid) await db.ref('sessions/' + S.user.uid + '/' + sid).remove();
+    }
+  } catch (e) {}
+  auth.signOut();
+}
+
+// ---------- личные подписки (ЛС, уведомления, сессии) ----------
+
+const subs = [];
+function sub(ref, cb) { ref.on('value', cb, e => console.warn(ref.toString(), e.message)); subs.push([ref, cb]); }
+function unbindUser() {
+  subs.splice(0).forEach(([r, cb]) => r.off('value', cb));
+  S.dmIndex = {}; S.dmRead = {}; S.notifs = {}; S.sessions = {};
+  dmUnsub();
+}
+function bindUser(uid) {
+  unbindUser();
+  const first = {dm: true, nf: true};
+  sub(db.ref('dmRead/' + uid), s => { S.dmRead = s.val() || {}; updateBadges(); });
+  sub(db.ref('dmIndex/' + uid), s => {
+    const prev = S.dmIndex;
+    S.dmIndex = s.val() || {};
+    if (!first.dm) {
+      Object.keys(S.dmIndex).forEach(p => {
+        const x = S.dmIndex[p], o = prev[p];
+        if (x.from !== uid && (!o || (x.date || 0) > (o.date || 0))) {
+          const viewing = S.view === 'dm' && S.dmWith === p && !document.hidden;
+          if (viewing) dmMarkRead(p); else ding('dm');
+        }
+      });
+    }
+    first.dm = false;
+    updateBadges();
+    if (S.view === 'dmList') draw();
+  });
+  sub(db.ref('notifs/' + uid), s => {
+    const prev = S.notifs;
+    S.notifs = s.val() || {};
+    if (!first.nf && Object.keys(S.notifs).some(k => !prev[k])) ding('reply');
+    first.nf = false;
+    updateBadges();
+    if (S.view === 'notifs') draw();
+  });
+  sub(db.ref('sessions/' + uid), s => { S.sessions = s.val() || {}; if (S.view === 'sessions') draw(); });
+}
 
 // ---------- кто залогинен ----------
 
@@ -1342,19 +1973,13 @@ async function loadUser(u) {
 
     if (rec) {
       me.nick = rec.nick || me.nick;
-      if (!viaNick) { me.owner = !!rec.owner; me.role = rec.role || 'user'; }
+      if (!viaNick) { me.owner = rec.owner === true; me.role = rec.role || 'user'; }
       me.created = rec.created;
       if (!viaNick) me.premium = rec.premium === true;
       me.profile = rec.profile;
       me.phone = rec.phone;
       me.followers = rec.followers;
-    }
-
-    if (OWNERS.includes(fromMail.toLowerCase())) {
-      me.owner = true;
-      if (rec && rec.uid === u.uid && rec.owner !== true) {
-        db.ref('users/' + u.uid + '/owner').set(true).catch(e => console.warn('owner:', e.message));
-      }
+      me.uses = rec.uses;
     }
 
     // всегда занимаем текущий ник за текущим uid
@@ -1362,13 +1987,13 @@ async function loadUser(u) {
       claimNick(me.nick, u.uid).catch(() => {});
     }
 
-    // если записи именно для этого uid нет — создаём её (не трогая чужую)
+    // если записи именно для этого uid нет — создаём её с обычными правами (овнеров/админов назначают только в базе)
     if (!rec || rec.uid !== u.uid) {
       try {
         await claimNick(me.nick, u.uid);
         await set('users/' + u.uid, {
-          uid: u.uid, nick: me.nick, role: me.role, owner: me.owner,
-          premium: false, created: me.created || TS, profile: me.profile || {}
+          uid: u.uid, nick: me.nick, role:'user', owner:false,
+          premium:false, created: TS
         });
       } catch (e) {
         console.warn('не смог создать запись юзера', e.message);
@@ -1381,13 +2006,33 @@ async function loadUser(u) {
   S.user = me;
 }
 
+async function boot(u) {
+  await loadUser(u);
+  if (u && S.user) {
+    const ok = await startSession(u);
+    if (!ok) {
+      S.user = null;
+      alert('Сессия завершена. Войдите снова.');
+      await auth.signOut().catch(() => {});
+      return;
+    }
+    bindUser(u.uid);
+  } else {
+    stopSession();
+    unbindUser();
+  }
+  S.ready = true;
+  draw();
+}
+
 (function () {
   const [v, i] = location.hash.slice(1).split('/');
-  if (['thread', 'chat', 'chatList', 'profile', 'members', 'admin', 'priv'].includes(v)) {
+  if (['thread', 'chat', 'chatList', 'profile', 'members', 'admin', 'priv', 'dm', 'dmList', 'notifs', 'sessions'].includes(v)) {
     S.view = v;
     if (v === 'thread') S.open = i;
     if (v === 'chat') S.chatId = i;
     if (v === 'profile') S.profile = i;
+    if (v === 'dm') S.dmWith = i;
   }
 })();
 
@@ -1395,9 +2040,7 @@ auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(e => console.war
 
 auth.onAuthStateChanged(async u => {
   if (S.registering) return;
-  await loadUser(u);
-  S.ready = true;
-  draw();
+  await boot(u);
 });
 
 // поиск в шапке
