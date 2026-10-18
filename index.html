@@ -6,9 +6,15 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://apis.google.com https://www.google.com/recaptcha/ https://*.firebasedatabase.app; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; media-src data: blob:; connect-src https://*.googleapis.com https://www.google.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebasedatabase.app wss://*.firebasedatabase.app https://translate.googleapis.com; frame-src https://tdel-45a78.firebaseapp.com https://*.firebasedatabase.app https://www.google.com/recaptcha/ https://recaptcha.google.com; base-uri 'none'; form-action 'self'; object-src 'none'; worker-src 'none'; manifest-src 'none'">
 <meta name="referrer" content="no-referrer">
 <title>60TDEL</title>
+<link rel="preconnect" href="https://www.gstatic.com">
+<link rel="preconnect" href="https://tdel-45a78-default-rtdb.europe-west1.firebasedatabase.app" crossorigin>
+<link rel="preload" as="script" href="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js">
+<link rel="preload" as="script" href="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js">
+<link rel="preload" as="script" href="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=Noto+Color+Emoji&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=Noto+Color+Emoji&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=Noto+Color+Emoji&display=swap" rel="stylesheet"></noscript>
 <style>
 *{box-sizing:border-box}
 :root{
@@ -305,6 +311,27 @@ thead th{font-size:12px}
 .toast{background:#1d1d21;border:1px solid #38383e;border-left:3px solid var(--accent);padding:10px 14px;border-radius:6px;font-size:13px;color:#eee;box-shadow:0 8px 24px rgba(0,0,0,.45)}
 .hero-logo{margin:0 auto 18px;display:block;width:max-content;max-width:100%;overflow-x:auto;text-align:left;white-space:pre;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Courier New",monospace;font-size:10px;line-height:1.1;color:#ff2d2d;user-select:none}
 @media (max-width:700px){.hero-logo{font-size:5.4px}}
+
+/* ---- v3: типографика ---- */
+html{-webkit-text-size-adjust:100%}
+body{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility;font-kerning:normal;font-feature-settings:"kern","liga","calt"}
+h1,h2,h3{line-height:1.25;text-wrap:balance}
+.wrap > h2,.tnav h2{font-size:24px;font-weight:700;letter-spacing:-.015em}
+h3{font-size:17px;font-weight:600}
+.post .text,.chatmsg .txt,.dmmsg .txt{font-size:15.5px;line-height:1.7;text-wrap:pretty;color:#ececef}
+.post .meta,.chatmsg .top,.dmmsg .top{font-size:12px;color:#85858b}
+.post .who{font-size:13px}
+.bio{line-height:1.7;color:#d6d6da;text-wrap:pretty}
+td{font-size:14px}
+td:first-child{color:#f1f1f3;font-weight:500}
+td.num,td.date,.count,.badge,.pstats b,.np-count{font-variant-numeric:tabular-nums}
+thead th{font-weight:600;color:#8d8d93;font-size:12px}
+.btn{font-size:13px;font-weight:500}
+.muted,.hint,.sub{line-height:1.5}
+.profile-username{font-size:24px;letter-spacing:-.01em}
+.perk{line-height:1.55}
+.hero-logo{text-shadow:0 0 8px rgba(255,45,45,.55)}
+.np-art{color:#ff2d2d;text-shadow:0 0 8px rgba(255,45,45,.45)}
 </style>
 </head>
 <body>
@@ -342,7 +369,6 @@ thead th{font-size:12px}
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-check-compat.js"></script>
 
 <script>
 firebase.initializeApp({
@@ -354,8 +380,6 @@ firebase.initializeApp({
   messagingSenderId: "246430149246",
   appId: "1:246430149246:web:a6a5802ff2f6166a70862f"
 });
-const APPCHECK_KEY = '';
-if (APPCHECK_KEY) { try { firebase.appCheck().activate(APPCHECK_KEY, true); } catch (e) { console.warn('appcheck:', e.message); } }
 const auth = firebase.auth();
 const db = firebase.database();
 
@@ -846,7 +870,7 @@ function msgActions(o) {
   }}));
   bar.append(el('button', {class:'btn small', type:'button', title:'Переслать', text:'↪ Переслать', onclick: e => {
     e.stopPropagation();
-    forwardModal(o);
+    ensureChats().then(() => forwardModal(o));
   }}));
   if (S.user && o.uid !== S.user.uid) bar.append(el('button', {class:'btn small danger', type:'button', title:'Пожаловаться', text:'⚠ Жалоба', onclick: e => {
     e.stopPropagation();
@@ -1055,7 +1079,7 @@ function listView() {
   const page = rows.slice((S.page - 1) * S.limit, S.page * S.limit);
 
   if (!page.length) {
-    tbody.appendChild(el('tr', null, [el('td', {colspan:'5', text:'Нет тем.', style:'text-align:center;padding:20px;color:#666'})]));
+    tbody.appendChild(el('tr', null, [el('td', {colspan:'5', text: !S.thLoaded ? 'Загрузка...' : (S.thMore && S.search ? 'В загруженных темах нет. Нажмите «Показать ещё» внизу.' : 'Нет тем.'), style:'text-align:center;padding:20px;color:#666'})]));
   }
 
   page.forEach(th => {
@@ -1089,6 +1113,7 @@ function listView() {
     }
     out.push(pager);
   }
+  if (S.thMore) out.push(el('div', {style:'text-align:center'}, [el('button', {class:'btn', type:'button', text:'Показать ещё темы', onclick: () => { S.thLimit += TH_STEP; subRecentThreads(); }})]));
 
   return out;
 }
@@ -1223,11 +1248,14 @@ function composer(key, ph, onSend, opts) {
   ])]);
 }
 
-function picEl(src) { return okImg(src) ? el('img', {class:'msgimg', src: src}) : null; }
+function picEl(src) { return okImg(src) ? el('img', {class:'msgimg', src: src, loading:'lazy', decoding:'async'}) : null; }
 
 function threadView() {
   const th0 = S.threads.find(x => x.id === S.open);
-  if (!th0) return [el('div', {text:'Не найдено'})];
+  if (!th0) {
+    if (S.thLoaded) watchThread(S.open);
+    return [el('div', {class:'muted', text: (S.thLoaded && thWatched[S.open] === 'gone') ? 'Не найдено' : 'Загрузка...'})];
+  }
   const box = el('div', {style:'display:flex;flex-direction:column;gap:12px'});
 
   S.fill = () => {
@@ -1486,10 +1514,26 @@ function adminUsers() {
       ])
     ];
   });
-  return adminTable(['Ник', 'Роль', 'Премиум', 'Номер', 'Подписчики', 'Юзы', 'Овнер', 'Действия'], rows);
+  const heavy = Object.entries(S.users).filter(([, x]) => x && x.profile && okAud(x.profile.song));
+  const bar = heavy.length ? el('div', {class:'row-item'}, [
+    el('div', null, ['Песни лежат внутри профилей (' + heavy.length + ') — из-за этого сайт грузится медленно.']),
+    abtn('Вынести песни', 'primary', async () => {
+      let ok = 0;
+      for (const [k, x] of heavy) {
+        try { await set('songs/' + k, x.profile.song); await del('users/' + k + '/profile/song'); ok++; }
+        catch (e) { fail(e); break; }
+      }
+      toast('Вынесено песен: ' + ok);
+    })
+  ]) : null;
+  return el('div', null, [bar, adminTable(['Ник', 'Роль', 'Премиум', 'Номер', 'Подписчики', 'Юзы', 'Овнер', 'Действия'], rows)]);
 }
 
 function adminThreads() {
+  const more = S.thMore ? el('button', {class:'btn', type:'button', style:'margin-top:12px', text:'Показать ещё темы', onclick: () => { S.thLimit += TH_STEP; subRecentThreads(); }}) : null;
+  return el('div', null, [adminThreadsTable(), more]);
+}
+function adminThreadsTable() {
   return adminTable(['Тема', 'Автор', 'Дата', 'Действия'], S.threads.map(th => [
     el('span', {text: (th.pin ? 'Закреплена · ' : '') + th.title}),
     nick(th.uid, th.author),
@@ -1617,10 +1661,10 @@ function profileView() {
     ])])
   ];
   if (pf.bio) out.push(el('div', {class:'bio', text: pf.bio}));
-  if (okAud(pf.song)) out.push(el('div', {class:'profile-song'}, [
-    el('span', {class:'cap', text:'🎵 Песня профиля'}),
-    el('audio', {controls:'', preload:'metadata', src: pf.song})
-  ]));
+  const songHost = el('div', {class:'profile-song', style:'display:none'}, [el('span', {class:'cap', text:'🎵 Песня профиля'})]);
+  const putSong = v => { if (!okAud(v)) return; songHost.append(el('audio', {controls:'', preload:'none', src: v})); songHost.style.display = ''; };
+  out.push(songHost);
+  if (okAud(pf.song)) putSong(pf.song); else get('songs/' + u.uid).then(putSong).catch(() => {});
   if (mine.length) {
     out.push(el('h3', {text:'Темы', style:'color:#fff'}));
     out.push(el('div', {class:'tlist'}, mine.slice(0, 10).map(th => el('a', {text: th.title, onclick: () => { S.view = 'thread'; S.open = th.id; draw(); }}))));
@@ -1662,8 +1706,8 @@ function profileView() {
     const showSong = () => {
       songBox.innerHTML = '';
       if (okAud(d.song)) {
-        songBox.append(el('audio', {controls:'', preload:'metadata', src: d.song}));
-        songBox.append(el('button', {class:'btn small danger', type:'button', text:'Убрать песню', onclick: () => { d.song = null; showSong(); }}));
+        songBox.append(el('audio', {controls:'', preload:'none', src: d.song}));
+        songBox.append(el('button', {class:'btn small danger', type:'button', text:'Убрать песню', onclick: () => { d.song = null; d._songTouched = true; showSong(); }}));
       } else {
         songBox.append(el('span', {class:'muted', style:'font-size:12px', text:'не выбрана'}));
       }
@@ -1675,9 +1719,10 @@ function profileView() {
       const url = await readUrl(f);
       if (!okAud(url)) { alert('Формат не поддержан (mp3/ogg/webm/mp4)'); songInp.value = ''; return; }
       if (url.length > 6800000) { alert('Слишком большой после кодирования'); songInp.value = ''; return; }
-      d.song = url; showSong(); songInp.value = '';
+      d.song = url; d._songTouched = true; showSong(); songInp.value = '';
     }});
     showSong();
+    if (!okAud(d.song)) get('songs/' + u.uid).then(v => { if (okAud(v) && !d._songTouched && !okAud(d.song)) { d.song = v; showSong(); } }).catch(() => {});
 
     const locIn = el('input', {type:'text', maxlength:'80', value: d.location || '', placeholder:'Город, страна — что угодно', oninput: e => { d.location = e.target.value; }});
 
@@ -1732,7 +1777,10 @@ function profileView() {
             d.banner = await uploadMedia(d.banner);
             if (pv && d.nickMedia && d.nickMedia.s) d.nickMedia = {t: d.nickMedia.t, s: await uploadMedia(d.nickMedia.s)};
             if (n !== u.nick) await set('users/' + u.uid + '/nick', n);
-            await set('users/' + u.uid + '/profile', {bio: d.bio || '', avatar: d.avatar || null, banner: d.banner || null, nickMedia: pv ? (d.nickMedia || null) : null, prefix: pv ? (d.prefix || null) : null, prefixColor: pv ? (d.prefixColor || null) : null, color: pv ? (d.color || null) : null, emoji: pv ? (d.emoji || null) : null, location: d.location || null, song: d.song || null});
+            if (d._songTouched || okAud(pf.song)) {
+              if (okAud(d.song)) await set('songs/' + u.uid, d.song); else await del('songs/' + u.uid);
+            }
+            await set('users/' + u.uid + '/profile', {bio: d.bio || '', avatar: d.avatar || null, banner: d.banner || null, nickMedia: pv ? (d.nickMedia || null) : null, prefix: pv ? (d.prefix || null) : null, prefixColor: pv ? (d.prefixColor || null) : null, color: pv ? (d.color || null) : null, emoji: pv ? (d.emoji || null) : null, location: d.location || null, song: null});
             if (n.toLowerCase() !== oldLow && !usesOf(u).includes(oldLow)) db.ref('nicks/' + oldLow).remove().catch(() => {});
             S.user.nick = n; S.edit = false; draw();
           } catch (x) { err.textContent = 'Не сохранилось: ' + x.message; }
@@ -1748,7 +1796,7 @@ function profileView() {
 
 function chatView() {
   const c = S.chats[S.chatId];
-  if (!c) return [el('div', {text:'Не найдено'})];
+  if (!c) return [el('div', {class:'muted', text: S.chatsReady ? 'Не найдено' : 'Загрузка...'})];
   const win = el('div', {class:'chatwin'});
   let stick = true;
 
@@ -1771,7 +1819,7 @@ function chatView() {
           quoteEl(cc.messages, m.reply),
           S.editing === m.key ? editBox('chats/' + cc.id + '/messages/' + m.key, m, 2000) : (m.text ? el('div', {class:'txt', text: m.text}) : null),
           picEl(m.media),
-          okAud(m.voice) ? el('audio', {controls:'', preload:'metadata', src: m.voice}) : null,
+          okAud(m.voice) ? el('audio', {controls:'', preload:'none', src: m.voice}) : null,
           reactBar('chats/' + cc.id + '/messages/' + m.key, m),
           msgActions({view:'chat', id: cc.id, key: m.key, uid: m.uid, text: m.text, nick: (getUser(m.uid) || {}).nick || m.author, media: m.media, voice: m.voice, dur: m.dur})
         ])
@@ -1825,6 +1873,8 @@ function chatListView() {
       ])
     ]));
   });
+
+  if (!S.chatsReady) tbody.appendChild(el('tr', null, [el('td', {colspan:'4', text:'Загрузка...', style:'text-align:center;padding:20px;color:#666'})]));
 
   const out = [el('h2', {text:'Чаты'})];
 
@@ -1932,7 +1982,7 @@ function dmView() {
           quoteEl(S.dmMsgs, m.reply),
           m.text ? el('div', {class:'txt', text: m.text}) : null,
           picEl(m.media),
-          okAud(m.voice) ? el('audio', {controls:'', preload:'metadata', src: m.voice}) : null,
+          okAud(m.voice) ? el('audio', {controls:'', preload:'none', src: m.voice}) : null,
           reactBar('dms/' + key + '/messages/' + m.key, m),
           msgActions({view:'dm', id: key, key: m.key, uid: m.uid, text: m.text, nick: mine ? S.user.nick : ((getUser(other) || {}).nick || 'User'), media: m.media, voice: m.voice, dur: m.dur})
         ])
@@ -2092,6 +2142,13 @@ function membersView() {
 
 // ---------- новая тема ----------
 
+const NEW_ART = String.raw`  ____ _____ ___________ _____ _
+ / ___|  _  |_   _|  _  \  ___| |
+/ /___| |/' | | | | | | | |__ | |
+| ___ \  /| | | | | | | |  __|| |
+| \_/ \ |_/ / | | | |/ /| |___| |____
+\_____/\___/  \_/ |___/ \____/\_____/`;
+
 function newView() {
   if (!S.user) { S.view = 'auth'; return authView(); }
   const d = S.newDraft || (S.newDraft = {title:'', text:'', pin:false, pic:null});
@@ -2150,6 +2207,8 @@ function newView() {
 
   const hr = () => el('div', {class:'np-hr'});
   const side = el('aside', {class:'np-side'}, [
+    el('pre', {class:'np-art', text: NEW_ART}),
+    hr(),
     el('div', {class:'np-user'}, [nick(S.user.uid, S.user.nick)]),
     hr(),
     title,
@@ -2198,6 +2257,7 @@ function draw() {
   app.innerHTML = '';
   if (!S.user && ['dm', 'dmList', 'notifs', 'sessions'].includes(S.view)) S.view = 'auth';
   if (S.view !== 'dm') dmUnsub();
+  if (['chatList', 'chat', 'dm'].includes(S.view) || (S.view === 'admin' && S.adminTab === 'chats')) ensureChats();
   drawWho();
   if (!S.ready) { app.append(el('div', {class:'muted', style:'text-align:center;padding:40px'}, [el('span', {class:'spinner'}), 'Загрузка...'])); return; }
 
@@ -2224,7 +2284,12 @@ function draw() {
   nodes.forEach(n => { if (n) app.append(n); });
 }
 
+let _rt = null;
 function refresh() {
+  if (_rt) return;
+  _rt = setTimeout(() => { _rt = null; doRefresh(); }, 60);
+}
+function doRefresh() {
   drawWho();
   if (!S.ready) return;
   if (S.fill && (S.view === 'chat' || S.view === 'thread' || S.view === 'dm')) S.fill();
@@ -2268,18 +2333,59 @@ db.ref('users').on('value', s => {
   console.error('users не читаются:', err.message);
 });
 
-db.ref('threads').on('value', s => {
-  const d = s.val() || {};
-  S.threads = Object.keys(d).map(k => ({id: k, ...d[k]})).sort((a, b) => (b.date || 0) - (a.date || 0));
-  refresh();
-}, err => console.error('threads:', err.message));
+// Темы грузим порциями: последние TH_STEP по дате + закреплённые. Остальные — кнопкой «Показать ещё».
+const TH_STEP = 30;
+S.thLimit = TH_STEP; S.thLoaded = false; S.thMore = false;
+let thRecent = {}, thPins = {}, thExtra = {}, thRef = null, thCb = null;
+const thWatched = {};
+function mergeThreads() {
+  const all = Object.assign({}, thExtra, thPins, thRecent);
+  S.threads = Object.keys(all).map(k => ({id: k, ...all[k]}))
+    .sort((a, b) => ((b.pin ? 1 : 0) - (a.pin ? 1 : 0)) || ((b.date || 0) - (a.date || 0)));
+}
+function subRecentThreads() {
+  if (thRef) thRef.off('value', thCb);
+  thRef = db.ref('threads').orderByChild('date').limitToLast(S.thLimit);
+  thCb = s => {
+    thRecent = s.val() || {};
+    S.thLoaded = true;
+    S.thMore = Object.keys(thRecent).length >= S.thLimit;
+    mergeThreads(); refresh();
+  };
+  thRef.on('value', thCb, err => { console.error('threads:', err.message); S.thLoaded = true; refresh(); });
+}
+// тема за пределами загруженных (прямая ссылка, старая тема) — подтягиваем одну
+function watchThread(id) {
+  if (!id || thWatched[id]) return;
+  thWatched[id] = 'loading';
+  db.ref('threads/' + id).on('value', s => {
+    if (s.exists()) { thExtra[id] = s.val(); thWatched[id] = 'ok'; }
+    else { delete thExtra[id]; thWatched[id] = 'gone'; }
+    mergeThreads(); refresh();
+  }, () => { thWatched[id] = 'gone'; refresh(); });
+}
+subRecentThreads();
+db.ref('threads').orderByChild('pin').equalTo(true).on('value', s => {
+  thPins = s.val() || {};
+  mergeThreads(); refresh();
+}, err => console.warn('pins:', err.message));
 
-db.ref('chats').on('value', s => {
-  const d = s.val() || {};
-  S.chats = {};
-  Object.keys(d).forEach(k => { S.chats[k] = {id: k, ...d[k]}; });
-  refresh();
-}, err => console.error('chats:', err.message));
+// Чаты вместе с сообщениями тяжёлые — подписываемся при первом заходе в чаты, а не при старте сайта.
+let chatsPromise = null;
+S.chatsReady = false;
+function ensureChats() {
+  if (chatsPromise) return chatsPromise;
+  chatsPromise = new Promise(res => {
+    const done = () => { S.chatsReady = true; refresh(); res(); };
+    db.ref('chats').on('value', s => {
+      const d = s.val() || {};
+      S.chats = {};
+      Object.keys(d).forEach(k => { S.chats[k] = {id: k, ...d[k]}; });
+      done();
+    }, err => { console.error('chats:', err.message); done(); });
+  });
+  return chatsPromise;
+}
 
 db.ref('follows').on('value', s => { S.follows = s.val() || {}; refresh(); }, err => console.error('follows:', err.message));
 
@@ -2478,6 +2584,12 @@ setTimeout(() => { if (!S.ready) { console.warn('boot timeout'); S.ready = true;
 
 auth.onAuthStateChanged(async u => {
   if (S.registering) return;
+  if (u && !S.ready) {
+    // показываем сайт сразу, роль и профиль дозагрузятся следом
+    S.user = {uid: u.uid, nick: u.displayName || (u.email || '').split('@')[0], role:'user', owner:false};
+    S.ready = true;
+    draw();
+  }
   await boot(u);
 });
 
