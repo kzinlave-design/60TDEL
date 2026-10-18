@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://apis.google.com https://*.firebasedatabase.app; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; media-src data: blob:; connect-src https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebasedatabase.app wss://*.firebasedatabase.app; frame-src https://tdel-45a78.firebaseapp.com https://*.firebasedatabase.app; base-uri 'none'; form-action 'self'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://apis.google.com https://www.google.com/recaptcha/ https://*.firebasedatabase.app; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; media-src data: blob:; connect-src https://*.googleapis.com https://www.google.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebasedatabase.app wss://*.firebasedatabase.app; frame-src https://tdel-45a78.firebaseapp.com https://*.firebasedatabase.app https://www.google.com/recaptcha/ https://recaptcha.google.com; base-uri 'none'; form-action 'self'; object-src 'none'; worker-src 'none'; manifest-src 'none'">
 <meta name="referrer" content="no-referrer">
 <title>60TDEL</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -286,6 +286,7 @@ button.chip{cursor:pointer}
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-check-compat.js"></script>
 
 <script>
 firebase.initializeApp({
@@ -297,6 +298,9 @@ firebase.initializeApp({
   messagingSenderId: "246430149246",
   appId: "1:246430149246:web:a6a5802ff2f6166a70862f"
 });
+// App Check: вставь сюда публичный ключ reCAPTCHA v3 (Firebase Console -> App Check). Пока пусто - выключено.
+const APPCHECK_KEY = '';
+if (APPCHECK_KEY) { try { firebase.appCheck().activate(APPCHECK_KEY, true); } catch (e) { console.warn('appcheck:', e.message); } }
 const auth = firebase.auth();
 const db = firebase.database();
 
@@ -371,12 +375,17 @@ const COLORS = [
 ];
 const PEMOJI = ['😀','😎','🔥','⚡','💀','👑','🎯','🚀','💎','🌙','⭐','❤️','💚','💙','🧡','💜','🖤','🤍','🐉','🦅','🎮','🎧','🍀','☄️','✨','🏆','🗡️','🛡️','🧿','🔮','🎸','🎬','📸','💻','🌊','🍁','🌸','❄️','☀️','🔱','⚔️','🤖','👾','👽','🐺'];
 const BAD_PREFIX = /admin|админ|mod|мод|owner|владел|root|system|support|саппорт|official|60tdel/i;
-const okImg = x => typeof x === 'string' && /^data:image\/(jpeg|png|webp);base64,/.test(x);
-const okVid = x => typeof x === 'string' && /^data:video\/(mp4|webm);base64,/.test(x);
+const isUrl = () => false;
+const okImg = x => isUrl(x) || (typeof x === 'string' && x.length < 700000 && /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+\/=]+$/.test(x));
+const okVid = x => isUrl(x) || (typeof x === 'string' && x.length < 1500000 && /^data:video\/(mp4|webm);base64,[A-Za-z0-9+\/=]+$/.test(x));
 const TS = firebase.database.ServerValue.TIMESTAMP;
+const LIM = () => 'limits/' + S.user.uid + '/last';
 
 // номер берётся из users/<uid>/phone и виден всем в профиле
 const phoneOf = u => (u && u.phone) ? String(u.phone) : '';
+
+// медиа хранится прямо в базе (data: URL), размер ограничен сжатием и правилами базы
+const uploadMedia = async v => v;
 
 // ужимаем картинку: max - сторона в пикселях, kb - предел размера
 function compress(file, max, kb) {
@@ -471,7 +480,7 @@ function avatar(id, sz) {
 
 // ---------- звук, уведомления, реплаи ----------
 
-const okAud = x => typeof x === 'string' && /^data:audio\/(webm|ogg|mp4);base64,/.test(x);
+const okAud = x => isUrl(x) || (typeof x === 'string' && x.length < 500000 && /^data:audio\/(webm|ogg|mp4);base64,[A-Za-z0-9+\/=]+$/.test(x));
 const dmKey = (a, b) => a < b ? a + '_' + b : b + '_' + a;
 const snip = (m, n) => (m.voice ? '🎤 Голосовое' : (m.text || (m.media ? '📷 Фото' : ''))).slice(0, n || 100);
 const tm = ts => ts ? new Date(ts).toLocaleTimeString(lang === 'ru' ? 'ru-RU' : 'en-GB', {hour:'2-digit', minute:'2-digit'}) : '';
@@ -515,8 +524,9 @@ function updateBadges() {
 async function notify(to, data) {
   if (!S.user || !to || to === S.user.uid) return;
   try {
-    await db.ref('notifs/' + to).push({type:'reply', from: S.user.uid, fromNick: S.user.nick,
-      text: String(data.text || '').slice(0, 80), view: data.view, id: data.id, key: data.key || null, date: TS});
+    await db.ref().update({['notifs/' + to + '/' + db.ref('notifs/' + to).push().key]: {type:'reply', from: S.user.uid, fromNick: S.user.nick,
+      text: String(data.text || '').slice(0, 80), view: data.view, id: data.id, key: data.key || null, date: TS},
+      ['limits/' + S.user.uid + '/nf']: TS});
   } catch (e) { console.warn('notify:', e.message); }
 }
 
@@ -573,7 +583,7 @@ function editBox(path, m, max) {
   const close = () => { S.editing = null; S.editDraft = ''; if (S.fill) S.fill(); };
   const save = async () => {
     const txt = ta.value.trim().slice(0, max);
-    if (!txt && !m.media) { alert('Сообщение не может быть пустым'); return; }
+    if (!txt && !m.media && !m.voice) { alert('Сообщение не может быть пустым'); return; }
     if (txt === (m.text || '')) { close(); return; }
     try {
       await db.ref(path + '/text').set(txt);
@@ -630,12 +640,12 @@ function authView() {
         S.registering = true;
         const c = await auth.createUserWithEmailAndPassword(email, p.value);
         await c.user.updateProfile({displayName: name});
-        let ok = false;
-        try { ok = await claimNick(name, c.user.uid); } catch (x) { console.error(x); }
+        let ok = false, ce = null;
+        try { ok = await claimNick(name, c.user.uid); } catch (x) { ce = x; console.error(x); }
         if (!ok) {
           await c.user.delete().catch(() => {});
           S.registering = false; S.busy = false;
-          err.textContent = 'Ник занят';
+          err.textContent = ce ? 'Ошибка базы (' + ce.message + '). Проверь правила Realtime Database.' : 'Ник занят';
           return;
         }
         try {
@@ -761,6 +771,7 @@ const EMO = ['😀','😂','😍','😎','😭','😡','👍','👎','🔥','�
 
 function composer(key, ph, onSend, opts) {
   opts = opts || {};
+  let picUp = null, voUp = null;
   let pic = null, busy = false, rp = null, vo = null, rec = null, timer = null, stream = null, chunks = [], t0 = 0, mime = '';
   const ta = el('textarea', {placeholder: ph, maxlength:'2000', rows:'2'});
   ta.value = S.drafts[key] || '';
@@ -780,15 +791,39 @@ function composer(key, ph, onSend, opts) {
 
   const panel = el('div', {class:'emo', style:'display:none'}, EMO.map(e =>
     el('span', {text: e, onclick: () => { ta.value += e; S.drafts[key] = ta.value; ta.focus(); }})));
-  const file = el('input', {type:'file', accept:'image/*', style:'display:none', onchange: async e => {
-    const f = e.target.files[0];
+  // общая функция: берём файл-картинку (из диалога, буфера или drag&drop), ужимаем и показываем превью
+  const setPic = async f => {
     if (!f) return;
     try { pic = await compress(f, 900, 120); }
     catch (x) { alert('Не вышло: ' + x.message); return; }
     prev.innerHTML = '';
     prev.append(el('img', {src: pic}), el('button', {class:'btn small', type:'button', text:'✕', onclick: () => { pic = null; prev.innerHTML = ''; }}));
+  };
+  const file = el('input', {type:'file', accept:'image/*', style:'display:none', onchange: async e => {
+    const f = e.target.files[0];
     file.value = '';
+    await setPic(f);
   }});
+  // Ctrl+V: если в буфере картинка (скриншот, копия из браузера) - прикрепляем её, текст вставляется как обычно
+  const imgFrom = dt => {
+    if (!dt) return null;
+    const it = [...(dt.items || [])].find(x => x.kind === 'file' && /^image\/(png|jpeg|webp|gif|bmp)$/.test(x.type));
+    if (it) return it.getAsFile();
+    return [...(dt.files || [])].find(f => /^image\/(png|jpeg|webp|gif|bmp)$/.test(f.type)) || null;
+  };
+  ta.addEventListener('paste', e => {
+    const f = imgFrom(e.clipboardData);
+    if (!f) return;
+    e.preventDefault();
+    setPic(f);
+  });
+  ta.addEventListener('dragover', e => { if (e.dataTransfer && [...e.dataTransfer.types].includes('Files')) e.preventDefault(); });
+  ta.addEventListener('drop', e => {
+    const f = imgFrom(e.dataTransfer);
+    if (!f) return;
+    e.preventDefault();
+    setPic(f);
+  });
 
   // ---- голосовые ----
   const showVo = () => {
@@ -839,13 +874,16 @@ function composer(key, ph, onSend, opts) {
     const text = ta.value.trim();
     if ((!text && !pic && !vo) || busy || rec) return;
     const now = Date.now();
-    if (now - (S.lastSend[key] || 0) < 1500) return; // не чаще раза в 1.5 сек на поле
-    S.lastSend[key] = now;
+    if (now - (S.lastSend.g || 0) < 2300) { alert('Не так быстро, подожди пару секунд'); return; } // сервер тоже режет чаще раза в 2 сек
+    S.lastSend.g = now;
     busy = true;
     try {
-      await onSend(text, pic, rp, vo);
+      if (pic && (!picUp || picUp.k !== pic)) picUp = {k: pic, u: await uploadMedia(pic)};
+      if (vo && (!voUp || voUp.k !== vo.s)) voUp = {k: vo.s, u: await uploadMedia(vo.s)};
+      await onSend(text, pic ? picUp.u : null, rp, vo ? {s: voUp.u, d: vo.d} : null);
+      picUp = null; voUp = null;
       ta.value = ''; S.drafts[key] = ''; pic = null; vo = null; prev.innerHTML = ''; showVo(); setReply(null);
-    } catch (x) { alert('Не отправилось: ' + x.message); }
+    } catch (x) { S.lastSend.g = 0; alert(/PERMISSION_DENIED/.test(x.message) ? 'Не отправилось: слишком часто или нет прав. Подожди пару секунд и повтори.' : 'Не отправилось: ' + x.message); }
     busy = false;
     ta.focus();
   }
@@ -933,7 +971,7 @@ function threadView() {
       const msg = {uid: S.user.uid, author: S.user.nick, text: text, date: TS};
       if (pic) msg.media = pic;
       if (rp) msg.reply = {key: rp.key};
-      await r.set(msg);
+      await db.ref().update({['threads/' + th0.id + '/posts/' + r.key]: msg, [LIM()]: TS});
       if (rp) notify(rp.uid, {view:'thread', id: th0.id, key: r.key, text: text || '📷 Фото'});
     }));
   } else out.push(el('div', {class:'muted', text:'Войдите, чтобы отвечать'}));
@@ -1142,7 +1180,7 @@ function adminChats() {
   const add = el('div', {class:'create-chat'}, [inp, abtn('Создать', 'primary', () => {
     const name = inp.value.trim();
     if (!name) return;
-    db.ref('chats').push({name: name, uid: S.user.uid, author: S.user.nick, date: TS}).then(() => { inp.value = ''; }).catch(fail);
+    db.ref().update({['chats/' + db.ref('chats').push().key]: {name: name, uid: S.user.uid, author: S.user.nick, date: TS}, [LIM()]: TS}).then(() => { inp.value = ''; }).catch(fail);
   })]);
   const rows = Object.values(S.chats).map(c => [
     el('span', {text: c.name || '—'}), nick(c.uid, c.author), el('span', {text: fmt(c.date)}),
@@ -1299,6 +1337,9 @@ function profileView() {
           }
           try {
             const pv = canPriv(S.user);
+            d.avatar = await uploadMedia(d.avatar);
+            d.banner = await uploadMedia(d.banner);
+            if (pv && d.nickMedia && d.nickMedia.s) d.nickMedia = {t: d.nickMedia.t, s: await uploadMedia(d.nickMedia.s)};
             if (n !== u.nick) await set('users/' + u.uid + '/nick', n);
             await set('users/' + u.uid + '/profile', {bio: d.bio || '', avatar: d.avatar || null, banner: d.banner || null, nickMedia: pv ? (d.nickMedia || null) : null, prefix: pv ? (d.prefix || null) : null, prefixColor: pv ? (d.prefixColor || null) : null, color: pv ? (d.color || null) : null, emoji: pv ? (d.emoji || null) : null});
             if (n.toLowerCase() !== oldLow && !usesOf(u).includes(oldLow)) db.ref('nicks/' + oldLow).remove().catch(() => {});
@@ -1336,8 +1377,9 @@ function chatView() {
             mine ? editBtn(m.key, m) : null,
             (mine || isAdmin()) ? el('button', {class:'btn small danger', text:'✕', onclick: () => { if (confirm('Удалить?')) del('chats/' + cc.id + '/messages/' + m.key); }}) : null]),
           quoteEl(cc.messages, m.reply),
-          S.editing === m.key ? editBox('chats/' + cc.id + '/messages/' + m.key, m, 2000) : el('div', {class:'txt', text: m.text || ''}),
-          picEl(m.media)
+          S.editing === m.key ? editBox('chats/' + cc.id + '/messages/' + m.key, m, 2000) : (m.text ? el('div', {class:'txt', text: m.text}) : null),
+          picEl(m.media),
+          okAud(m.voice) ? el('audio', {controls:'', preload:'metadata', src: m.voice}) : null
         ])
       ]));
     });
@@ -1355,15 +1397,16 @@ function chatView() {
     win
   ];
   if (S.user) {
-    out.push(composer('c' + c.id, 'Сообщение... (Enter - отправить)', async (text, pic, rp) => {
+    out.push(composer('c' + c.id, 'Сообщение... (Enter - отправить, Ctrl+V - вставить фото)', async (text, pic, rp, vo) => {
       stick = true;
       const r = db.ref('chats/' + c.id + '/messages').push();
       const msg = {uid: S.user.uid, author: S.user.nick, text: text, date: TS};
       if (pic) msg.media = pic;
+      if (vo) { msg.voice = vo.s; msg.dur = vo.d; }
       if (rp) msg.reply = {key: rp.key};
-      await r.set(msg);
-      if (rp) notify(rp.uid, {view:'chat', id: c.id, key: r.key, text: text || '📷 Фото'});
-    }));
+      await db.ref().update({['chats/' + c.id + '/messages/' + r.key]: msg, [LIM()]: TS});
+      if (rp) notify(rp.uid, {view:'chat', id: c.id, key: r.key, text: text || (vo ? '🎤 Голосовое' : '📷 Фото')});
+    }, {voice: true}));
   } else out.push(el('div', {class:'muted', text:'Войдите, чтобы писать'}));
   return out;
 }
@@ -1397,7 +1440,7 @@ function chatListView() {
     const create = () => {
       const name = inp.value.trim();
       if (!name) return;
-      db.ref('chats').push({name, uid: S.user.uid, author: S.user.nick, date: TS})
+      db.ref().update({['chats/' + db.ref('chats').push().key]: {name, uid: S.user.uid, author: S.user.nick, date: TS}, [LIM()]: TS})
         .then(() => { inp.value = ''; })
         .catch(fail);
     };
@@ -1450,6 +1493,7 @@ async function sendDM(other, text, pic, replyKey, voice) {
   up['dms/' + key + '/messages/' + id] = msg;
   up['dmIndex/' + me + '/' + other] = idx;
   up['dmIndex/' + other + '/' + me] = idx;
+  up[LIM()] = TS;
   await db.ref().update(up);
 }
 
@@ -1511,7 +1555,7 @@ function dmView() {
       el('div', {class:'peer', style:'display:flex;gap:10px;align-items:center'}, [avatar(other, 32), nick(other, ou ? ou.nick : 'User')])
     ]),
     win,
-    composer('d' + key, 'Сообщение... (Enter - отправить)', async (text, pic, rp, vo) => {
+    composer('d' + key, 'Сообщение... (Enter - отправить, Ctrl+V - вставить фото)', async (text, pic, rp, vo) => {
       stick = true;
       await sendDM(other, text, pic, rp && rp.key, vo);
     }, {voice: true})
@@ -1696,10 +1740,10 @@ function newView() {
     try {
       const r = db.ref('threads').push();
       const post = {uid: S.user.uid, author: S.user.nick, text: txt, date: TS};
-      if (d.pic) post.media = d.pic;
+      if (d.pic) post.media = await uploadMedia(d.pic);
       const th = {title: ttl, uid: S.user.uid, author: S.user.nick, date: TS, posts: {p0: post}};
       if (d.pin && isAdmin()) th.pin = true;
-      await r.set(th);
+      await db.ref().update({['threads/' + r.key]: th, [LIM()]: TS});
       S.newDraft = null;
       S.view = 'thread'; S.open = r.key;
       draw();
@@ -2027,7 +2071,8 @@ async function boot(u) {
 }
 
 (function () {
-  const [v, i] = location.hash.slice(1).split('/');
+  let [v, i] = location.hash.slice(1).split('/');
+  if (i && !/^[A-Za-z0-9_-]{1,80}$/.test(i)) i = '';
   if (['thread', 'chat', 'chatList', 'profile', 'members', 'admin', 'priv', 'dm', 'dmList', 'notifs', 'sessions'].includes(v)) {
     S.view = v;
     if (v === 'thread') S.open = i;
