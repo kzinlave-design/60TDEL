@@ -303,6 +303,8 @@ thead th{font-size:12px}
 .modal-box{border-radius:10px}
 .toasts{position:fixed;right:16px;bottom:16px;display:flex;flex-direction:column;gap:8px;z-index:1200;max-width:min(360px,calc(100vw - 32px))}
 .toast{background:#1d1d21;border:1px solid #38383e;border-left:3px solid var(--accent);padding:10px 14px;border-radius:6px;font-size:13px;color:#eee;box-shadow:0 8px 24px rgba(0,0,0,.45)}
+.hero-logo{margin:0 auto 18px;display:block;width:max-content;max-width:100%;overflow-x:auto;text-align:left;white-space:pre;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Courier New",monospace;font-size:10px;line-height:1.1;color:#ff2d2d;user-select:none}
+@media (max-width:700px){.hero-logo{font-size:5.4px}}
 </style>
 </head>
 <body>
@@ -1019,12 +1021,21 @@ function authView() {
 // ---------- список тем ----------
 
 function listView() {
+  const LOGO = String.raw` /$$$$$$   /$$$$$$  /$$$$$$$$ /$$$$$$$  /$$$$$$$$ /$$      
+ /$$__  $$ /$$$_  $$|__  $$__/| $$__  $$| $$_____/| $$      
+| $$  \__/| $$$$\ $$   | $$   | $$  \ $$| $$      | $$      
+| $$$$$$$ | $$ $$ $$   | $$   | $$  | $$| $$$$$   | $$      
+| $$__  $$| $$\ $$$$   | $$   | $$  | $$| $$__/   | $$      
+| $$  \ $$| $$ \ $$$   | $$   | $$  | $$| $$      | $$      
+|  $$$$$$/|  $$$$$$/   | $$   | $$$$$$$/| $$$$$$$$| $$$$$$$$
+ \______/  \______/    |__/   |_______/ |________/|________/`;
+
   const searchIn = el('input', {type:'text', placeholder:'Search...', value: S.search || ''});
   const doSearch = () => { S.search = searchIn.value.trim(); S.page = 1; draw(); };
   searchIn.onkeydown = e => { if (e.key === 'Enter') doSearch(); };
 
   const out = [el('div', {class:'hero'}, [
-    el('div', {class:'hero-title'}, ['60', el('span', {text:'TDEL'})]),
+    el('pre', {class:'hero-logo', 'aria-label':'60TDEL', text: LOGO}),
     el('div', {class:'links'}, [
       el('a', {href:'https://t.me/B2L3NC1AGA', target:'_blank', rel:'noopener noreferrer', text:'Official Telegram Channel'}),
       el('a', {href:'https://t.me/+ogE4l7ZAQ-g3NDZl', target:'_blank', rel:'noopener noreferrer', text:'Official Telegram Chat'})
