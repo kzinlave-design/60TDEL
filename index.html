@@ -312,6 +312,24 @@ thead th{font-size:12px}
 .hero-logo{margin:0 auto 18px;display:block;width:max-content;max-width:100%;overflow-x:auto;text-align:left;white-space:pre;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Courier New",monospace;font-size:10px;line-height:1.1;color:#ff2d2d;user-select:none}
 @media (max-width:700px){.hero-logo{font-size:5.4px}}
 
+.mention{color:#7fb0ff;cursor:pointer}.mention:hover{text-decoration:underline}
+.hashtag{color:#9bb8ff;cursor:pointer}.hashtag:hover{text-decoration:underline}
+.tagchip{display:inline-block;margin-left:8px;font-size:11px;color:#9bb8ff;cursor:pointer}.tagchip:hover{text-decoration:underline}
+.rep{font-size:12px;font-family:var(--font-mono);color:#85858b}.rep.pos{color:#4dd47e}.rep.neg{color:#ff6b6b}
+.pinbar{display:flex;gap:10px;align-items:center;background:#1d1517;border:1px solid var(--accent-dim);border-left:3px solid var(--accent);border-radius:6px;padding:8px 12px;margin-bottom:10px;cursor:pointer;font-size:13px;min-width:0}
+.pinbar .qt{flex:1;color:#ddd}
+.poll{background:#141416;border:1px solid #2b2b30;border-radius:8px;padding:14px;display:grid;gap:8px}
+.poll h3{margin:0;color:#fff}
+.poll-opt{position:relative;display:flex;justify-content:space-between;gap:10px;border:1px solid #2b2b30;border-radius:6px;padding:9px 12px;overflow:hidden;cursor:pointer}
+.poll-opt.off{cursor:default}
+.poll-opt.mine{border-color:var(--accent)}
+.poll-fill{position:absolute;left:0;top:0;bottom:0;background:#3a191c;z-index:0;transition:width .3s}
+.poll-opt span{position:relative;z-index:1}
+.poll-n{color:#9a9aa0;font-variant-numeric:tabular-nums;white-space:nowrap}
+.hl{background:#5a2a2d;color:#fff;border-radius:2px;padding:0 2px}
+.res-h{color:#fff;margin:14px 0 8px;font-size:15px}
+.nav-search{max-width:340px}
+
 /* ---- v3: типографика ---- */
 html{-webkit-text-size-adjust:100%}
 body{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility;font-kerning:normal;font-feature-settings:"kern","liga","calt"}
@@ -348,7 +366,7 @@ thead th{font-weight:600;color:#8d8d93;font-size:12px}
     <button class="link" id="nav-admin" style="display:none" onclick="router.goAdmin()">Админка</button>
 
     <div class="nav-search">
-      <input type="text" id="global-search" placeholder="Поиск..." autocomplete="off">
+      <input type="text" id="global-search" placeholder="Поиск: сообщения, темы, чаты, @юзы" autocomplete="off">
     </div>
 
     <div class="lang-switch">
@@ -881,7 +899,7 @@ function msgActions(o) {
 
 // ---------- реакции ----------
 
-const REACTS = [{id:'like', e:'👍'}, {id:'heart', e:'❤️'}, {id:'fire', e:'🔥'}, {id:'laugh', e:'😂'}, {id:'wow', e:'😮'}, {id:'sad', e:'😢'}];
+const REACTS = [{id:'like', e:'👍'}, {id:'heart', e:'❤️'}, {id:'fire', e:'🔥'}, {id:'laugh', e:'😂'}, {id:'wow', e:'😮'}, {id:'sad', e:'😢'}, {id:'dislike', e:'👎'}];
 
 function toggleReact(path, id, mine) {
   if (!S.user) { S.view = 'auth'; draw(); return; }
@@ -953,7 +971,8 @@ function dmInfo(uid) {
     el('div', {class:'dm-cells'}, [
       cell('Номер', phoneOf(u) || 'не указан'),
       cell('Отлега', u.created ? ageText(u.created) + ' · с ' + fmt(u.created) : '—'),
-      cell('Сообщений в чатах', String(written.reduce((a, c) => a + c.n, 0)))
+      cell('Сообщений в чатах', String(written.reduce((a, c) => a + c.n, 0))),
+      cell('Статус', presText(uid) || '—')
     ]),
     el('div', {class:'dm-chats'}, [el('div', {class:'dm-cell'}, [el('div', {class:'l', text:'Писал(а) в чатах'})]), chats])
   ]);
@@ -1089,7 +1108,7 @@ function listView() {
       S.open = th.id;
       draw();
     }}, [
-      el('td', {text: th.title}),
+      el('td', null, [th.title, ...tagChips(th)]),
       el('td', {class:'num', text: String(comments)}),
       el('td', {class:'num', text: String(th.views || 0)}),
       el('td', null, [nick(th.uid, th.author)]),
@@ -1257,11 +1276,13 @@ function threadView() {
     return [el('div', {class:'muted', text: (S.thLoaded && thWatched[S.open] === 'gone') ? 'Не найдено' : 'Загрузка...'})];
   }
   const box = el('div', {style:'display:flex;flex-direction:column;gap:12px'});
+  const pollBox = el('div');
 
   S.fill = () => {
     const th = S.threads.find(x => x.id === S.open);
     if (!th) return;
     const y = window.scrollY;
+    renderPoll(pollBox, th);
     box.innerHTML = '';
     Object.entries(th.posts || {}).map(([key, p]) => ({...p, key})).sort((a, b) => a.date - b.date).forEach(p => {
       const mine = S.user && p.uid === S.user.uid;
@@ -1280,7 +1301,7 @@ function threadView() {
           ]),
           p.forwarded ? el('div', {class:'fwd-mark', text:'↪ Переслано от ' + (p.forwarded.fromNick || 'User')}) : null,
           quoteEl(th.posts, p.reply),
-          S.editing === p.key ? editBox('threads/' + th.id + '/posts/' + p.key, p, 5000) : el('div', {class:'text', text: p.text || ''}),
+          S.editing === p.key ? editBox('threads/' + th.id + '/posts/' + p.key, p, 5000) : richText('text', p.text),
           picEl(p.media),
           reactBar('threads/' + th.id + '/posts/' + p.key, p),
           msgActions({view:'thread', id: th.id, key: p.key, uid: p.uid, text: p.text, nick: (getUser(p.uid) || {}).nick || p.author, media: p.media})
@@ -1318,7 +1339,9 @@ function threadView() {
         navBtn(nextTh, '›')
       ])
     ]),
-    el('h2', {text: th0.title, style:'margin:16px 0;color:#fff'}),
+    el('h2', {text: th0.title, style:'margin:16px 0 6px;color:#fff'}),
+    el('div', {style:'margin-bottom:10px'}, tagChips(th0)),
+    pollBox,
     box
   ];
   if (S.user) {
@@ -1328,7 +1351,7 @@ function threadView() {
       if (pic) msg.media = pic;
       if (rp) msg.reply = {key: rp.key};
       await db.ref().update({['threads/' + th0.id + '/posts/' + r.key]: msg, [LIM()]: TS});
-      if (rp) notify(rp.uid, {view:'thread', id: th0.id, key: r.key, text: text || 'Фото'});
+      sendNotifs(text, rp, {view:'thread', id: th0.id, key: r.key, text: text || 'Фото'});
     }));
   } else out.push(el('div', {class:'muted', text:'Войдите, чтобы отвечать'}));
   return out;
@@ -1610,6 +1633,7 @@ function profileView() {
   if (!u) return [el('div', {text:'Профиль не найден'})];
   const isMe = S.user && u.uid === S.user.uid;
   const pf = u.profile || {};
+  watchPres(u.uid || uid);
 
   const mine = S.threads.filter(th => th.uid === u.uid || th.author === u.nick);
   let posts = 0;
@@ -1638,7 +1662,8 @@ function profileView() {
       }});
 
   const actions = el('div', {style:'display:flex;gap:8px;flex-wrap:wrap'}, isMe
-    ? [btn, el('button', {class:'btn', type:'button', text:'Сессии', onclick: () => { S.view = 'sessions'; S.edit = false; draw(); }})]
+    ? [btn, el('button', {class:'btn', type:'button', text:'Сессии', onclick: () => { S.view = 'sessions'; S.edit = false; draw(); }}),
+       el('button', {class:'btn', type:'button', text: presHidden() ? 'Показывать онлайн' : 'Скрыть онлайн', onclick: () => { localStorage.setItem('hidepres', presHidden() ? '0' : '1'); pushPresence(); draw(); }})]
     : [el('button', {class:'btn', type:'button', text:'✉ Написать', onclick: () => openDM(u.uid || uid)}), btn]);
 
   const out = [
@@ -1648,7 +1673,9 @@ function profileView() {
         el('span', null, [el('b', {text: String(followers)}), ' подписчиков']),
         el('span', null, [el('b', {text: String(following)}), ' подписок']),
         el('span', null, [el('b', {text: String(mine.length)}), ' тем']),
-        el('span', null, [el('b', {text: String(posts)}), ' ответов'])
+        el('span', null, [el('b', {text: String(posts)}), ' ответов']),
+        el('span', {title:'Подписчики + хорошие реакции − плохие'}, [el('b', {class:'rep ' + (repOf(u.uid) < 0 ? 'neg' : repOf(u.uid) > 0 ? 'pos' : ''), style:'font-size:inherit', text:'★ ' + repOf(u.uid)}), ' репутация']),
+        presText(u.uid) ? el('span', {text: presText(u.uid)}) : null
       ])
     ])])]),
     el('table', {class:'profile-table'}, [el('tbody', null, [
@@ -1798,12 +1825,23 @@ function chatView() {
   const c = S.chats[S.chatId];
   if (!c) return [el('div', {class:'muted', text: S.chatsReady ? 'Не найдено' : 'Загрузка...'})];
   const win = el('div', {class:'chatwin'});
+  const pinBar = el('div', {class:'pinbar', style:'display:none'});
   let stick = true;
 
   S.fill = () => {
     const cc = S.chats[S.chatId];
     if (!cc) return;
     const old = win.scrollTop;
+    const canPin = S.user && (cc.uid === S.user.uid || isAdmin());
+    const pm = cc.pinned && (cc.messages || {})[cc.pinned];
+    pinBar.innerHTML = '';
+    if (pm) {
+      pinBar.style.display = 'flex';
+      pinBar.onclick = () => { S.jump = cc.pinned; doJump(win); };
+      pinBar.append(el('span', {class:'cap', style:'margin:0', text:'📌 Закреплено'}),
+        el('span', {class:'qt', text: (((getUser(pm.uid) || {}).nick || pm.author || 'User') + ': ' + (snip(pm, 140) || '…'))}));
+      if (canPin) pinBar.append(el('button', {class:'btn small', type:'button', text:'Открепить', onclick: e => { e.stopPropagation(); db.ref('chats/' + cc.id + '/pinned').remove().catch(fail); }}));
+    } else pinBar.style.display = 'none';
     const near = stick || win.scrollHeight - win.scrollTop - win.clientHeight < 80;
     win.innerHTML = '';
     Object.entries(cc.messages || {}).map(([key, m]) => ({...m, key})).sort((a, b) => a.date - b.date).forEach(m => {
@@ -1813,11 +1851,12 @@ function chatView() {
         el('div', {class:'bub'}, [
           el('div', {class:'top'}, [nick(m.uid, m.author), el('span', {text: fmt(m.date) + (m.edited ? ' · изменено' : '')}),
             S.user ? replyBtn('c' + cc.id, m.key, m) : null,
+            canPin ? el('button', {class:'btn small', type:'button', title: cc.pinned === m.key ? 'Открепить' : 'Закрепить', text:'📌', onclick: () => db.ref('chats/' + cc.id + '/pinned').set(cc.pinned === m.key ? null : m.key).catch(fail)}) : null,
             mine ? editBtn(m.key, m) : null,
             (mine || isAdmin()) ? el('button', {class:'btn small danger', text:'✕', onclick: () => { sure('Удалить сообщение?').then(ok => { if (ok) del('chats/' + cc.id + '/messages/' + m.key).catch(fail); }); }}) : null]),
           m.forwarded ? el('div', {class:'fwd-mark', text:'↪ Переслано от ' + (m.forwarded.fromNick || 'User')}) : null,
           quoteEl(cc.messages, m.reply),
-          S.editing === m.key ? editBox('chats/' + cc.id + '/messages/' + m.key, m, 2000) : (m.text ? el('div', {class:'txt', text: m.text}) : null),
+          S.editing === m.key ? editBox('chats/' + cc.id + '/messages/' + m.key, m, 2000) : (m.text ? richText('txt', m.text) : null),
           picEl(m.media),
           okAud(m.voice) ? el('audio', {controls:'', preload:'none', src: m.voice}) : null,
           reactBar('chats/' + cc.id + '/messages/' + m.key, m),
@@ -1836,6 +1875,7 @@ function chatView() {
   const out = [
     el('button', {class:'btn', text:'← Назад', onclick: () => { S.view = 'chatList'; draw(); }}),
     el('h2', {text: c.name, style:'margin:16px 0'}),
+    pinBar,
     win
   ];
   if (S.user) {
@@ -1847,7 +1887,7 @@ function chatView() {
       if (vo) { msg.voice = vo.s; msg.dur = vo.d; }
       if (rp) msg.reply = {key: rp.key};
       await db.ref().update({['chats/' + c.id + '/messages/' + r.key]: msg, [LIM()]: TS});
-      if (rp) notify(rp.uid, {view:'chat', id: c.id, key: r.key, text: text || (vo ? 'Голосовое' : 'Фото')});
+      sendNotifs(text, rp, {view:'chat', id: c.id, key: r.key, text: text || (vo ? 'Голосовое' : 'Фото')});
     }, {voice: true}));
   } else out.push(el('div', {class:'muted', text:'Войдите, чтобы писать'}));
   return out;
@@ -1944,6 +1984,7 @@ function dmView() {
   const other = S.dmWith;
   if (!other || !S.user) { S.view = 'dmList'; return dmListView(); }
   const key = dmKey(S.user.uid, other);
+  watchPres(other);
 
   if (!dmSub || dmSub.key !== key) {
     dmUnsub();
@@ -1980,7 +2021,7 @@ function dmView() {
           ]),
           m.forwarded ? el('div', {class:'fwd-mark', text:'↪ Переслано от ' + (m.forwarded.fromNick || 'User')}) : null,
           quoteEl(S.dmMsgs, m.reply),
-          m.text ? el('div', {class:'txt', text: m.text}) : null,
+          m.text ? richText('txt', m.text) : null,
           picEl(m.media),
           okAud(m.voice) ? el('audio', {controls:'', preload:'none', src: m.voice}) : null,
           reactBar('dms/' + key + '/messages/' + m.key, m),
@@ -2065,7 +2106,7 @@ function notifsView() {
   if (!items.length) out.push(el('div', {class:'muted', text:'Пока ничего нет'}));
   items.forEach(([id, n]) => out.push(el('div', {class:'row-item unread', style:'cursor:pointer', onclick: () => goNotif(id, n)}, [
     el('div', {style:'min-width:0'}, [
-      el('div', {style:'color:#fff', text: ((getUser(n.from) || {}).nick || n.fromNick || 'User') + ' ответил(а) вам'}),
+      el('div', {style:'color:#fff', text: ((getUser(n.from) || {}).nick || n.fromNick || 'User') + (n.type === 'mention' ? ' упомянул(а) вас' : ' ответил(а) вам')}),
       el('div', {class:'sub', text: n.text || ''})
     ]),
     el('span', {class:'sub', text: fmt(n.date) + ' ' + tm(n.date)})
@@ -2101,6 +2142,346 @@ function sessionsView() {
       db.ref('sessions/' + S.user.uid).update(u).catch(fail);
     });
   }));
+  return out;
+}
+
+// ---------- глобальный поиск ----------
+
+// ---------- упоминания, теги, репутация, онлайн, опросы ----------
+
+const RICH_RE = /(^|[^A-Za-z0-9_А-Яа-яЁё@#])([@#])([A-Za-z0-9_А-Яа-яЁё]{2,30})/g;
+
+function ownerOfName(low) {
+  if (!S._nameIdx) {
+    const ix = {};
+    Object.entries(S.users).forEach(([k, u]) => {
+      if (!u) return;
+      if (u.nick) ix[u.nick.toLowerCase()] = u.uid || k;
+      usesOf(u).forEach(x => { ix[x] = u.uid || k; });
+    });
+    S._nameIdx = ix;
+  }
+  return S._nameIdx[low] || null;
+}
+
+function richText(cls, text) {
+  const d = el('div', {class: cls});
+  const s = String(text || '');
+  let last = 0, m;
+  RICH_RE.lastIndex = 0;
+  while ((m = RICH_RE.exec(s))) {
+    const start = m.index + m[1].length, sign = m[2], word = m[3];
+    if (start > last) d.append(s.slice(last, start));
+    if (sign === '@') {
+      const owner = /^[A-Za-z0-9_]{3,15}$/.test(word) ? ownerOfName(word.toLowerCase()) : null;
+      if (owner) d.append(el('a', {class:'mention', text:'@' + word, onclick: e => { e.stopPropagation(); S.view = 'profile'; S.profile = owner; draw(); }}));
+      else d.append('@' + word);
+    } else {
+      d.append(el('a', {class:'hashtag', text:'#' + word, onclick: e => { e.stopPropagation(); window.runGlobalSearch('#' + word); }}));
+    }
+    last = start + 1 + word.length;
+  }
+  if (last < s.length) d.append(s.slice(last));
+  return d;
+}
+
+function mentionUids(text) {
+  const found = [], s = String(text || '');
+  let m;
+  RICH_RE.lastIndex = 0;
+  while ((m = RICH_RE.exec(s))) {
+    if (m[2] !== '@' || !/^[A-Za-z0-9_]{3,15}$/.test(m[3])) continue;
+    const o = ownerOfName(m[3].toLowerCase());
+    if (o && !found.includes(o)) found.push(o);
+    if (found.length >= 5) break;
+  }
+  return found;
+}
+
+// одним запросом: ответ автору + упоминания (лимит 5)
+function sendNotifs(text, rp, data) {
+  if (!S.user) return;
+  const items = {};
+  if (rp && rp.uid) items[rp.uid] = 'reply';
+  mentionUids(text).forEach(u => { if (!items[u]) items[u] = 'mention'; });
+  delete items[S.user.uid];
+  const ks = Object.keys(items);
+  if (!ks.length) return;
+  const up = {};
+  ks.forEach(to => {
+    up['notifs/' + to + '/' + db.ref('notifs/' + to).push().key] = {type: items[to], from: S.user.uid, fromNick: S.user.nick,
+      text: String(data.text || '').slice(0, 80), view: data.view, id: data.id, key: data.key || null, date: TS};
+  });
+  up['limits/' + S.user.uid + '/nf'] = TS;
+  db.ref().update(up).catch(e => console.warn('notify:', e.message));
+}
+
+function tagChips(th) {
+  return Object.keys(th.tags || {}).slice(0, 5).map(tg => el('span', {class:'tagchip', text:'#' + tg, onclick: e => { e.stopPropagation(); window.runGlobalSearch('#' + tg); }}));
+}
+function parseTags(str) {
+  const out = [];
+  String(str || '').split(/[,\s]+/).forEach(x => {
+    const t = x.replace(/^#+/, '').toLowerCase();
+    if (/^[a-z0-9_а-яё]{2,24}$/.test(t) && !out.includes(t)) out.push(t);
+  });
+  return out.slice(0, 5);
+}
+
+// ---- репутация: подписчики + хорошие реакции − плохие ----
+const REP_GOOD = ['like', 'heart', 'fire'], REP_BAD = ['dislike'];
+let _repCache = null;
+function followersOf(u, k) {
+  return u.followers !== undefined ? u.followers : (u.owner ? 666 : Object.keys(S.follows[u.uid || k] || {}).length);
+}
+function repMap() {
+  if (_repCache) return _repCache;
+  const m = {};
+  const add = (uid, n) => { m[uid] = (m[uid] || 0) + n; };
+  const scan = msg => {
+    if (!msg || !msg.uid || !msg.reactions) return;
+    const cnt = (id, sign) => {
+      const r = msg.reactions[id];
+      if (r && typeof r === 'object') for (const k in r) if (k !== msg.uid) add(msg.uid, sign);
+    };
+    REP_GOOD.forEach(id => cnt(id, 1));
+    REP_BAD.forEach(id => cnt(id, -1));
+  };
+  S.threads.forEach(th => Object.values(th.posts || {}).forEach(scan));
+  Object.values(S.chats).forEach(c => Object.values(c.messages || {}).forEach(scan));
+  Object.entries(S.users).forEach(([k, u]) => { if (u) add(u.uid || k, followersOf(u, k)); });
+  return (_repCache = m);
+}
+function repOf(uid) { return repMap()[uid] || 0; }
+function repBadge(uid) {
+  const n = repOf(uid);
+  return el('span', {class:'rep ' + (n < 0 ? 'neg' : n > 0 ? 'pos' : ''), title:'Репутация: подписчики + хорошие реакции − плохие', text:'★ ' + n});
+}
+
+// ---- онлайн-статус ----
+let presRef = null, presTimer = null, presConn = null;
+const presSubs = {};
+const presHidden = () => localStorage.getItem('hidepres') === '1';
+const presPayload = on => presHidden() ? {h: true} : (on ? {on: true, last: TS} : {on: false, last: TS});
+function pushPresence() {
+  if (!presRef) return;
+  presRef.onDisconnect().set(presPayload(false)).catch(() => {});
+  presRef.set(presPayload(true)).catch(() => {});
+}
+const presConnCb = s => { if (s.val() === true) pushPresence(); };
+function startPresence(uid) {
+  stopPresence(false);
+  presRef = db.ref('presence/' + uid);
+  presConn = db.ref('.info/connected');
+  presConn.on('value', presConnCb);
+  presTimer = setInterval(() => { if (!document.hidden && presRef) presRef.set(presPayload(true)).catch(() => {}); }, 120000);
+}
+async function stopPresence(off) {
+  clearInterval(presTimer); presTimer = null;
+  if (presConn) { presConn.off('value', presConnCb); presConn = null; }
+  const r = presRef; presRef = null;
+  if (r) {
+    try { await r.onDisconnect().cancel(); if (off) await r.set(presPayload(false)); } catch (e) {}
+  }
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden && presRef) presRef.set(presPayload(true)).catch(() => {}); });
+
+function watchPres(uid) {
+  if (!uid) return;
+  S._presKeep = S._presKeep || {};
+  S._presKeep[uid] = true;
+  if (presSubs[uid]) return;
+  const r = db.ref('presence/' + uid);
+  const cb = s => { S.pres = S.pres || {}; S.pres[uid] = s.val() || null; refresh(); };
+  r.on('value', cb, () => {});
+  presSubs[uid] = {r, cb};
+}
+function presGc() {
+  Object.keys(presSubs).forEach(k => {
+    if (S._presKeep && S._presKeep[k]) return;
+    presSubs[k].r.off('value', presSubs[k].cb); delete presSubs[k];
+  });
+}
+function agoText(ts) {
+  const s = Math.max(0, Math.floor((Date.now() - ts) / 1000));
+  if (s < 60) return 'только что';
+  if (s < 3600) return Math.floor(s / 60) + ' мин назад';
+  if (s < 86400) return Math.floor(s / 3600) + ' ч назад';
+  if (s < 7 * 86400) return Math.floor(s / 86400) + ' дн. назад';
+  return fmt(ts);
+}
+function presText(uid) {
+  const p = (S.pres || {})[uid];
+  if (!p || p.h || !p.last) return '';
+  if (p.on && Date.now() - p.last < 240000) return '🟢 онлайн';
+  return 'был(а) ' + agoText(p.last);
+}
+
+// ---- опросы в темах ----
+function renderPoll(host, th) {
+  host.innerHTML = '';
+  const pl = th.poll;
+  if (!pl || !pl.opts) return;
+  const votes = th.votes || {};
+  const ids = Object.keys(pl.opts).sort((a, b) => parseInt(a.slice(1), 10) - parseInt(b.slice(1), 10));
+  const cnt = {};
+  ids.forEach(i => { cnt[i] = 0; });
+  Object.values(votes).forEach(v => { if (cnt[v] !== undefined) cnt[v]++; });
+  const total = ids.reduce((a, i) => a + cnt[i], 0);
+  const mine = S.user ? votes[S.user.uid] : null;
+  const closed = pl.closed === true;
+  const wrap = el('div', {class:'poll'}, [el('h3', {text:'📊 ' + (pl.q || 'Опрос')})]);
+  ids.forEach(i => {
+    const pct = total ? Math.round(cnt[i] * 100 / total) : 0;
+    wrap.append(el('div', {class:'poll-opt' + (mine === i ? ' mine' : '') + (closed || !S.user ? ' off' : ''), onclick: () => {
+      if (!S.user) { S.view = 'auth'; draw(); return; }
+      if (closed) return;
+      const vr = db.ref('threads/' + th.id + '/votes/' + S.user.uid);
+      (mine === i ? vr.remove() : vr.set(i)).catch(fail);
+    }}, [el('i', {class:'poll-fill', style:'width:' + pct + '%'}), el('span', {text: String(pl.opts[i])}), el('span', {class:'poll-n', text: cnt[i] + ' · ' + pct + '%'})]));
+  });
+  const canClose = S.user && (th.uid === S.user.uid || isAdmin());
+  wrap.append(el('div', {class:'muted', style:'font-size:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap'}, [
+    total + ' голосов' + (closed ? ' · опрос закрыт' : ''),
+    !S.user ? 'Войдите, чтобы голосовать' : null,
+    mine && !closed ? 'нажмите на свой вариант, чтобы снять голос' : null,
+    canClose ? abtn(closed ? 'Открыть' : 'Закрыть опрос', '', () => db.ref('threads/' + th.id + '/poll/closed').set(!closed).catch(fail)) : null
+  ]));
+  host.append(wrap);
+}
+
+function useCheckBox(q) {
+  const box = el('div', {class:'row-item'});
+  const show = owner => {
+    box.innerHTML = '';
+    if (!owner) { box.append(el('div', {style:'color:#4dd47e', text:'✔ @' + q + ' свободен — можно выдавать'})); return; }
+    const u = getUser(owner);
+    box.style.cursor = 'pointer';
+    box.onclick = () => { S.view = 'profile'; S.profile = owner; draw(); };
+    box.append(el('div', null, ['@' + q + ' занят · владелец: ', u ? nickOf(u) : 'неизвестно']));
+  };
+  S.useChk = S.useChk || {};
+  const c = S.useChk[q];
+  if (c && Date.now() - c.t < 15000) { show(c.v); return box; }
+  box.append(el('span', {class:'muted', text:'Проверяю @' + q + '…'}));
+  get('nicks/' + q).then(v => { S.useChk[q] = {t: Date.now(), v: v}; show(v); })
+    .catch(e => { box.textContent = 'Не удалось проверить: ' + e.message; });
+  return box;
+}
+
+function hlText(text, q, ctx) {
+  const s = String(text || '').replace(/\s+/g, ' ');
+  const i = s.toLowerCase().indexOf(q);
+  if (i < 0) return el('span', {text: s.slice(0, ctx * 2)});
+  const from = Math.max(0, i - ctx), to = Math.min(s.length, i + q.length + ctx);
+  return el('span', null, [
+    (from > 0 ? '…' : '') + s.slice(from, i),
+    el('mark', {class:'hl', text: s.slice(i, i + q.length)}),
+    s.slice(i + q.length, to) + (to < s.length ? '…' : '')
+  ]);
+}
+
+function searchView() {
+  const raw = (S.gq || '').trim();
+  const isUse = raw.startsWith('@');
+  const isTag = raw.startsWith('#');
+  const q = raw.replace(/^[@#]+/, '').toLowerCase();
+  const needle = isTag ? '#' + q : q;
+  const out = [el('div', {class:'tnav'}, [
+    el('h2', {text:'Поиск: ' + raw, style:'color:#fff'}),
+    el('button', {class:'btn', type:'button', text:'✕ Закрыть', onclick: () => { window.clearGlobalSearch(); S.view = 'list'; draw(); }})
+  ])];
+  if (q.length < 2) {
+    out.push(el('div', {class:'muted', text:'Введите минимум 2 символа. @юз — только по юзам и проверка занятости, #тег — по тегам.'}));
+    return out;
+  }
+
+  const LIMIT = 30;
+  const section = (title, count, items) => {
+    if (!items.length) return;
+    out.push(el('h3', {class:'res-h', text: title + ' · ' + count}));
+    items.slice(0, LIMIT).forEach(i => out.push(i));
+    if (items.length > LIMIT) out.push(el('div', {class:'muted', style:'font-size:12px', text:'Показаны первые ' + LIMIT + '. Уточните запрос.'}));
+  };
+
+  if (isUse && /^[a-z0-9_]{3,15}$/.test(q)) out.push(useCheckBox(q));
+
+  // юзы и ники
+  const userHits = [];
+  if (!isTag) Object.entries(S.users).forEach(([k, u]) => {
+    if (!u) return;
+    const uses = usesOf(u);
+    const useMatch = uses.filter(x => x.includes(q));
+    const nickMatch = !isUse && u.nick && u.nick.toLowerCase().includes(q);
+    if (!useMatch.length && !nickMatch) return;
+    const exact = uses.includes(q);
+    userHits.push({exact, node: el('div', {class:'row-item', style:'cursor:pointer', onclick: () => { S.view = 'profile'; S.profile = u.uid || k; draw(); }}, [
+      el('div', {class:'peer'}, [avatar(k, 36), el('div', {style:'min-width:0'}, [
+        el('div', {style:'display:flex;gap:8px;align-items:center'}, [nickOf(u), repBadge(u.uid || k)]),
+        useMatch.length ? el('div', {class:'chips', style:'margin-top:4px'}, useMatch.map(x => el('span', {class:'chip'}, ['💎 @', hlText(x, q, 20)]))) : null
+      ])]),
+      exact ? el('span', {class:'dm-badge new', text:'точное совпадение'}) : null
+    ])});
+  });
+  userHits.sort((a, b) => (b.exact ? 1 : 0) - (a.exact ? 1 : 0));
+  section('Юзеры и юзы', userHits.length, userHits.map(h => h.node));
+
+  if (isUse) {
+    if (!userHits.length) out.push(el('div', {class:'muted', text:'Среди выданных юзов такого нет.'}));
+    return out;
+  }
+
+  // темы по заголовку / тегу
+  const thHits = S.threads.filter(th => (th.title || '').toLowerCase().includes(needle) || (isTag && th.tags && th.tags[q])).map(th =>
+    el('div', {class:'row-item', style:'cursor:pointer', onclick: () => { S.view = 'thread'; S.open = th.id; draw(); }}, [
+      el('div', {style:'min-width:0'}, [el('div', {style:'color:#fff'}, [hlText(th.title, needle, 60), ...tagChips(th)]), el('div', {class:'sub'}, [nick(th.uid, th.author)])]),
+      el('span', {class:'sub', text: fmt(th.date)})
+    ]));
+  section('Темы', thHits.length, thHits);
+
+  // сообщения в темах
+  const postHits = [];
+  S.threads.forEach(th => Object.entries(th.posts || {}).forEach(([key, p]) => {
+    if (!p || !(p.text || '').toLowerCase().includes(needle)) return;
+    postHits.push({date: p.date || 0, node: el('div', {class:'row-item', style:'cursor:pointer', onclick: () => { S.view = 'thread'; S.open = th.id; S.jump = key; draw(); }}, [
+      el('div', {style:'min-width:0'}, [
+        el('div', {class:'sub'}, [(getUser(p.uid) || {}).nick || p.author || 'User', ' · в теме «' + (th.title || '') + '»']),
+        el('div', {style:'color:#ddd;overflow-wrap:anywhere'}, [hlText(p.text, needle, 70)])
+      ]),
+      el('span', {class:'sub', text: fmt(p.date)})
+    ])});
+  }));
+  postHits.sort((a, b) => b.date - a.date);
+  section('Сообщения в темах', postHits.length, postHits.map(h => h.node));
+
+  // чаты по названию и сообщения в чатах
+  const chats = Object.values(S.chats);
+  const chHits = isTag ? [] : chats.filter(c => (c.name || '').toLowerCase().includes(q)).map(c =>
+    el('div', {class:'row-item', style:'cursor:pointer', onclick: () => { S.view = 'chat'; S.chatId = c.id; draw(); }}, [
+      el('div', {style:'color:#fff'}, ['💬 ', hlText(c.name, q, 60)]),
+      el('span', {class:'sub', text: Object.keys(c.messages || {}).length + ' сообщ.'})
+    ]));
+  section('Чаты', chHits.length, chHits);
+
+  const msgHits = [];
+  chats.forEach(c => Object.entries(c.messages || {}).forEach(([key, m]) => {
+    if (!m || !(m.text || '').toLowerCase().includes(needle)) return;
+    msgHits.push({date: m.date || 0, node: el('div', {class:'row-item', style:'cursor:pointer', onclick: () => { S.view = 'chat'; S.chatId = c.id; S.jump = key; draw(); }}, [
+      el('div', {style:'min-width:0'}, [
+        el('div', {class:'sub'}, [(getUser(m.uid) || {}).nick || m.author || 'User', ' · в чате «' + (c.name || '') + '»']),
+        el('div', {style:'color:#ddd;overflow-wrap:anywhere'}, [hlText(m.text, needle, 70)])
+      ]),
+      el('span', {class:'sub', text: fmt(m.date)})
+    ])});
+  }));
+  msgHits.sort((a, b) => b.date - a.date);
+  section('Сообщения в чатах', msgHits.length, msgHits.map(h => h.node));
+
+  if (!S.chatsReady) out.push(el('div', {class:'muted', text:'Загружаю чаты…'}));
+  if (!userHits.length && !thHits.length && !postHits.length && !chHits.length && !msgHits.length && S.chatsReady) {
+    out.push(el('div', {class:'muted', text:'Ничего не найдено.'}));
+  }
+  if (S.thMore) out.push(el('div', {style:'text-align:center'}, [el('button', {class:'btn', type:'button', text:'Искать глубже: загрузить ещё темы', onclick: () => { S.thLimit += TH_STEP; subRecentThreads(); }})]));
   return out;
 }
 
@@ -2151,7 +2532,7 @@ const NEW_ART = String.raw`  ____ _____ ___________ _____ _
 
 function newView() {
   if (!S.user) { S.view = 'auth'; return authView(); }
-  const d = S.newDraft || (S.newDraft = {title:'', text:'', pin:false, pic:null});
+  const d = S.newDraft || (S.newDraft = {title:'', text:'', pin:false, pic:null, tags:'', pollOn:false, pollQ:'', pollOpts:''});
   const err = el('div', {class:'err'});
 
   const ta = el('textarea', {class:'np-editor', maxlength:'5000', placeholder:'Текст темы...', spellcheck:'false'});
@@ -2180,6 +2561,19 @@ function newView() {
   pin.checked = !!d.pin;
   pin.onchange = () => { d.pin = pin.checked; };
 
+  const tagIn = el('input', {type:'text', maxlength:'100', placeholder:'Теги: игры, кино (до 5)', value: d.tags || ''});
+  tagIn.oninput = () => { d.tags = tagIn.value; };
+  const pollChk = el('input', {type:'checkbox'});
+  pollChk.checked = !!d.pollOn;
+  const pollEd = el('div', {style:'display:' + (d.pollOn ? 'grid' : 'none') + ';gap:6px'});
+  const pq = el('input', {type:'text', maxlength:'120', placeholder:'Вопрос опроса', value: d.pollQ || ''});
+  pq.oninput = () => { d.pollQ = pq.value; };
+  const po = el('textarea', {maxlength:'700', rows:'5', placeholder:'Варианты — каждый с новой строки (2–8)', style:'min-height:90px;resize:vertical'});
+  po.value = d.pollOpts || '';
+  po.oninput = () => { d.pollOpts = po.value; };
+  pollEd.append(pq, po);
+  pollChk.onchange = () => { d.pollOn = pollChk.checked; pollEd.style.display = d.pollOn ? 'grid' : 'none'; };
+
   let sending = false;
   const send = el('button', {class:'btn primary np-send', type:'button', text:'Опубликовать'});
   send.onclick = async () => {
@@ -2188,6 +2582,15 @@ function newView() {
     const txt = d.text.trim().slice(0, 5000);
     if (!ttl) { err.textContent = 'Введите заголовок'; return; }
     if (!txt) { err.textContent = 'Введите текст'; return; }
+    let pollData = null;
+    if (d.pollOn) {
+      const pqv = (d.pollQ || '').trim().slice(0, 120);
+      const opts = (d.pollOpts || '').split('\n').map(x => x.trim().slice(0, 60)).filter(Boolean).slice(0, 8);
+      if (!pqv) { err.textContent = 'Введите вопрос опроса'; return; }
+      if (opts.length < 2) { err.textContent = 'В опросе минимум 2 варианта'; return; }
+      pollData = {q: pqv, opts: Object.fromEntries(opts.map((x, i) => ['o' + i, x])), closed: false};
+    }
+    const tagList = parseTags(d.tags);
     sending = true; send.disabled = true; err.textContent = '';
     try {
       const r = db.ref('threads').push();
@@ -2195,7 +2598,10 @@ function newView() {
       if (d.pic) post.media = await uploadMedia(d.pic);
       const th = {title: ttl, uid: S.user.uid, author: S.user.nick, date: TS, posts: {p0: post}};
       if (d.pin && isAdmin()) th.pin = true;
+      if (tagList.length) th.tags = Object.fromEntries(tagList.map(x => [x, true]));
+      if (pollData) th.poll = pollData;
       await db.ref().update({['threads/' + r.key]: th, [LIM()]: TS});
+      sendNotifs(txt, null, {view:'thread', id: r.key, key:'p0', text: ttl});
       S.newDraft = null;
       S.view = 'thread'; S.open = r.key;
       draw();
@@ -2212,6 +2618,9 @@ function newView() {
     el('div', {class:'np-user'}, [nick(S.user.uid, S.user.nick)]),
     hr(),
     title,
+    tagIn,
+    el('label', {class:'np-check'}, [pollChk, ' Добавить опрос']),
+    pollEd,
     el('div', {class:'np-row'}, [
       el('button', {class:'btn small', type:'button', text:'📷 Картинка', onclick: () => file.click()}), file
     ]),
@@ -2253,14 +2662,16 @@ function drawWho() {
 function draw() {
   S.fill = null;
   S.editing = null;
+  if (S.view !== 'search' && S.gq && window.clearGlobalSearch) window.clearGlobalSearch();
   const app = document.getElementById('app');
   app.innerHTML = '';
   if (!S.user && ['dm', 'dmList', 'notifs', 'sessions'].includes(S.view)) S.view = 'auth';
   if (S.view !== 'dm') dmUnsub();
-  if (['chatList', 'chat', 'dm'].includes(S.view) || (S.view === 'admin' && S.adminTab === 'chats')) ensureChats();
+  if (['chatList', 'chat', 'dm', 'search', 'profile'].includes(S.view) || (S.view === 'admin' && S.adminTab === 'chats')) ensureChats();
   drawWho();
   if (!S.ready) { app.append(el('div', {class:'muted', style:'text-align:center;padding:40px'}, [el('span', {class:'spinner'}), 'Загрузка...'])); return; }
 
+  S._presKeep = {};
   const id = {thread: S.open, chat: S.chatId, profile: S.profile, dm: S.dmWith}[S.view];
   history.replaceState(null, '', '#' + S.view + (id ? '/' + id : ''));
 
@@ -2279,13 +2690,16 @@ function draw() {
     case 'dmList': nodes = dmListView(); break;
     case 'notifs': nodes = notifsView(); break;
     case 'sessions': nodes = sessionsView(); break;
+    case 'search': nodes = searchView(); break;
     default: nodes = listView();
   }
   nodes.forEach(n => { if (n) app.append(n); });
+  presGc();
 }
 
 let _rt = null;
 function refresh() {
+  _repCache = null;
   if (_rt) return;
   _rt = setTimeout(() => { _rt = null; doRefresh(); }, 60);
 }
@@ -2317,6 +2731,7 @@ const router = {
 
 db.ref('users').on('value', s => {
   S.users = s.val() || {};
+  S._nameIdx = null;
   const mine = S.user && S.users[S.user.uid];
   if (mine) {
     S.user.role = mine.role || 'user';
@@ -2444,6 +2859,7 @@ async function doSignOut() {
       localStorage.removeItem(k);
       stopSession();
       if (sid) await db.ref('sessions/' + S.user.uid + '/' + sid).remove();
+      await stopPresence(true);
     }
   } catch (e) {}
   auth.signOut();
@@ -2558,9 +2974,11 @@ async function boot(u) {
       return;
     }
     bindUser(u.uid);
+    startPresence(u.uid);
   } else {
     stopSession();
     unbindUser();
+    stopPresence(false);
   }
   S.ready = true;
   draw();
@@ -2599,12 +3017,21 @@ auth.onAuthStateChanged(async u => {
   inp.addEventListener('input', () => {
     clearTimeout(tm);
     tm = setTimeout(() => {
-      S.search = inp.value.trim();
-      S.page = 1;
-      if (S.view !== 'list') S.view = 'list';
+      S.gq = inp.value.trim();
+      if (S.gq) {
+        if (S.view !== 'search') S.prevView = S.view;
+        S.view = 'search';
+      } else if (S.view === 'search') {
+        S.view = 'list';
+      }
       draw();
     }, 250);
   });
+  inp.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { inp.value = ''; S.gq = ''; if (S.view === 'search') { S.view = 'list'; draw(); } }
+  });
+  window.clearGlobalSearch = () => { inp.value = ''; S.gq = ''; };
+  window.runGlobalSearch = v => { inp.value = v; S.gq = v; if (S.view !== 'search') S.prevView = S.view; S.view = 'search'; draw(); };
 })();
 
 // ---------- иконки вместо эмодзи в интерфейсе ----------
