@@ -465,7 +465,7 @@ let S = {
   ready:false, drafts:{}, follows:{}, fill:null, view:'list',
   authMode:'login', open:null, threads:[], user:null, users:{},
   chats:{}, chatId:null, profile:null, edit:false, draft:null,
-  page:1, limit:10, busy:false, registering:false,
+  page:1, limit:100000, busy:false, registering:false,
   lastSend:{}, adminTab:'users', search:'',
   dmIndex:{}, dmRead:{}, dmMsgs:{}, dmWith:null, notifs:{}, sessions:{}, jump:null, modalRefresh:null,
   reports:{}, fwd:null
@@ -1200,7 +1200,7 @@ function listView() {
   const page = rows.slice((S.page - 1) * S.limit, S.page * S.limit);
 
   if (!page.length) {
-    tbody.appendChild(el('tr', null, [el('td', {colspan:'5', text: !S.thLoaded ? 'Загрузка...' : (S.thMore && S.search ? 'В загруженных темах нет. Нажмите «Показать ещё» внизу.' : 'Нет тем.'), style:'text-align:center;padding:20px;color:#666'})]));
+    tbody.appendChild(el('tr', null, [el('td', {colspan:'5', text: !S.thLoaded ? 'Загрузка...' : 'Нет тем.', style:'text-align:center;padding:20px;color:#666'})]));
   }
 
   page.forEach(th => {
@@ -1234,7 +1234,6 @@ function listView() {
     }
     out.push(pager);
   }
-  if (S.thMore) out.push(el('div', {style:'text-align:center'}, [el('button', {class:'btn', type:'button', text:'Показать ещё темы', onclick: () => { S.thLimit += TH_STEP; subRecentThreads(); }})]));
 
   return out;
 }
@@ -1651,8 +1650,7 @@ function adminUsers() {
 }
 
 function adminThreads() {
-  const more = S.thMore ? el('button', {class:'btn', type:'button', style:'margin-top:12px', text:'Показать ещё темы', onclick: () => { S.thLimit += TH_STEP; subRecentThreads(); }}) : null;
-  return el('div', null, [adminThreadsTable(), more]);
+  return adminThreadsTable();
 }
 function adminThreadsTable() {
   return adminTable(['Тема', 'Автор', 'Дата', 'Действия'], S.threads.map(th => [
@@ -2465,7 +2463,7 @@ db.ref('users').on('value', s => {
 });
 
 // Темы грузим порциями: последние TH_STEP по дате + закреплённые. Остальные — кнопкой «Показать ещё».
-const TH_STEP = 30;
+const TH_STEP = 100000;
 S.thLimit = TH_STEP; S.thLoaded = false; S.thMore = false;
 let thRecent = {}, thPins = {}, thExtra = {}, thRef = null, thCb = null;
 const thWatched = {};
