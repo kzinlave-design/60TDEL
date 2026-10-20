@@ -298,8 +298,8 @@ body{-webkit-font-smoothing:antialiased}
 .okline{color:#4dd47e}
 
 /* ---- 60Captcha ---- */
-.cap{position:fixed;inset:0;z-index:5000;background:#000;display:grid;place-items:center;padding:16px;transition:opacity .35s}
-.cap.out{opacity:0;pointer-events:none}
+.capwrap{position:fixed;inset:0;z-index:5000;background:#000;display:grid;place-items:center;padding:16px;transition:opacity .35s}
+.capwrap.out{opacity:0;pointer-events:none}
 .cap-box{width:min(360px,100%);background:#0a0a0c;border:1px solid #222;padding:24px;display:flex;flex-direction:column;gap:16px;text-align:center}
 .cap-brand{font-weight:800;font-size:24px;color:#fff}
 .cap-brand span{color:var(--accent)}
@@ -310,13 +310,13 @@ body{-webkit-font-smoothing:antialiased}
 .cap-knob{position:absolute;left:0;top:0;bottom:0;width:46px;background:#1a1a1a;border-right:1px solid #333;display:grid;place-items:center;cursor:grab;color:#ccc;touch-action:none}
 .cap-knob:active{cursor:grabbing}
 .cap-knob svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.cap.ok .cap-fill{background:#14301c}
-.cap.ok .cap-hint{color:#4dd47e}
+.capwrap.ok .cap-fill{background:#14301c}
+.capwrap.ok .cap-hint{color:#4dd47e}
 .cap-msg{min-height:16px;font-size:12px;color:var(--err)}
 </style>
 </head>
 <body>
-<div id="cap" class="cap" role="dialog" aria-modal="true" aria-label="60Captcha">
+<div id="cap" class="capwrap" role="dialog" aria-modal="true" aria-label="60Captcha">
   <div class="cap-box">
     <div class="cap-brand">60<span>Captcha</span></div>
     <div class="cap-txt">Подтвердите, что вы человек</div>
@@ -444,7 +444,17 @@ firebase.initializeApp({
   appId: "1:246430149246:web:a6a5802ff2f6166a70862f"
 });
 const APPCHECK_KEY = '6LeSlvYtAAAAAPpCJF3DQXJ-jJJSqtFrBIB50Q8m'; // ключ reCAPTCHA v3 для App Check, см. SECURITY.md
-if (APPCHECK_KEY) { try { firebase.appCheck().activate(APPCHECK_KEY, true); } catch (e) { console.warn('appcheck:', e.message); } }
+window.__appCheck = {ok: null, err: null};   // смотреть в консоли браузера: __appCheck
+if (APPCHECK_KEY) {
+  try {
+    firebase.appCheck().activate(APPCHECK_KEY, true);
+    // Принудительно просим токен и пишем результат. Enforcement включать, только когда тут ok:true на ВСЕХ доменах.
+    firebase.appCheck().getToken(true).then(
+      r => { window.__appCheck = {ok: !!(r && r.token), err: null}; console.info('appcheck: токен получен'); },
+      e => { window.__appCheck = {ok: false, err: e.code || e.message}; console.error('appcheck: getToken НЕ работает (' + (e.code || e.message) + ') — enforcement включать нельзя'); }
+    );
+  } catch (e) { window.__appCheck = {ok: false, err: e.message}; console.warn('appcheck:', e.message); }
+}
 const auth = firebase.auth();
 const db = firebase.database();
 
@@ -453,6 +463,8 @@ const get = p => withTimeout(db.ref(p).once('value'), 12000).then(s => s.exists(
 const set = (p, v) => db.ref(p).set(v);
 const upd = (p, v) => db.ref(p).update(v);
 const del = p => db.ref(p).remove();
+// Поле, которое живёт и в users/<uid>, и в public/<uid>, пишем одним update — иначе проекции разъедутся.
+const setBoth = (uid, f, v) => db.ref().update({['users/' + uid + '/' + f]: v, ['public/' + uid + '/' + f]: v});
 
 const T = {
   ru: {login:'Войти', reg:'Регистрация', out:'Выйти', send:'Отправить', save:'Сохранить', cancel:'Отмена', edit:'Редактировать профиль', pass:'Пароль', nick:'Никнейм', auth:'Вход', reg_title:'Регистрация', no_acc:'Нет аккаунта? ', has_acc:'Есть аккаунт? '},
@@ -584,12 +596,31 @@ async function claimNick(n, uid) {
   return r.committed;
 }
 
+// Тяжёлое (аватар, баннер, медиа у ника, bio) лежит в media/<uid> и грузится лениво, по одному разу на юзера.
+const MEDIA = {};
+function mediaFor(uid) {
+  if (!uid) return null;
+  const m = MEDIA[uid];
+  if (m === undefined) {
+    MEDIA[uid] = 'loading';
+    get('media/' + uid).then(v => { MEDIA[uid] = v || {}; refresh(); }).catch(() => { MEDIA[uid] = {}; });
+    return null;
+  }
+  return m === 'loading' ? null : m;
+}
 function getUser(id) {
   if (!id) return null;
-  if (S.users[id]) return S.users[id];
-  if (S.user && S.user.uid === id) return S.user;
-  const low = String(id).toLowerCase();
-  return Object.values(S.users).find(u => u.nick && u.nick.toLowerCase() === low) || null;
+  let u = S.users[id];
+  if (!u) {
+    if (S.user && S.user.uid === id) return S.user;
+    const low = String(id).toLowerCase();
+    u = Object.values(S.users).find(x => x.nick && x.nick.toLowerCase() === low) || null;
+  }
+  if (!u) return null;
+  const uid = u.uid || id;
+  if ((S.user && S.user.uid === uid) || S.priv[uid]) return u;   // свои / staff: полный профиль уже есть
+  const m = mediaFor(uid);
+  return m ? Object.assign({}, u, {profile: Object.assign({}, u.profile || {}, m)}) : u;
 }
 
 function mediaEl(m) {
@@ -1123,7 +1154,10 @@ function authView() {
           return;
         }
         try {
-          await set('users/' + c.user.uid, {uid: c.user.uid, nick: name, role:'user', owner:false, premium:false, created: TS, profile:{}});
+          await db.ref().update({
+            ['users/' + c.user.uid]: {uid: c.user.uid, nick: name, role:'user', owner:false, premium:false, created: TS, profile:{}},
+            ['public/' + c.user.uid]: {uid: c.user.uid, nick: name, role:'user', owner:false, premium:false, created: TS}
+          });
         } catch (ex) {
           console.error('не записался юзер в базу', ex);
         }
@@ -1233,6 +1267,9 @@ function listView() {
       pager.append(el('button', {class: i === S.page ? 'active' : '', text: String(i), onclick: () => { S.page = i; draw(); }}));
     }
     out.push(pager);
+  }
+  if (S.thMore && !S.search) {
+    out.push(el('div', {class:'pager'}, [el('button', {text:'Показать ещё', onclick: () => { S.thLimit += TH_STEP; S.thMore = false; subRecentThreads(); draw(); }})]));
   }
 
   return out;
@@ -1527,7 +1564,7 @@ const abtn = (text, cls, fn) => el('button', {class:'btn small ' + cls, type:'bu
 
 async function removeUse(k, x) {
   const slot = Object.entries((S.users[k] || {}).uses || {}).find(([, v]) => v === x);
-  if (slot) await db.ref('users/' + k + '/uses/' + slot[0]).remove();
+  if (slot) await db.ref().update({['users/' + k + '/uses/' + slot[0]]: null, ['public/' + k + '/uses/' + slot[0]]: null});
   const u = S.users[k] || {};
   if (String(u.nick || '').toLowerCase() !== x) await db.ref('nicks/' + x).remove();
 }
@@ -1553,7 +1590,7 @@ function usesModal(k) {
         let slot = null;
         for (let i = 0; i < 30; i++) if (!taken['s' + i]) { slot = 's' + i; break; }
         if (slot === null) { err.textContent = 'Лимит — 30 юзов'; return; }
-        await db.ref('users/' + k + '/uses/' + slot).set(name);
+        await db.ref().update({['users/' + k + '/uses/' + slot]: name, ['public/' + k + '/uses/' + slot]: name});
         inp.value = '';
       } catch (e) { err.textContent = /permission/i.test(e.message || '') ? 'Нет прав: правила базы не дают выдавать юзы (узлы nicks и users/…/uses)' : e.message; }
     };
@@ -1582,10 +1619,10 @@ function adminUsers() {
       iOwner ? abtn(u.role || 'user', '', () => {
         askText('Роль: user / moderator / admin', u.role || 'user').then(r => {
           const v = (r || '').trim().toLowerCase();
-          if (['user', 'moderator', 'admin'].includes(v)) db.ref('users/' + k + '/role').set(v).catch(fail);
+          if (['user', 'moderator', 'admin'].includes(v)) setBoth(k, 'role', v).catch(fail);
         });
       }) : el('span', {text: u.role || 'user'}),
-      abtn(u.premium ? 'Снять' : 'Выдать', u.premium ? '' : 'primary', () => db.ref('users/' + k + '/premium').set(!u.premium).catch(fail)),
+      abtn(u.premium ? 'Снять' : 'Выдать', u.premium ? '' : 'primary', () => setBoth(k, 'premium', !u.premium).catch(fail)),
 
       el('div', {class:'phone-cell'}, [
         el('span', {class:'val', text: phoneOf(u) || '—', style:'color:' + (phoneOf(u) ? '#fff' : '#555')}),
@@ -1603,12 +1640,12 @@ function adminUsers() {
       el('div', {class:'phone-cell'}, [
         el('span', {class:'val', text: String(follCount), style:'color:' + (u.followers ? '#f5b842' : '#fff')}),
         abtn(u.followers ? '✕' : 'Задать', u.followers ? 'danger' : 'primary', () => {
-          if (u.followers) { db.ref('users/' + k + '/followers').remove().catch(fail); return; }
+          if (u.followers) { setBoth(k, 'followers', null).catch(fail); return; }
           askText('Кол-во подписчиков для ' + u.nick + ':', String(follCount)).then(v => {
             if (v === null) return;
             const val = parseInt(v.trim(), 10);
             if (isNaN(val) || val < 0) return alert('Нужно положительное число');
-            db.ref('users/' + k + '/followers').set(val).catch(fail);
+            setBoth(k, 'followers', val).catch(fail);
           });
         })
       ]),
@@ -1621,14 +1658,14 @@ function adminUsers() {
       iOwner
         ? abtn(isOwn ? 'Снять' : 'Выдать', isOwn ? 'danger' : 'primary', () => {
             if (isOwn && k === S.user.uid) return alert('Себя лишить овнера нельзя');
-            db.ref('users/' + k + '/owner').set(!isOwn).catch(fail);
+            setBoth(k, 'owner', !isOwn).catch(fail);
           })
         : el('span', {text: isOwn ? 'Да' : 'Нет'}),
       el('span', {style:'display:flex;gap:6px'}, [
         abtn('Выкинуть', '', () => { sure('Завершить все сессии ' + u.nick + '?').then(ok => { if (ok) del('sessions/' + k).catch(fail); }); }),
         iOwner ? abtn('Удалить', 'danger', () => {
           sure('Удалить запись пользователя ' + u.nick + '?').then(ok => ok && Promise.all(usesOf(u).map(x => db.ref('nicks/' + x).remove()))
-            .then(() => db.ref('users/' + k).remove())
+            .then(() => db.ref().update({['users/' + k]: null, ['public/' + k]: null, ['media/' + k]: null}))
             .then(() => db.ref('nicks/' + String(u.nick).toLowerCase()).remove())).catch(fail);
         }) : null
       ])
@@ -1895,11 +1932,16 @@ function profileView() {
             d.avatar = await uploadMedia(d.avatar);
             d.banner = await uploadMedia(d.banner);
             if (pv && d.nickMedia && d.nickMedia.s) d.nickMedia = {t: d.nickMedia.t, s: await uploadMedia(d.nickMedia.s)};
-            if (n !== u.nick) await set('users/' + u.uid + '/nick', n);
+            if (n !== u.nick) await setBoth(u.uid, 'nick', n);
             if (d._songTouched || okAud(pf.song)) {
               if (okAud(d.song)) await set('songs/' + u.uid, d.song); else await del('songs/' + u.uid);
             }
-            await set('users/' + u.uid + '/profile', {bio: d.bio || '', avatar: d.avatar || null, banner: d.banner || null, nickMedia: pv ? (d.nickMedia || null) : null, prefix: pv ? (d.prefix || null) : null, prefixColor: pv ? (d.prefixColor || null) : null, color: pv ? (d.color || null) : null, emoji: pv ? (d.emoji || null) : null, location: d.location || null, song: null});
+            const full = {bio: d.bio || '', avatar: d.avatar || null, banner: d.banner || null, nickMedia: pv ? (d.nickMedia || null) : null, prefix: pv ? (d.prefix || null) : null, prefixColor: pv ? (d.prefixColor || null) : null, color: pv ? (d.color || null) : null, emoji: pv ? (d.emoji || null) : null, location: d.location || null, song: null};
+            await db.ref().update({
+              ['users/' + u.uid + '/profile']: full,
+              ['public/' + u.uid + '/profile']: {prefix: full.prefix, prefixColor: full.prefixColor, color: full.color, emoji: full.emoji},
+              ['media/' + u.uid]: {avatar: full.avatar, banner: full.banner, nickMedia: full.nickMedia, bio: full.bio, location: full.location}
+            });
             if (n.toLowerCase() !== oldLow && !usesOf(u).includes(oldLow)) db.ref('nicks/' + oldLow).remove().catch(() => {});
             S.user.nick = n; S.edit = false; draw();
           } catch (x) { err.textContent = 'Не сохранилось: ' + x.message; }
@@ -2444,8 +2486,16 @@ const router = {
 
 // ---------- слушаем базу ----------
 
-db.ref('users').on('value', s => {
-  S.users = s.val() || {};
+// Публичная проекция юзеров лежит в public/<uid> (лёгкая), приватное (phone и т.п.) — в users/<uid>.
+// Обычный юзер читает public + свою запись, staff дополнительно читает весь users.
+S.pub = {}; S.priv = {};
+function rebuildUsers() {
+  const out = {};
+  new Set([...Object.keys(S.pub), ...Object.keys(S.priv)]).forEach(k => {
+    const a = S.pub[k] || {}, b = S.priv[k] || {};
+    out[k] = Object.assign({}, a, b, {profile: Object.assign({}, a.profile || {}, b.profile || {})});
+  });
+  S.users = out;
   const mine = S.user && S.users[S.user.uid];
   if (mine) {
     S.user.role = mine.role || 'user';
@@ -2458,12 +2508,13 @@ db.ref('users').on('value', s => {
   }
   if (S.modalRefresh) S.modalRefresh();
   refresh();
-}, err => {
-  console.error('users не читаются:', err.message);
+}
+db.ref('public').on('value', s => { S.pub = s.val() || {}; rebuildUsers(); }, err => {
+  console.error('public не читается:', err.message);
 });
 
 // Темы грузим порциями: последние TH_STEP по дате + закреплённые. Остальные — кнопкой «Показать ещё».
-const TH_STEP = 100000;
+const TH_STEP = 50;
 S.thLimit = TH_STEP; S.thLoaded = false; S.thMore = false;
 let thRecent = {}, thPins = {}, thExtra = {}, thRef = null, thCb = null;
 const thWatched = {};
@@ -2585,11 +2636,14 @@ function sub(ref, cb) { ref.on('value', cb, e => console.warn(ref.toString(), e.
 function unbindUser() {
   subs.splice(0).forEach(([r, cb]) => r.off('value', cb));
   S.dmIndex = {}; S.dmRead = {}; S.notifs = {}; S.sessions = {}; S.reports = {};
+  if (Object.keys(S.priv).length) { S.priv = {}; rebuildUsers(); }
   dmUnsub();
 }
 function bindUser(uid) {
   unbindUser();
   const first = {dm: true, nf: true};
+  if (isTop(S.user)) sub(db.ref('users'), s => { S.priv = s.val() || {}; rebuildUsers(); });
+  else sub(db.ref('users/' + uid), s => { S.priv = s.exists() ? {[uid]: s.val()} : {}; rebuildUsers(); });
   sub(db.ref('dmRead/' + uid), s => { S.dmRead = s.val() || {}; updateBadges(); });
   sub(db.ref('dmIndex/' + uid), s => {
     const prev = S.dmIndex;
@@ -2641,7 +2695,7 @@ async function loadUser(u) {
 
     if (!rec) {
       try {
-        const all = await get('users');
+        const all = await get('public');
         if (all) {
           rec = Object.values(all).find(x => x.nick && x.nick.toLowerCase() === fromMail.toLowerCase());
           viaNick = !!rec;
@@ -2669,9 +2723,9 @@ async function loadUser(u) {
     if (!rec || rec.uid !== u.uid) {
       try {
         await claimNick(me.nick, u.uid);
-        await set('users/' + u.uid, {
-          uid: u.uid, nick: me.nick, role:'user', owner:false,
-          premium:false, created: TS
+        await db.ref().update({
+          ['users/' + u.uid]: {uid: u.uid, nick: me.nick, role:'user', owner:false, premium:false, created: TS},
+          ['public/' + u.uid]: {uid: u.uid, nick: me.nick, role:'user', owner:false, premium:false, created: TS}
         });
       } catch (e) {
         console.warn('не смог создать запись юзера', e.message);
