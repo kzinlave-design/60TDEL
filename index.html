@@ -333,6 +333,9 @@ body{-webkit-font-smoothing:antialiased}
 .rc-msg.bad{color:#ff8a80}
 .rc-hint{font-size:11px;color:#8a8a8a;text-align:center}
 .rc-cancel{background:none;border:0;color:#999;cursor:pointer;font-size:12px}
+.rc-inl{margin:4px 0}
+.rc-inl .rc-wrap{width:100%}
+.rc-inl .rc-hint{display:none}
 .rc-shake{animation:rcshake .4s}
 @keyframes rcshake{20%{transform:translateX(-7px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(2px)}}
 @media (prefers-reduced-motion:reduce){.rc-spin{animation-duration:2s}.rc-draw,.rc-draw2{animation:none;stroke-dashoffset:0}.rc-shake{animation:none}}
@@ -405,11 +408,12 @@ body{-webkit-font-smoothing:antialiased}
 
   window.CAP60 = function (o) {
     o = o || {};
-    return new Promise(function (resolve) {
-      var gate = !!o.gate, done = false, state = 'idle', moves = 0, kbd = false, touch = false;
+    var api = {};
+    var pr = new Promise(function (resolve) {
+      var inl = !!o.host, gate = !!o.gate, done = false, state = 'idle', moves = 0, kbd = false, touch = false;
       var mountT = Date.now(), fails = 0, wrongs = 0, code = '', waitT = 0, failT = 0, tick = 0, lastPT = '';
 
-      var ov = h('div', 'rc-ov' + (gate ? ' rc-gate' : ''));
+      var ov = inl ? h('div', 'rc-inl') : h('div', 'rc-ov' + (gate ? ' rc-gate' : ''));
       ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); ov.setAttribute('aria-label', '60CAPTCHA');
       var wrap = h('div', 'rc-wrap'), box = h('div', 'rc-box'), left = h('div', 'rc-left');
       var cb = h('button', 'rc-cb s-idle'); cb.type = 'button';
@@ -423,9 +427,9 @@ body{-webkit-font-smoothing:antialiased}
       var chal = h('div', 'rc-chal'); chal.style.display = 'none';
       var msg = h('div', 'rc-msg'), hint = h('div', 'rc-hint', 'Не сворачивайте браузер и не переключайте вкладки во время проверки');
       wrap.append(box, chal, msg, hint);
-      if (!gate) wrap.append(h('button', 'rc-cancel', 'Отмена'));
-      ov.append(wrap); document.body.append(ov);
-      if (!gate) wrap.lastChild.onclick = function () { finish(false); };
+      if (!gate && !inl) wrap.append(h('button', 'rc-cancel', 'Отмена'));
+      ov.append(wrap); (inl ? o.host : document.body).append(ov);
+      if (!gate && !inl) wrap.lastChild.onclick = function () { finish(false); };
 
       function setState(s) {
         state = s;
@@ -491,6 +495,7 @@ body{-webkit-font-smoothing:antialiased}
         if (done) return;
         clearTimeout(waitT); chal.style.display = 'none';
         clearFails(); setState('ok'); say('');
+        if (inl) { o.onChange && o.onChange(true); return; }
         setTimeout(function () { finish(true); }, 900);
       }
 
@@ -529,7 +534,7 @@ body{-webkit-font-smoothing:antialiased}
       function onVis() { if (document.hidden) onLeave(); }
       function onMove() { moves++; }
       function onDown(e) { lastPT = e.pointerType || ''; }
-      function onKey(e) { if (e.key === 'Escape' && !gate) { e.stopPropagation(); finish(false); } }
+      function onKey(e) { if (e.key === 'Escape' && !gate && !inl) { e.stopPropagation(); finish(false); } }
       document.addEventListener('visibilitychange', onVis);
       window.addEventListener('blur', onLeave);
       window.addEventListener('pagehide', onLeave);
@@ -546,9 +551,18 @@ body{-webkit-font-smoothing:antialiased}
         waitT = setTimeout(function () { if (score >= 3) suspicious(); else pass(); }, 1800 + rnd(1600));
       };
 
+      api.reset = function () {
+        if (done) return;
+        clearTimeout(waitT); clearTimeout(failT); clearInterval(tick);
+        fails = 0; reset(); o.onChange && o.onChange(false);
+      };
+      api.destroy = function () { finish(false); };
       if (!gate && lockLeft() > 0) showLock();
       else setTimeout(function () { try { cb.focus(); } catch (e) {} }, 60);
     });
+    pr.reset = function () { api.reset && api.reset(); };
+    pr.destroy = function () { api.destroy && api.destroy(); };
+    return pr;
   };
 })();
 
@@ -1291,12 +1305,17 @@ function authView() {
   const n = el('input', {type:'text', placeholder: t('nick'), maxlength:'15'});
   const p = el('input', {type:'password', placeholder: t('pass')});
 
+  let capPassed = false;
+  const capHost = el('div');
+  S.capCtl = CAP60({host: capHost, onChange: v => { capPassed = v; if (v) err.textContent = ''; }});
+
   const form = el('form', {class:'auth', onsubmit: async e => {
     e.preventDefault();
     if (S.busy) return;
     S.busy = true;
     err.textContent = '';
 
+    if (!capPassed) { err.textContent = 'Подтвердите, что вы не робот'; S.busy = false; return; }
     const name = n.value.trim().replace(/[^a-zA-Z0-9_]/g, '');
     if (name.length < 3) {
       err.textContent = 'Ник от 3 символов';
@@ -1313,7 +1332,6 @@ function authView() {
         try { await auth.signInWithEmailAndPassword(email, p.value); loginOk(name); }
         catch (e2) { if (/wrong-password|user-not-found|invalid-credential|invalid-login/.test(e2.code || '')) loginFail(name); throw e2; }
       } else {
-        if (!(await cap60())) { err.textContent = 'Проверка 60CAPTCHA не пройдена'; S.busy = false; return; }
         S.registering = true;
         const c = await auth.createUserWithEmailAndPassword(email, p.value);
         await c.user.updateProfile({displayName: name});
@@ -1321,7 +1339,7 @@ function authView() {
         try { ok = await claimNick(name, c.user.uid); } catch (x) { ce = x; console.error(x); }
         if (!ok) {
           await c.user.delete().catch(() => {});
-          S.registering = false; S.busy = false;
+          S.registering = false; S.busy = false; if (S.capCtl) S.capCtl.reset();
           err.textContent = ce ? 'Ошибка базы (' + ce.message + '). Проверь правила Realtime Database.' : 'Ник занят';
           return;
         }
@@ -1351,12 +1369,14 @@ function authView() {
       else m = m + ' (' + code + ')';
       err.textContent = m;
     }
+    if (S.capCtl) S.capCtl.reset();
     S.busy = false;
   }}, [
     el('h2', {text: isLogin ? t('auth') : t('reg_title'), style:'color:#fff;text-align:center'}),
     el('label', null, ['Никнейм', n]),
     el('label', null, [t('pass'), p]),
     err,
+    capHost,
     el('button', {class:'btn primary', type:'submit', text: isLogin ? t('login') : t('reg')}),
     el('div', {class:'switch'}, [
       isLogin ? t('no_acc') : t('has_acc'),
@@ -2575,7 +2595,7 @@ function drawWho() {
         drawWho();
       }}),
       nick(S.user.uid, S.user.nick),
-      el('button', {text: t('out'), onclick: doSignOut})
+      el('button', {text: t('out'), onclick: () => { CAP60({gate: false}).then(ok => { if (ok) doSignOut(); }); }})
     );
   } else if (!S.ready && localStorage.getItem('lun')) {
     w.append(el('span', {class:'muted', text: localStorage.getItem('lun')}));
@@ -2594,6 +2614,7 @@ function drawWho() {
 }
 
 function draw() {
+  if (S.capCtl) { S.capCtl.destroy(); S.capCtl = null; }
   S.fill = null;
   S.editing = null;
   const app = document.getElementById('app');
