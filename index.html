@@ -339,19 +339,66 @@ body{-webkit-font-smoothing:antialiased}
 .rc-shake{animation:rcshake .4s}
 @keyframes rcshake{20%{transform:translateX(-7px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(2px)}}
 @media (prefers-reduced-motion:reduce){.rc-spin{animation-duration:2s}.rc-draw,.rc-draw2{animation:none;stroke-dashoffset:0}.rc-shake{animation:none}}
+.rc-cb.s-chal{border-color:transparent;background:transparent}
+.rc-gt{color:#fff;font:600 16px/1.3 Roboto,Arial,sans-serif;text-align:center}
+.rc-gs{color:#9a9aa0;font:13px/1.4 Roboto,Arial,sans-serif;text-align:center;margin-top:-4px}
+.rc-link,.rc-link2{background:none;border:0;padding:0;cursor:pointer;font:inherit;color:inherit;text-decoration:underline}
+.rc-link{font-size:8px;color:#555}
+.rc-link2{color:#bbb}
+.rc-link:hover,.rc-link2:hover{color:#4a90e2}
+.rc-chh .rc-sm{font-size:13px;opacity:.9}
+.rc-chh .rc-big{font-size:22px;font-weight:700;line-height:1.2;text-transform:uppercase}
+.rc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}
+.rc-tile{position:relative;padding:0;border:0;background:#ddd;cursor:pointer;aspect-ratio:1;overflow:hidden}
+.rc-tile canvas{width:100%;height:100%;display:block;transition:transform .12s}
+.rc-tile.on canvas{transform:scale(.82)}
+.rc-tile.on::after{content:"";position:absolute;top:6px;left:6px;width:20px;height:20px;border-radius:50%;background:#4a90e2 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7' fill='none' stroke='%23fff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/70% no-repeat}
+.rc-tile:focus-visible{outline:2px solid #4a90e2;outline-offset:-2px}
+.rc-foot{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:2px;border-top:1px solid #e5e5e5;padding-top:8px}
+.rc-fl{display:flex;gap:6px}
+.rc-ib{width:34px;height:34px;border:0;border-radius:50%;background:#eee;color:#444;cursor:pointer;font:600 14px Roboto,Arial,sans-serif}
+.rc-ib:hover{background:#ddd}
+.rc-stage{position:relative}
+.rc-piece{position:absolute;display:block;pointer-events:none;filter:drop-shadow(0 0 3px rgba(0,0,0,.5))}
+.rc-range{width:100%;margin:4px 0 0;accent-color:#4a90e2;height:28px}
+.lg-ov{position:fixed;inset:0;z-index:6000;background:rgba(0,0,0,.85);display:grid;place-items:center;padding:12px;font-family:var(--font-body)}
+.lg-box{background:#0b0b0d;border:1px solid #333;border-radius:8px;width:min(680px,100%);max-height:88vh;display:flex;flex-direction:column;color:#e0e0e0}
+.lg-tabs{display:flex;gap:4px;border-bottom:1px solid #222;padding:0 8px;flex-wrap:wrap}
+.lg-tab{background:none;border:0;border-bottom:2px solid transparent;border-radius:0;color:#888;padding:12px 12px;cursor:pointer;font-size:13px}
+.lg-tab.on{color:#fff;border-bottom-color:var(--accent)}
+.lg-body{padding:16px 20px;overflow:auto;line-height:1.55;font-size:13px}
+.lg-body h3{color:#fff;font-size:18px;margin-bottom:6px}
+.lg-body h4{color:#fff;font-size:13px;margin:14px 0 4px}
+.lg-body p{margin:0;color:#bbb;overflow-wrap:anywhere}
+.lg-foot{display:flex;justify-content:flex-end;padding:10px 16px;border-top:1px solid #222}
+.footer button{background:none;border:0;color:#666;cursor:pointer;text-decoration:underline;font:inherit;padding:0}
+.footer button:hover{color:var(--accent)}
+.auth .lg-ag{flex-direction:row}
+.mention{color:#5490ff;cursor:pointer}
+.mention:hover{text-decoration:underline}
+.spoiler{background:#333;color:transparent;border-radius:3px;cursor:pointer;padding:0 2px}
+.spoiler.open{color:inherit;background:#1f1f24}
+.ic{font-family:var(--font-mono);background:#1a1a1f;border:1px solid #2a2a30;padding:0 4px;border-radius:3px;font-size:.92em}
+.lg-ag{display:flex;gap:8px;align-items:flex-start;font-size:12px;color:#aaa;cursor:pointer;line-height:1.4}
+.lg-ag input{margin-top:2px;flex:none}
+.lg-ag button{background:none;border:0;padding:0;color:var(--accent);cursor:pointer;text-decoration:underline;font:inherit}
 </style>
 </head>
 <body>
+<script>
+if (window.top !== window.self) { try { window.top.location.href = window.location.href; } catch (e) {} document.documentElement.innerHTML = ''; }
+</script>
 <script>
 (function () {
   var LOCK_KEY = '60cap_lock', LOCK_MS = 5 * 60 * 1000, FAIL_KEY = '60cap_f';
   var SVG = {
     load: '<svg class="rc-spin" viewBox="0 0 28 28"><circle cx="14" cy="14" r="10" fill="none" stroke="#4a90e2" stroke-width="3.2" stroke-dasharray="46 20" stroke-linecap="round"/></svg>',
     ok: '<svg viewBox="0 0 28 28"><path class="rc-draw" d="M5 14.5l6 6L23 8" fill="none" stroke="#0a9c55" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-    bad: '<svg viewBox="0 0 28 28"><path class="rc-draw2" d="M7 7l14 14M21 7L7 21" fill="none" stroke="#d93025" stroke-width="3.6" stroke-linecap="round"/></svg>',
-    warn: '<svg viewBox="0 0 28 28"><path d="M14 3L2 25h24z" fill="#f9a825" stroke="#f9a825" stroke-width="2" stroke-linejoin="round"/><path d="M14 11v7M14 21.5v.6" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/></svg>'
+    bad: '<svg viewBox="0 0 28 28"><path class="rc-draw2" d="M7 7l14 14M21 7L7 21" fill="none" stroke="#d93025" stroke-width="3.6" stroke-linecap="round"/></svg>'
   };
+  SVG.chal = SVG.load;
 
+  function L(ru, en) { try { return localStorage.getItem('lang') === 'en' ? en : ru; } catch (e) { return ru; } }
   function rnd(n) { var a = new Uint32Array(1); crypto.getRandomValues(a); return a[0] % n; }
   function rf(a, b) { return a + rnd(1e6) / 1e6 * (b - a); }
   function h(tag, cls, txt) {
@@ -368,11 +415,96 @@ body{-webkit-font-smoothing:antialiased}
   function addFail() { try { localStorage.setItem(FAIL_KEY, JSON.stringify({c: recentFails() + 1, t: Date.now()})); } catch (e) {} }
   function clearFails() { try { localStorage.removeItem(FAIL_KEY); } catch (e) {} }
 
-  // Оценка подозрительности по сигналам браузера. IP из браузера не виден — для настоящей проверки IP нужен сервер.
+  // ---------- Условия и Конфиденциальность ----------
+  var LEGAL = {
+    terms: {
+      ru: {title: 'Условия использования', secs: [
+        ['1. Общие положения', '60TDEL — онлайн-форум. Регистрируясь, входя в аккаунт или просто пользуясь сайтом, вы подтверждаете, что прочитали эти Условия и Политику конфиденциальности и принимаете их. Если вы не согласны — не пользуйтесь сайтом. Сайт предназначен для лиц от 14 лет.'],
+        ['2. Аккаунт', 'Ник — от 3 до 15 символов (латиница, цифры, _). Вы отвечаете за сохранность пароля и за всё, что сделано из вашего аккаунта. Восстановление забытого пароля не предусмотрено: адрес вида ник@60tdel.local служебный и не является настоящей почтой. Ники и «юзы» выдаёт и может изменять администрация; администрация вправе освободить ник, если он нарушает правила или выдаёт себя за чужого человека или за персонал.'],
+        ['3. Правила поведения', 'Запрещено: публиковать незаконные материалы; угрожать, травить и оскорблять людей; распространять чужие личные данные (адреса, номера, документы, переписку без согласия); спам, мошенничество и вредоносные ссылки; любой сексуальный контент с участием несовершеннолетних (такие материалы удаляются сразу, а сведения о них могут быть переданы правоохранительным органам); выдавать себя за администрацию или модератора (в том числе через префикс или ник); обходить капчу, лимиты, блокировки и правила базы данных; автоматически создавать аккаунты и сообщения; пытаться получить доступ к чужим данным.'],
+        ['4. Ваш контент', 'Вы сохраняете права на свои тексты, изображения и голосовые сообщения, но даёте сайту право хранить, показывать и пересылать их в рамках работы форума (темы, чаты, личные сообщения, пересылка, перевод по вашей кнопке). Публикуйте только то, что вы вправе публиковать. Свои сообщения вы можете удалять сами; копии у других людей (например, пересланные сообщения) могут остаться.'],
+        ['5. Модерация', 'Администрация и модераторы могут удалять сообщения и темы, закреплять и закрывать темы, ограничивать возможность писать (мут), блокировать аккаунты, завершать сессии и снимать привилегии, в том числе без предупреждения, если считают, что нарушены правила или безопасность сайта. Нажав «Пожаловаться», вы отправляете модераторам текст сообщения и своё имя. Ложные жалобы тоже считаются нарушением.'],
+        ['6. Привилегия', 'Привилегия — необязательная платная опция (оформление ника, баннер и т. п.). Оплата и выдача происходят вручную через контакты администрации. Привилегия может быть снята за нарушение правил. Условия возврата обсуждаются с администрацией индивидуально.'],
+        ['7. Отказ от гарантий', 'Сайт предоставляется «как есть». Возможны сбои, потеря данных и изменения функций. Личные сообщения не защищены сквозным шифрованием; не отправляйте в них пароли, платёжные данные и другие секреты. Администрация не отвечает за контент пользователей и за ущерб от использования сайта в той мере, в какой это допускает закон.'],
+        ['8. Изменения', 'Условия могут меняться. Новая редакция вступает в силу с момента публикации на сайте; продолжая пользоваться сайтом, вы принимаете её.'],
+        ['9. Контакты', 'Telegram: @uhrap · Почта: manage60tdel@gmail.com'],
+        ['Редакция', 'Последнее обновление: 21 октября 2026.']
+      ]},
+      en: {title: 'Terms of Use', secs: [
+        ['1. General', '60TDEL is an online forum. By registering, signing in or simply using the site you confirm that you have read these Terms and the Privacy Policy and accept them. If you do not agree, do not use the site. The site is intended for people aged 14 and over.'],
+        ['2. Account', 'A username is 3–15 characters (Latin letters, digits, _). You are responsible for your password and everything done from your account. Password recovery is not provided: the nick@60tdel.local address is internal and is not a real mailbox. Usernames and "uses" are issued and may be changed by the administration; a name may be taken away if it breaks the rules or impersonates a person or staff.'],
+        ['3. Conduct', 'Forbidden: illegal material; threats, harassment and abuse; sharing other people\'s personal data or private conversations without consent; spam, fraud and malicious links; any sexual content involving minors (removed immediately and may be reported to authorities); impersonating staff (including through a prefix or nickname); bypassing the captcha, rate limits, bans or database rules; creating accounts or messages automatically; trying to access other people\'s data.'],
+        ['4. Your content', 'You keep the rights to your texts, images and voice messages, but you allow the site to store, display and forward them as part of the forum (threads, chats, direct messages, forwarding, translation you request). Post only what you are entitled to post. You can delete your own messages; copies held by others (for example forwarded messages) may remain.'],
+        ['5. Moderation', 'Administrators and moderators may delete messages and threads, pin or lock threads, restrict posting (mute), ban accounts, end sessions and remove privileges, including without notice, if they believe the rules or the site\'s security have been violated. When you press "Report" you send moderators the message text and your name. False reports are a violation too.'],
+        ['6. Privilege', 'The privilege is an optional paid feature (name styling, banner, etc.). Payment and activation are handled manually through the administration\'s contacts. It may be removed for rule violations. Refunds are discussed individually.'],
+        ['7. No warranty', 'The site is provided "as is". Outages, data loss and feature changes are possible. Direct messages are not end-to-end encrypted; do not send passwords, payment details or other secrets in them. The administration is not responsible for user content or for damage from using the site to the extent permitted by law.'],
+        ['8. Changes', 'The Terms may change. A new version takes effect once published on the site; continuing to use the site means you accept it.'],
+        ['9. Contact', 'Telegram: @uhrap · Email: manage60tdel@gmail.com'],
+        ['Version', 'Last updated: October 21, 2026.']
+      ]}
+    },
+    privacy: {
+      ru: {title: 'Политика конфиденциальности', secs: [
+        ['1. Какие данные мы храним', 'Ник; пароль (хранится сервисом Firebase Authentication только в виде хэша, мы его не видим); служебный адрес вида ник@60tdel.local; дата регистрации; профиль (описание, место жительства, аватар, баннер, песня, префикс, оформление ника); темы, ответы, сообщения в чатах и личные сообщения, картинки и голосовые; реакции, подписки, закладки, список заблокированных; отправленные жалобы; список ваших сессий (название браузера и системы, время входа и последней активности). Номер телефона появляется в профиле только если его выдала администрация — вы его не вводите.'],
+        ['2. Кто это видит', 'Публичные поля профиля, темы и ответы видны всем. Чаты видны зарегистрированным пользователям. Личные сообщения видны участникам диалога. Администраторы и владелец проекта, имеющие доступ к консоли базы данных, технически могут видеть все данные, включая личные сообщения и жалобы; личные сообщения не шифруются сквозным шифрованием. Жалобы видны модераторам.'],
+        ['3. Данные в вашем браузере', 'Сайт сохраняет в браузере: язык, настройку звука, отметку о пройденной проверке (до 12 часов), счётчики неудачных попыток входа и проверки, идентификатор текущей сессии, имя последнего пользователя (для быстрой отрисовки) и служебные данные входа Firebase. В sessionStorage хранится список уже просмотренных тем. Очистив данные сайта в браузере, вы удалите всё это (вы будете разлогинены).'],
+        ['4. Сторонние сервисы', 'Google Firebase (Authentication, Realtime Database, App Check с reCAPTCHA v3): хранение данных и проверка запросов; база расположена в Европе (europe-west1). Google Fonts: при загрузке страницы ваш браузер обращается к серверам Google за шрифтами. Google Translate: только если вы нажали «Перевести» — текст этого сообщения отправляется в Google для перевода. Мы не используем рекламу и не продаём данные.'],
+        ['5. 60CAPTCHA', 'Проверка «Я не робот» выполняется в вашем браузере. Для оценки риска используются сигналы поведения (движение указателя, время на странице, признаки автоматизации, число прошлых неудач). Эти сигналы не отправляются на сервер и не сохраняются, кроме счётчика неудач и таймера блокировки в localStorage.'],
+        ['6. Сроки хранения', 'Данные хранятся, пока существует ваш аккаунт; сообщения — пока их не удалят вы или модератор. Сессии без активности 30 дней истекают. Записи могут сохраняться в резервных копиях и в пересланных сообщениях других людей.'],
+        ['7. Ваши права', 'Вы можете изменить профиль, удалить свои сообщения, завершить свои сессии и сменить пароль в разделе профиля. Чтобы удалить аккаунт или получить копию своих данных, напишите на контакты ниже — мы ответим в разумный срок.'],
+        ['8. Безопасность', 'Мы используем правила доступа базы данных, ограничения частоты действий и проверку входа. Полную безопасность в интернете гарантировать нельзя: используйте уникальный пароль и не делитесь им.'],
+        ['9. Дети', 'Сайт не предназначен для лиц младше 14 лет. Если вы узнали, что такой пользователь зарегистрирован, сообщите нам, и мы удалим данные.'],
+        ['10. Контакты и изменения', 'Telegram: @uhrap · Почта: manage60tdel@gmail.com. Политика может обновляться; актуальная версия всегда доступна по ссылке «Конфиденциальность». Последнее обновление: 21 октября 2026.']
+      ]},
+      en: {title: 'Privacy Policy', secs: [
+        ['1. Data we store', 'Username; password (kept by Firebase Authentication only as a hash — we cannot see it); an internal nick@60tdel.local address; registration date; profile (bio, location, avatar, banner, song, prefix, name styling); threads, replies, chat and direct messages, images and voice clips; reactions, follows, bookmarks, block list; reports you send; your session list (browser and OS name, sign-in and last-activity times). A phone number appears on a profile only if the administration assigned it — you do not enter it.'],
+        ['2. Who can see it', 'Public profile fields, threads and replies are visible to everyone. Chats are visible to registered users. Direct messages are visible to the people in the conversation. Administrators and the project owner with access to the database console can technically see all data, including direct messages and reports; direct messages are not end-to-end encrypted. Reports are visible to moderators.'],
+        ['3. Data in your browser', 'The site stores in your browser: language, sound setting, a "verified" mark (up to 12 hours), counters of failed sign-in and verification attempts, the current session id, the last username (for fast rendering) and Firebase sign-in data. sessionStorage keeps a list of threads already viewed. Clearing site data removes all of it (you will be signed out).'],
+        ['4. Third parties', 'Google Firebase (Authentication, Realtime Database, App Check with reCAPTCHA v3) stores data and verifies requests; the database is located in Europe (europe-west1). Google Fonts: your browser requests fonts from Google when the page loads. Google Translate: only if you press "Translate" — the text of that message is sent to Google. We use no ads and do not sell data.'],
+        ['5. 60CAPTCHA', 'The "I\'m not a robot" check runs in your browser. Risk is estimated from behavioural signals (pointer movement, time on page, signs of automation, previous failures). These signals are not sent to a server or stored, except a failure counter and lock timer in localStorage.'],
+        ['6. Retention', 'Data is kept while your account exists; messages until you or a moderator delete them. Sessions inactive for 30 days expire. Records may remain in backups and in other people\'s forwarded messages.'],
+        ['7. Your rights', 'You can edit your profile, delete your messages, end your sessions and change your password in the profile section. To delete your account or get a copy of your data, contact us below.'],
+        ['8. Security', 'We use database access rules, rate limits and sign-in checks. Perfect security cannot be guaranteed: use a unique password and do not share it.'],
+        ['9. Children', 'The site is not intended for people under 14. If you learn that such a user is registered, tell us and we will delete the data.'],
+        ['10. Contact and changes', 'Telegram: @uhrap · Email: manage60tdel@gmail.com. The policy may be updated; the current version is always available through the "Privacy" link. Last updated: October 21, 2026.']
+      ]}
+    }
+  };
+
+  function legalModal(tab) {
+    var cur = tab === 'privacy' ? 'privacy' : 'terms';
+    var ov = h('div', 'lg-ov'), box = h('div', 'lg-box'), tabs = h('div', 'lg-tabs'), body = h('div', 'lg-body'), foot = h('div', 'lg-foot');
+    ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true');
+    function close() { document.removeEventListener('keydown', onEsc, true); ov.remove(); }
+    function onEsc(e) { if (e.key === 'Escape') { e.stopPropagation(); close(); } }
+    function show() {
+      var lang = L('ru', 'en'), doc = LEGAL[cur][lang];
+      tabs.innerHTML = ''; body.innerHTML = '';
+      ['terms', 'privacy'].forEach(function (k) {
+        var b = h('button', 'lg-tab' + (k === cur ? ' on' : ''), LEGAL[k][lang].title); b.type = 'button';
+        b.onclick = function () { cur = k; show(); body.scrollTop = 0; };
+        tabs.append(b);
+      });
+      body.append(h('h3', null, doc.title));
+      doc.secs.forEach(function (s) { body.append(h('h4', null, s[0]), h('p', null, s[1])); });
+    }
+    var ok = h('button', 'rc-btn', L('Закрыть', 'Close')); ok.type = 'button'; ok.onclick = close;
+    foot.append(ok);
+    box.append(tabs, body, foot); ov.append(box);
+    ov.onclick = function (e) { if (e.target === ov) close(); };
+    document.addEventListener('keydown', onEsc, true);
+    document.body.append(ov);
+    show();
+    setTimeout(function () { try { ok.focus(); } catch (e) {} }, 30);
+  }
+  window.LEGAL60 = legalModal;
+
+  // ---------- оценка подозрительности ----------
+  // Всё считается в браузере: это защита от примитивных скриптов, а не от целенаправленного бота.
   function riskScore(c) {
     var s = 0, ua = navigator.userAgent || '';
     if (navigator.webdriver) s += 3;
-    if (/HeadlessChrome|PhantomJS|Selenium/i.test(ua)) s += 3;
+    if (/HeadlessChrome|PhantomJS|Selenium|Puppeteer|Playwright/i.test(ua)) s += 3;
     if (!navigator.languages || !navigator.languages.length) s += 1;
     if (c.moves < 4 && !c.kbd && !c.touch) s += 2;
     if (c.sinceMount < 800) s += 1;
@@ -381,8 +513,11 @@ body{-webkit-font-smoothing:antialiased}
     return s;
   }
 
+  // ---------- картинки ----------
+  function dpr() { return Math.min(2, window.devicePixelRatio || 1); }
+
   function drawCode(cv, code) {
-    var d = Math.min(2, window.devicePixelRatio || 1), i;
+    var d = dpr(), i;
     cv.width = 300 * d; cv.height = 100 * d;
     var x = cv.getContext('2d'); x.setTransform(d, 0, 0, d, 0, 0);
     x.fillStyle = '#f2f2f2'; x.fillRect(0, 0, 300, 100);
@@ -406,28 +541,134 @@ body{-webkit-font-smoothing:antialiased}
     }
   }
 
+  var SHAPES = [
+    {id: 'circle', ru: 'круги', en: 'circles'},
+    {id: 'triangle', ru: 'треугольники', en: 'triangles'},
+    {id: 'square', ru: 'квадраты', en: 'squares'},
+    {id: 'star', ru: 'звёзды', en: 'stars'},
+    {id: 'hex', ru: 'шестиугольники', en: 'hexagons'},
+    {id: 'cross', ru: 'крестики', en: 'crosses'}
+  ];
+  function shapePath(x, kind, cx, cy, r) {
+    var i, a, rr, t;
+    x.beginPath();
+    if (kind === 'circle') x.arc(cx, cy, r, 0, Math.PI * 2);
+    else if (kind === 'square') x.rect(cx - r * .85, cy - r * .85, r * 1.7, r * 1.7);
+    else if (kind === 'triangle') {
+      for (i = 0; i < 3; i++) { a = -Math.PI / 2 + i * 2 * Math.PI / 3; x[i ? 'lineTo' : 'moveTo'](cx + r * Math.cos(a), cy + r * Math.sin(a)); }
+      x.closePath();
+    } else if (kind === 'hex') {
+      for (i = 0; i < 6; i++) { a = i * Math.PI / 3; x[i ? 'lineTo' : 'moveTo'](cx + r * Math.cos(a), cy + r * Math.sin(a)); }
+      x.closePath();
+    } else if (kind === 'star') {
+      for (i = 0; i < 10; i++) { rr = i % 2 ? r * .45 : r; a = -Math.PI / 2 + i * Math.PI / 5; x[i ? 'lineTo' : 'moveTo'](cx + rr * Math.cos(a), cy + rr * Math.sin(a)); }
+      x.closePath();
+    } else {
+      t = r * .38;
+      x.moveTo(cx - t, cy - r); x.lineTo(cx + t, cy - r); x.lineTo(cx + t, cy - t); x.lineTo(cx + r, cy - t);
+      x.lineTo(cx + r, cy + t); x.lineTo(cx + t, cy + t); x.lineTo(cx + t, cy + r); x.lineTo(cx - t, cy + r);
+      x.lineTo(cx - t, cy + t); x.lineTo(cx - r, cy + t); x.lineTo(cx - r, cy - t); x.lineTo(cx - t, cy - t);
+      x.closePath();
+    }
+  }
+  function drawTile(cv, kind) {
+    var d = dpr(), S = 100, i, x;
+    cv.width = S * d; cv.height = S * d;
+    x = cv.getContext('2d'); x.setTransform(d, 0, 0, d, 0, 0);
+    var hue = rnd(360), gr = x.createLinearGradient(0, 0, S, S);
+    gr.addColorStop(0, 'hsl(' + hue + ',25%,' + (78 + rnd(10)) + '%)');
+    gr.addColorStop(1, 'hsl(' + ((hue + 40 + rnd(60)) % 360) + ',25%,' + (62 + rnd(12)) + '%)');
+    x.fillStyle = gr; x.fillRect(0, 0, S, S);
+    for (i = 0; i < 60; i++) {
+      var g = 90 + rnd(130);
+      x.fillStyle = 'rgba(' + g + ',' + g + ',' + g + ',.35)';
+      x.fillRect(rnd(S), rnd(S), 1 + rnd(3), 1 + rnd(3));
+    }
+    x.save(); x.translate(S / 2 + rf(-6, 6), S / 2 + rf(-6, 6)); x.rotate(rf(-.7, .7));
+    shapePath(x, kind, 0, 0, rf(24, 32));
+    x.fillStyle = 'hsl(' + ((hue + 150 + rnd(80)) % 360) + ',60%,' + (36 + rnd(16)) + '%)'; x.fill();
+    x.lineWidth = 2; x.strokeStyle = 'rgba(255,255,255,.65)'; x.stroke();
+    x.restore();
+    for (i = 0; i < 2; i++) {
+      x.strokeStyle = 'rgba(40,40,40,.35)'; x.lineWidth = 1.5; x.beginPath();
+      x.moveTo(0, rnd(S)); x.bezierCurveTo(30, rnd(S), 70, rnd(S), S, rnd(S)); x.stroke();
+    }
+  }
+
+  var PW = 40, PK = 6; // ползунок: размер детали и выступ
+  function puzzlePath(x, ox, oy) {
+    x.beginPath();
+    x.moveTo(ox, oy + 6); x.arcTo(ox, oy, ox + 6, oy, 6);
+    x.lineTo(ox + PW - 6, oy); x.arcTo(ox + PW, oy, ox + PW, oy + 6, 6);
+    x.lineTo(ox + PW, oy + PW / 2 - PK); x.arc(ox + PW, oy + PW / 2, PK, -Math.PI / 2, Math.PI / 2, false);
+    x.lineTo(ox + PW, oy + PW - 6); x.arcTo(ox + PW, oy + PW, ox + PW - 6, oy + PW, 6);
+    x.lineTo(ox + 6, oy + PW); x.arcTo(ox, oy + PW, ox, oy + PW - 6, 6);
+    x.closePath();
+  }
+  function drawPuzzleBg(cv, tx, ty, piece) {
+    var d = dpr(), i, x;
+    cv.width = 300 * d; cv.height = 150 * d;
+    x = cv.getContext('2d'); x.setTransform(d, 0, 0, d, 0, 0);
+    var hue = rnd(360), gr = x.createLinearGradient(0, 0, 300, 150);
+    gr.addColorStop(0, 'hsl(' + hue + ',45%,62%)');
+    gr.addColorStop(.5, 'hsl(' + ((hue + 70) % 360) + ',45%,48%)');
+    gr.addColorStop(1, 'hsl(' + ((hue + 150) % 360) + ',45%,38%)');
+    x.fillStyle = gr; x.fillRect(0, 0, 300, 150);
+    for (i = 0; i < 14; i++) {
+      x.save(); x.translate(rnd(300), rnd(150)); x.rotate(rf(0, 6.28));
+      shapePath(x, SHAPES[rnd(SHAPES.length)].id, 0, 0, rf(10, 26));
+      x.fillStyle = 'hsla(' + rnd(360) + ',55%,' + (30 + rnd(40)) + '%,.55)'; x.fill(); x.restore();
+    }
+    for (i = 0; i < 120; i++) {
+      var g = 60 + rnd(180);
+      x.fillStyle = 'rgba(' + g + ',' + g + ',' + g + ',.3)';
+      x.fillRect(rnd(300), rnd(150), 1 + rnd(2), 1 + rnd(2));
+    }
+    // деталь вырезается из картинки, на её месте остаётся тёмная «дырка»
+    var px = piece.getContext('2d');
+    piece.width = (PW + PK + 2) * d; piece.height = PW * d;
+    px.setTransform(d, 0, 0, d, 0, 0);
+    px.save(); puzzlePath(px, 0, 0); px.clip();
+    px.drawImage(cv, tx * d, ty * d, (PW + PK + 2) * d, PW * d, 0, 0, PW + PK + 2, PW);
+    px.restore();
+    puzzlePath(px, 0, 0); px.lineWidth = 2; px.strokeStyle = 'rgba(255,255,255,.9)'; px.stroke();
+    puzzlePath(x, tx, ty); x.fillStyle = 'rgba(0,0,0,.55)'; x.fill();
+    x.lineWidth = 1.5; x.strokeStyle = 'rgba(255,255,255,.5)'; x.stroke();
+  }
+
   window.CAP60 = function (o) {
     o = o || {};
     var api = {};
     var pr = new Promise(function (resolve) {
       var inl = !!o.host, gate = !!o.gate, done = false, state = 'idle', moves = 0, kbd = false, touch = false;
       var mountT = Date.now(), fails = 0, wrongs = 0, code = '', waitT = 0, failT = 0, tick = 0, lastPT = '';
+      var queue = [], chalT = 0, inputs = 0;
 
       var ov = inl ? h('div', 'rc-inl') : h('div', 'rc-ov' + (gate ? ' rc-gate' : ''));
       ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); ov.setAttribute('aria-label', '60CAPTCHA');
       var wrap = h('div', 'rc-wrap'), box = h('div', 'rc-box'), left = h('div', 'rc-left');
       var cb = h('button', 'rc-cb s-idle'); cb.type = 'button';
-      cb.setAttribute('role', 'checkbox'); cb.setAttribute('aria-checked', 'false'); cb.setAttribute('aria-label', 'Я не робот');
+      cb.setAttribute('role', 'checkbox'); cb.setAttribute('aria-checked', 'false'); cb.setAttribute('aria-label', L('Я не робот', 'I am not a robot'));
       var icon = h('span', 'rc-ic'); cb.append(icon);
-      left.append(cb, h('span', 'rc-lbl', 'Я не робот'));
+      left.append(cb, h('span', 'rc-lbl', L('Я не робот', 'I am not a robot')));
       var right = h('div', 'rc-right');
-      right.append(h('div', 'rc-logo', '60'), h('div', 'rc-name', '60CAPTCHA'), h('div', 'rc-links', 'Конфиденциальность - Условия'));
+      var lk = h('div', 'rc-links');
+      var bPriv = h('button', 'rc-link', L('Конфиденциальность', 'Privacy')), bTerms = h('button', 'rc-link', L('Условия', 'Terms'));
+      bPriv.type = 'button'; bTerms.type = 'button';
+      bPriv.onclick = function () { legalModal('privacy'); }; bTerms.onclick = function () { legalModal('terms'); };
+      lk.append(bPriv, document.createTextNode(' · '), bTerms);
+      right.append(h('div', 'rc-logo', '60'), h('div', 'rc-name', '60CAPTCHA'), lk);
       box.append(left, right);
 
       var chal = h('div', 'rc-chal'); chal.style.display = 'none';
-      var msg = h('div', 'rc-msg'), hint = h('div', 'rc-hint', 'Не сворачивайте браузер и не переключайте вкладки во время проверки');
+      var msg = h('div', 'rc-msg'), hint = h('div', 'rc-hint');
+      var bP2 = h('button', 'rc-link2', L('Политику конфиденциальности', 'Privacy Policy')), bT2 = h('button', 'rc-link2', L('Условия использования', 'Terms of Use'));
+      bP2.type = 'button'; bT2.type = 'button';
+      bP2.onclick = function () { legalModal('privacy'); }; bT2.onclick = function () { legalModal('terms'); };
+      hint.append(document.createTextNode(L('Нажимая «Я не робот», вы принимаете ', 'By pressing "I am not a robot" you accept the ')), bT2, document.createTextNode(L(' и ', ' and ')), bP2, document.createTextNode('.'));
+      if (gate) wrap.append(h('div', 'rc-gt', L('60TDEL · Проверка безопасности', '60TDEL · Security check')), h('div', 'rc-gs', L('Подтвердите, что вы человек, чтобы продолжить', 'Verify you are human to continue')));
       wrap.append(box, chal, msg, hint);
-      if (!gate && !inl) wrap.append(h('button', 'rc-cancel', 'Отмена'));
+      if (!gate && !inl) wrap.append(h('button', 'rc-cancel', L('Отмена', 'Cancel')));
       ov.append(wrap); (inl ? o.host : document.body).append(ov);
       if (!gate && !inl) wrap.lastChild.onclick = function () { finish(false); };
 
@@ -443,9 +684,6 @@ body{-webkit-font-smoothing:antialiased}
       function finish(ok) {
         if (done) return;
         done = true; clearTimeout(waitT); clearTimeout(failT); clearInterval(tick);
-        document.removeEventListener('visibilitychange', onVis);
-        window.removeEventListener('blur', onLeave);
-        window.removeEventListener('pagehide', onLeave);
         document.removeEventListener('pointermove', onMove, true);
         document.removeEventListener('pointerdown', onDown, true);
         document.removeEventListener('keydown', onKey, true);
@@ -466,7 +704,7 @@ body{-webkit-font-smoothing:antialiased}
           var left = lockLeft();
           if (left > 0) {
             var s = Math.ceil(left / 1000);
-            say('Слишком много неудачных попыток. Подождите ' + String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0'), true);
+            say(L('Слишком много неудачных попыток. Подождите ', 'Too many failed attempts. Wait ') + String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0'), true);
           } else {
             clearInterval(tick); fails = 0; reset();
           }
@@ -475,7 +713,7 @@ body{-webkit-font-smoothing:antialiased}
       }
       function reset() {
         if (done) return;
-        chal.style.display = 'none'; wrongs = 0; moves = 0; mountT = Date.now();
+        chal.style.display = 'none'; wrongs = 0; moves = 0; queue = []; mountT = Date.now();
         setState('idle'); say('');
       }
 
@@ -499,56 +737,147 @@ body{-webkit-font-smoothing:antialiased}
         setTimeout(function () { finish(true); }, 900);
       }
 
+      function next() {
+        if (done) return;
+        var k = queue.shift();
+        if (!k) { pass(); return; }
+        say(''); wrongs = 0; inputs = 0;
+        if (k === 'grid') runGrid(); else if (k === 'slider') runSlider(); else runCode();
+      }
+      function wrong(textFirst, retry) {
+        wrongs++;
+        if (wrongs >= 3) { fail(L('Проверка не пройдена', 'Verification failed')); return; }
+        say(textFirst, true);
+        retry();
+      }
+
+      // подвал испытания: обновить / текстовый вариант / справка / проверить
+      function foot(o2) {
+        var f = h('div', 'rc-foot'), l = h('div', 'rc-fl'), r = h('div', 'rc-fr');
+        var re = h('button', 'rc-ib', '↻'); re.type = 'button'; re.title = L('Другое задание', 'New challenge'); re.setAttribute('aria-label', re.title);
+        re.onclick = o2.reload; l.append(re);
+        if (o2.alt) {
+          var al = h('button', 'rc-ib', 'Aa'); al.type = 'button'; al.title = L('Ввести код с картинки', 'Enter a text code'); al.setAttribute('aria-label', al.title);
+          al.onclick = o2.alt; l.append(al);
+        }
+        var hp = h('button', 'rc-ib', '?'); hp.type = 'button'; hp.title = L('Справка', 'Help'); hp.setAttribute('aria-label', hp.title);
+        hp.onclick = function () { say(o2.help, false); };
+        l.append(hp);
+        if (o2.verify) { var v = h('button', 'rc-btn', L('Проверить', 'Verify')); v.type = 'button'; v.onclick = o2.verify; r.append(v); }
+        f.append(l, r);
+        return f;
+      }
+      function openChal() { setState('chal'); chal.style.display = 'block'; chalT = Date.now(); }
+      function tooFast() { return Date.now() - chalT < 700; }
+
+      function runGrid() {
+        var target = SHAPES[rnd(SHAPES.length)], kinds = [], nT = 2 + rnd(3), i, j, t;
+        var others = SHAPES.filter(function (s) { return s.id !== target.id; });
+        for (i = 0; i < 9; i++) kinds.push(i < nT ? target.id : others[rnd(others.length)].id);
+        for (i = 8; i > 0; i--) { j = rnd(i + 1); t = kinds[i]; kinds[i] = kinds[j]; kinds[j] = t; }
+        var sel = {};
+        chal.innerHTML = '';
+        var head = h('div', 'rc-chh');
+        head.append(h('div', 'rc-sm', L('Выберите все', 'Select all')), h('div', 'rc-big', L(target.ru, target.en)));
+        var grid = h('div', 'rc-grid');
+        kinds.forEach(function (k, n) {
+          var b = h('button', 'rc-tile'); b.type = 'button'; b.setAttribute('aria-pressed', 'false');
+          b.setAttribute('aria-label', L('Картинка ', 'Image ') + (n + 1));
+          var cv = h('canvas'); drawTile(cv, k); b.append(cv);
+          b.onclick = function () { sel[n] = !sel[n]; inputs++; b.classList.toggle('on', !!sel[n]); b.setAttribute('aria-pressed', String(!!sel[n])); };
+          grid.append(b);
+        });
+        var body = h('div', 'rc-chb');
+        body.append(grid, foot({
+          reload: runGrid, alt: runCode,
+          help: L('Нажмите на все картинки с нужной фигурой и нажмите «Проверить». Если не видно картинок, нажмите Aa.', 'Tap every picture with the shape, then press Verify. If you cannot see pictures, press Aa.'),
+          verify: function () {
+            if (state !== 'chal' || done) return;
+            var ok = !tooFast() && inputs > 0 && kinds.every(function (k, n) { return (k === target.id) === !!sel[n]; });
+            if (ok) next(); else wrong(L('Неверно, попробуйте ещё раз', 'Incorrect, try again'), runGrid);
+          }
+        }));
+        chal.append(head, body);
+        openChal();
+      }
+
+      function runSlider() {
+        var tx = 110 + rnd(130), ty = 20 + rnd(80);
+        chal.innerHTML = '';
+        var head = h('div', 'rc-chh');
+        head.append(h('div', 'rc-sm', L('Передвиньте ползунок', 'Move the slider')), h('div', 'rc-big', L('чтобы вставить деталь', 'to fit the piece')));
+        var stage = h('div', 'rc-stage'), bg = h('canvas', 'rc-cv'), pc = h('canvas', 'rc-piece');
+        drawPuzzleBg(bg, tx, ty, pc);
+        pc.style.top = (ty / 150 * 100) + '%'; pc.style.width = ((PW + PK + 2) / 300 * 100) + '%'; pc.style.height = (PW / 150 * 100) + '%'; pc.style.left = '0%';
+        stage.append(bg, pc);
+        var sl = h('input', 'rc-range'); sl.type = 'range'; sl.min = '0'; sl.max = String(300 - (PW + PK + 2)); sl.step = '1'; sl.value = '0';
+        sl.setAttribute('aria-label', L('Ползунок', 'Slider'));
+        sl.oninput = function () { inputs++; pc.style.left = (+sl.value / 300 * 100) + '%'; };
+        var slT = 0;
+        sl.onchange = function () {
+          clearTimeout(slT);
+          // небольшая пауза, чтобы стрелки на клавиатуре не засчитывались как попытка после каждого нажатия
+          slT = setTimeout(function () {
+            if (state !== 'chal' || done) return;
+            var ok = !tooFast() && inputs >= 4 && Math.abs(+sl.value - tx) <= 5;
+            if (ok) next(); else wrong(L('Не совпало, попробуйте ещё раз', 'No match, try again'), runSlider);
+          }, 600);
+        };
+        var body = h('div', 'rc-chb');
+        body.append(stage, sl, foot({
+          reload: runSlider, alt: runCode,
+          help: L('Тяните ползунок, пока деталь не встанет на тёмное место, и отпустите. Стрелки на клавиатуре тоже работают.', 'Drag the slider until the piece fills the dark gap, then release. Arrow keys work too.')
+        }));
+        chal.append(head, body);
+        openChal();
+      }
+
       function newCode() {
         var alpha = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
         code = ''; for (var i = 0; i < 5; i++) code += alpha[rnd(alpha.length)];
         return code;
       }
-      function suspicious() {
-        setState('warn');
-        say('Подозрительная активность. Введите код с картинки', true);
+      function runCode() {
         chal.innerHTML = '';
         var cv = h('canvas', 'rc-cv'), inp = h('input'), row = h('form', 'rc-row');
-        inp.type = 'text'; inp.maxLength = 8; inp.autocomplete = 'off'; inp.spellcheck = false; inp.placeholder = 'Код';
-        var reload = h('button', 'rc-btn alt', '↻'); reload.type = 'button'; reload.title = 'Другая картинка';
-        var go = h('button', 'rc-btn', 'Проверить'); go.type = 'submit';
+        inp.type = 'text'; inp.maxLength = 8; inp.autocomplete = 'off'; inp.spellcheck = false; inp.placeholder = L('Код', 'Code');
+        inp.setAttribute('aria-label', L('Код с картинки', 'Code from the image'));
+        var reload = h('button', 'rc-btn alt', '↻'); reload.type = 'button'; reload.title = L('Другая картинка', 'New image');
+        var go = h('button', 'rc-btn', L('Проверить', 'Verify')); go.type = 'submit';
         reload.onclick = function () { drawCode(cv, newCode()); inp.value = ''; inp.focus(); };
         row.onsubmit = function (e) {
           e.preventDefault();
-          if (done || state !== 'warn') return;
-          if (inp.value.replace(/\s/g, '').toUpperCase() === code) { pass(); return; }
-          wrongs++;
-          if (wrongs >= 3) { fail('Код не подошёл'); return; }
-          say('Неверно, попробуйте ещё раз', true);
-          drawCode(cv, newCode()); inp.value = ''; inp.focus();
+          if (done || state !== 'chal') return;
+          if (!tooFast() && inp.value.replace(/\s/g, '').toUpperCase() === code) { next(); return; }
+          wrong(L('Неверно, попробуйте ещё раз', 'Incorrect, try again'), function () { drawCode(cv, newCode()); inp.value = ''; inp.focus(); });
         };
         row.append(inp, reload, go);
         var body = h('div', 'rc-chb'); body.append(cv, row);
-        chal.append(h('div', 'rc-chh', 'Введите код с картинки'), body);
-        chal.style.display = 'block';
+        chal.append(h('div', 'rc-chh', L('Введите код с картинки', 'Enter the code from the image')), body);
+        openChal();
         drawCode(cv, newCode());
         setTimeout(function () { inp.focus(); }, 50);
       }
 
-      function onLeave() { if (state === 'load' || state === 'warn') fail('Вы покинули страницу — проверка прервана'); }
-      function onVis() { if (document.hidden) onLeave(); }
       function onMove() { moves++; }
       function onDown(e) { lastPT = e.pointerType || ''; }
-      function onKey(e) { if (e.key === 'Escape' && !gate && !inl) { e.stopPropagation(); finish(false); } }
-      document.addEventListener('visibilitychange', onVis);
-      window.addEventListener('blur', onLeave);
-      window.addEventListener('pagehide', onLeave);
+      function onKey(e) { if (e.key === 'Escape' && !gate && !inl && !document.querySelector('.lg-ov')) { e.stopPropagation(); finish(false); } }
       document.addEventListener('pointermove', onMove, true);
       document.addEventListener('pointerdown', onDown, true);
       document.addEventListener('keydown', onKey, true);
 
       cb.onclick = function (e) {
         if (state !== 'idle' || done) return;
-        if (!e.isTrusted) { fail('Подозрительная активность'); return; }
+        if (!e.isTrusted) { fail(L('Подозрительная активность', 'Suspicious activity')); return; }
         kbd = e.detail === 0; touch = lastPT === 'touch';
         var score = riskScore({moves: moves, kbd: kbd, touch: touch, sinceMount: Date.now() - mountT});
+        var pick = function () { return rnd(2) ? 'grid' : 'slider'; };
+        if (score >= 4) queue = ['grid', 'slider'];
+        else if (score >= 2) queue = [pick()];
+        else if (rnd(100) < (gate ? 10 : 25)) queue = [pick()];
+        else queue = [];
         setState('load'); say('');
-        waitT = setTimeout(function () { if (score >= 3) suspicious(); else pass(); }, 1800 + rnd(1600));
+        waitT = setTimeout(next, 1200 + rnd(1400));
       };
 
       api.reset = function () {
@@ -565,7 +894,6 @@ body{-webkit-font-smoothing:antialiased}
     return pr;
   };
 })();
-
 </script>
 <script>
 (function () {
@@ -608,7 +936,7 @@ body{-webkit-font-smoothing:antialiased}
 <main class="wrap" id="app"></main>
 
 <footer class="footer">
-  <b>60TDEL</b> · © 2026 · <span id="footer-rights">Все права защищены</span>
+  <b>60TDEL</b> · © 2026 · <span id="footer-rights">Все права защищены</span> · <button type="button" id="ft-terms" onclick="LEGAL60('terms')">Условия</button> · <button type="button" id="ft-priv" onclick="LEGAL60('privacy')">Конфиденциальность</button>
 </footer>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -663,7 +991,7 @@ let S = {
   page:1, limit:100000, busy:false, registering:false,
   lastSend:{}, adminTab:'users', search:'',
   dmIndex:{}, dmRead:{}, dmMsgs:{}, dmWith:null, notifs:{}, sessions:{}, jump:null, modalRefresh:null,
-  reports:{}, fwd:null
+  reports:{}, fwd:null, bm:{}, blocks:{}, modlog:{}
 };
 
 function el(tag, attrs, kids) {
@@ -730,6 +1058,8 @@ function setLang(l) {
   document.getElementById('btn-ru').className = l === 'ru' ? 'active' : '';
   document.getElementById('btn-en').className = l === 'en' ? 'active' : '';
   document.getElementById('footer-rights').textContent = l === 'ru' ? 'Все права защищены' : 'All rights reserved';
+  document.getElementById('ft-terms').textContent = l === 'ru' ? 'Условия' : 'Terms';
+  document.getElementById('ft-priv').textContent = l === 'ru' ? 'Конфиденциальность' : 'Privacy';
   draw();
 }
 
@@ -856,6 +1186,7 @@ function avatar(id, sz) {
   return a;
 }
 
+function fwdName(f) { const u = f && f.fromUid ? getUser(f.fromUid) : null; return (u && u.nick) || (f && f.fromNick) || 'User'; }
 const dmKey = (a, b) => a < b ? a + '_' + b : b + '_' + a;
 const snip = (m, n) => (m.voice ? 'Голосовое' : (m.text || (m.media ? 'Фото' : ''))).slice(0, n || 100);
 const tm = ts => ts ? new Date(ts).toLocaleTimeString(lang === 'ru' ? 'ru-RU' : 'en-GB', {hour:'2-digit', minute:'2-digit'}) : '';
@@ -897,7 +1228,7 @@ function updateBadges() {
 async function notify(to, data) {
   if (!S.user || !to || to === S.user.uid) return;
   try {
-    await db.ref().update({['notifs/' + to + '/' + db.ref('notifs/' + to).push().key]: {type:'reply', from: S.user.uid, fromNick: S.user.nick,
+    await db.ref().update({['notifs/' + to + '/' + db.ref('notifs/' + to).push().key]: {type: data.type === 'mention' ? 'mention' : 'reply', from: S.user.uid, fromNick: S.user.nick,
       text: String(data.text || '').slice(0, 80), view: data.view, id: data.id, key: data.key || null, date: TS},
       ['limits/' + S.user.uid + '/nf']: TS});
   } catch (e) { console.warn('notify:', e.message); }
@@ -928,6 +1259,44 @@ function quoteEl(map, r) {
   return el('div', {class:'quote', onclick: () => { S.jump = r.key; doJump(); }}, [
     el('b', {text:'↩ ' + nm}), el('span', {class:'qt', text: snip(o, 100) || '…'})
   ]);
+}
+
+function rich(text) {
+  const frag = document.createDocumentFragment();
+  const re = /(\*\*[^*\n]+\*\*|`[^`\n]+`|\|\|[^|\n]+\|\||@[A-Za-z0-9_]{3,15})/g;
+  const str = String(text || '');
+  let last = 0, m;
+  while ((m = re.exec(str))) {
+    const tok = m[0];
+    if (m.index > last) frag.append(str.slice(last, m.index));
+    if (tok.startsWith('**')) frag.append(el('b', {text: tok.slice(2, -2)}));
+    else if (tok[0] === '`') frag.append(el('code', {class:'ic', text: tok.slice(1, -1)}));
+    else if (tok.startsWith('||')) {
+      const sp = el('span', {class:'spoiler', text: tok.slice(2, -2)});
+      sp.onclick = e => { e.stopPropagation(); sp.classList.toggle('open'); };
+      frag.append(sp);
+    } else {
+      const u = (m.index > 0 && /[A-Za-z0-9_]/.test(str[m.index - 1])) ? null : getUser(tok.slice(1));
+      if (u && u.uid) {
+        const a = el('span', {class:'mention', text: tok});
+        a.onclick = e => { e.stopPropagation(); S.view = 'profile'; S.profile = u.uid; draw(); };
+        frag.append(a);
+      } else frag.append(tok);
+    }
+    last = m.index + tok.length;
+  }
+  if (last < str.length) frag.append(str.slice(last));
+  return frag;
+}
+function mentionNotify(text, ctx, skip) {
+  if (!S.user) return;
+  const seen = {};
+  (String(text || '').match(/@[A-Za-z0-9_]{3,15}/g) || []).slice(0, 5).forEach(mt => {
+    const u = getUser(mt.slice(1));
+    if (!u || !u.uid || u.uid === S.user.uid || u.uid === skip || seen[u.uid]) return;
+    seen[u.uid] = 1;
+    notify(u.uid, {type:'mention', text: text, view: ctx.view, id: ctx.id, key: ctx.key});
+  });
 }
 
 const COMP = {};
@@ -1034,6 +1403,7 @@ function translateModal(text, onDone) {
       el('h3', {text:'🌐 Перевести сообщение', style:'color:#fff'}),
       el('div', {class:'muted', style:'font-size:12px;max-height:120px;overflow:auto;white-space:pre-wrap;border:1px solid #222;padding:8px;border-radius:4px'}, [String(text || '').slice(0, 1000)]),
       el('div', {style:'display:flex;gap:8px;align-items:center'}, [sel, btn]),
+      el('div', {style:'font-size:11px;color:#777', text:'Текст сообщения будет отправлен в Google Translate. Не переводите то, что не хотите раскрывать.'}),
       err, out,
       abtn('Закрыть', '', close)
     );
@@ -1090,7 +1460,7 @@ function forwardModal(original) {
         try {
           const r = db.ref('chats/' + c.id + '/messages').push();
           const msg = {uid: S.user.uid, author: S.user.nick, text: original.text || '', date: TS,
-            forwarded: {fromNick: original.fromNick || 'User', view: original.view, id: original.id}};
+            forwarded: {fromUid: original.uid || null, view: original.view, id: original.id, key: original.key || null}};
           if (original.media) msg.media = original.media;
           if (original.voice) { msg.voice = original.voice; msg.dur = original.dur; }
           await db.ref().update({['chats/' + c.id + '/messages/' + r.key]: msg, [LIM()]: TS});
@@ -1109,7 +1479,7 @@ function forwardModal(original) {
             const me = S.user.uid, key = dmKey(me, p);
             const id = db.ref('dms/' + key + '/messages').push().key;
             const msg = {uid: me, text: original.text || '', date: TS,
-              forwarded: {fromNick: original.fromNick || 'User', view: original.view, id: original.id}};
+              forwarded: {fromUid: original.uid || null, view: original.view, id: original.id, key: original.key || null}};
             if (original.media) msg.media = original.media;
             if (original.voice) { msg.voice = original.voice; msg.dur = original.dur; }
             const idx = {last: 'Переслано: ' + (snip(msg, 80) || '…'), date: TS, from: me};
@@ -1190,6 +1560,37 @@ function reactBar(path, m) {
 }
 
 // ---------- шапка диалога: кто это ----------
+
+function bmBtn(id) {
+  const b = el('button', {class:'btn small', type:'button'});
+  const paint = () => { b.textContent = (S.bm && S.bm[id]) ? '★ В закладках' : '☆ В закладки'; };
+  b.onclick = () => {
+    const on = !(S.bm && S.bm[id]);
+    const r = db.ref('bookmarks/' + S.user.uid + '/' + id);
+    (on ? r.set(TS) : r.remove()).catch(fail);
+    S.bm = Object.assign({}, S.bm); if (on) S.bm[id] = 1; else delete S.bm[id];
+    paint();
+  };
+  paint();
+  return b;
+}
+function bookmarksView() {
+  const ids = Object.keys(S.bm || {}).sort((a, b) => (+S.bm[b] || 0) - (+S.bm[a] || 0));
+  const out = [el('h2', {text:'Закладки', style:'color:#fff'})];
+  if (!ids.length) out.push(el('div', {class:'muted', text:'Пока пусто. Нажмите «В закладки» в теме.'}));
+  ids.forEach(id => {
+    const th = S.threads.find(x => x.id === id);
+    if (!th) watchThread(id);
+    out.push(el('div', {class:'row-item', style:'cursor:pointer', onclick: () => { S.view = 'thread'; S.open = id; draw(); }}, [
+      el('div', {style:'min-width:0'}, [
+        el('div', {style:'color:#fff', text: th ? th.title : (thWatched[id] === 'gone' ? 'Тема удалена' : 'Загрузка...')}),
+        th ? el('div', {class:'sub', text: (th.author || '') + ' · ' + fmt(th.date)}) : null
+      ]),
+      el('button', {class:'btn small danger', type:'button', text:'✕', title:'Убрать', onclick: e => { e.stopPropagation(); db.ref('bookmarks/' + S.user.uid + '/' + id).remove().catch(fail); }})
+    ]));
+  });
+  return out;
+}
 
 const NEW_DAYS = 30; // меньше стольки дней на сайте — «Новый», иначе «Старый»
 
@@ -1305,6 +1706,12 @@ function authView() {
   const n = el('input', {type:'text', placeholder: t('nick'), maxlength:'15'});
   const p = el('input', {type:'password', placeholder: t('pass')});
 
+  const agree = el('input', {type:'checkbox'});
+  const agreeBox = el('label', {class:'lg-ag'}, [agree, el('span', null, [lang === 'en' ? 'I accept the ' : 'Я принимаю ',
+    el('button', {type:'button', text: lang === 'en' ? 'Terms of Use' : 'Условия использования', onclick: e => { e.preventDefault(); LEGAL60('terms'); }}),
+    lang === 'en' ? ' and ' : ' и ',
+    el('button', {type:'button', text: lang === 'en' ? 'Privacy Policy' : 'Политику конфиденциальности', onclick: e => { e.preventDefault(); LEGAL60('privacy'); }}),
+    lang === 'en' ? ' (I am 14 or older)' : ' (мне есть 14 лет)'])]);
   let capPassed = false;
   const capHost = el('div');
   S.capCtl = CAP60({host: capHost, onChange: v => { capPassed = v; if (v) err.textContent = ''; }});
@@ -1315,6 +1722,7 @@ function authView() {
     S.busy = true;
     err.textContent = '';
 
+    if (!isLogin && !agree.checked) { err.textContent = lang === 'en' ? 'Accept the Terms and Privacy Policy' : 'Примите условия использования и политику конфиденциальности'; S.busy = false; return; }
     if (!capPassed) { err.textContent = 'Подтвердите, что вы не робот'; S.busy = false; return; }
     const name = n.value.trim().replace(/[^a-zA-Z0-9_]/g, '');
     if (name.length < 3) {
@@ -1345,7 +1753,7 @@ function authView() {
         }
         try {
           await db.ref().update({
-            ['users/' + c.user.uid]: {uid: c.user.uid, nick: name, role:'user', owner:false, premium:false, created: TS, profile:{}},
+            ['users/' + c.user.uid]: {uid: c.user.uid, nick: name, role:'user', owner:false, premium:false, created: TS, terms: TS, profile:{}},
             ['public/' + c.user.uid]: {uid: c.user.uid, nick: name, role:'user', owner:false, premium:false, created: TS}
           });
         } catch (ex) {
@@ -1376,6 +1784,7 @@ function authView() {
     el('label', null, ['Никнейм', n]),
     el('label', null, [t('pass'), p]),
     err,
+    isLogin ? null : agreeBox,
     capHost,
     el('button', {class:'btn primary', type:'submit', text: isLogin ? t('login') : t('reg')}),
     el('div', {class:'switch'}, [
@@ -1436,7 +1845,7 @@ function listView() {
       S.open = th.id;
       draw();
     }}, [
-      el('td', {text: th.title}),
+      el('td', {text: (th.locked ? '🔒 ' : '') + th.title}),
       el('td', {class:'num', text: String(comments)}),
       el('td', {class:'num', text: String(th.views || 0)}),
       el('td', null, [nick(th.uid, th.author)]),
@@ -1572,6 +1981,8 @@ function composer(key, ph, onSend, opts) {
   async function send() {
     const text = ta.value.trim();
     if ((!text && !pic && !vo) || busy || rec) return;
+    if (S.user && S.user.banned) { alert('Аккаунт заблокирован'); return; }
+    if (S.user && (S.user.mutedUntil || 0) > Date.now()) { alert('Вам ограничена отправка сообщений до ' + fmt(S.user.mutedUntil) + ' ' + tm(S.user.mutedUntil)); return; }
     const now = Date.now();
     if (now - (S.lastSend.g || 0) < 2300) { alert('Не так быстро, подожди пару секунд'); return; }
     S.lastSend.g = now;
@@ -1612,7 +2023,10 @@ function threadView() {
     if (!th) return;
     const y = window.scrollY;
     box.innerHTML = '';
+    const hidT = Object.values(th.posts || {}).filter(x => S.user && x.uid !== S.user.uid && S.blocks[x.uid]).length;
+    if (hidT) box.append(el('div', {class:'muted', style:'font-size:12px;text-align:center', text:'Скрыто сообщений от заблокированных: ' + hidT}));
     Object.entries(th.posts || {}).map(([key, p]) => ({...p, key})).sort((a, b) => a.date - b.date).forEach(p => {
+      if (S.user && p.uid !== S.user.uid && S.blocks[p.uid]) return;
       const mine = S.user && p.uid === S.user.uid;
       box.append(el('div', {class:'post', 'data-k': p.key}, [
         el('div', {class:'who'}, [avatar(p.uid, 48), nick(p.uid, p.author || th.author)]),
@@ -1623,13 +2037,13 @@ function threadView() {
               S.user ? replyBtn('t' + th.id, p.key, p) : null,
               mine ? editBtn(p.key, p) : null,
               (mine || isAdmin()) ? el('button', {class:'btn small danger', text:'✕', onclick: () => {
-                sure('Удалить сообщение?').then(ok => { if (ok) del('threads/' + th.id + '/posts/' + p.key).catch(fail); });
+                sure('Удалить сообщение?').then(ok => { if (ok) del('threads/' + th.id + '/posts/' + p.key).then(() => { if (!mine) logAct('del_msg', p.uid, (getUser(p.uid) || {}).nick || p.author, snip(p, 60)); }).catch(fail); });
               }}) : null
             ])
           ]),
-          p.forwarded ? el('div', {class:'fwd-mark', text:'↪ Переслано от ' + (p.forwarded.fromNick || 'User')}) : null,
+          p.forwarded ? el('div', {class:'fwd-mark', text:'↪ Переслано от ' + fwdName(p.forwarded)}) : null,
           quoteEl(th.posts, p.reply),
-          S.editing === p.key ? editBox('threads/' + th.id + '/posts/' + p.key, p, 5000) : el('div', {class:'text', text: p.text || ''}),
+          S.editing === p.key ? editBox('threads/' + th.id + '/posts/' + p.key, p, 5000) : el('div', {class:'text'}, [rich(p.text || '')]),
           picEl(p.media),
           reactBar('threads/' + th.id + '/posts/' + p.key, p),
           msgActions({view:'thread', id: th.id, key: p.key, uid: p.uid, text: p.text, nick: (getUser(p.uid) || {}).nick || p.author, media: p.media})
@@ -1662,6 +2076,7 @@ function threadView() {
     el('div', {class:'tnav'}, [
       el('button', {class:'btn', text:'← К списку', onclick: () => { S.view = 'list'; draw(); }}),
       el('div', {class:'navbtns'}, [
+        S.user ? bmBtn(th0.id) : null,
         navBtn(prevTh, '‹'),
         el('span', {class:'muted', style:'font-size:12px;align-self:center', text: (idx + 1) + ' / ' + S.threads.length}),
         navBtn(nextTh, '›')
@@ -1670,7 +2085,9 @@ function threadView() {
     el('h2', {text: th0.title, style:'margin:16px 0;color:#fff'}),
     box
   ];
-  if (S.user) {
+  if (S.user && th0.locked && !isAdmin()) {
+    out.push(el('div', {class:'muted', text:'Тема закрыта: отвечать нельзя'}));
+  } else if (S.user) {
     out.push(composer('t' + th0.id, 'Ответ... (Enter - отправить)', async (text, pic, rp) => {
       const r = db.ref('threads/' + th0.id + '/posts').push();
       const msg = {uid: S.user.uid, author: S.user.nick, text: text, date: TS};
@@ -1678,6 +2095,7 @@ function threadView() {
       if (rp) msg.reply = {key: rp.key};
       await db.ref().update({['threads/' + th0.id + '/posts/' + r.key]: msg, [LIM()]: TS});
       if (rp) notify(rp.uid, {view:'thread', id: th0.id, key: r.key, text: text || 'Фото'});
+      mentionNotify(text, {view:'thread', id: th0.id, key: r.key}, rp && rp.uid);
     }));
   } else out.push(el('div', {class:'muted', text:'Войдите, чтобы отвечать'}));
   return out;
@@ -1752,6 +2170,34 @@ function adminTable(heads, rows) {
   return el('div', {class:'tablebox'}, [el('table', null, [el('thead', null, [el('tr', null, heads.map(h => el('th', {text:h})))]), tb])]);
 }
 const fail = e => alert(/permission/i.test((e && e.message) || '') ? 'Нет прав: правила Realtime Database не разрешают это действие (' + e.message + ')' : 'Ошибка: ' + ((e && e.message) || e));
+function logAct(act, target, targetNick, info) {
+  if (!S.user || !isStaff(S.user)) return;
+  db.ref('modlog').push().set({by: S.user.uid, byNick: S.user.nick, act: act, target: target || null, targetNick: targetNick ? String(targetNick).slice(0, 120) : null,
+    info: info ? String(info).slice(0, 120) : null, date: TS}).catch(() => {});
+}
+const isMuted = u => !!u && (u.mutedUntil || 0) > Date.now();
+function banUser(k, u) {
+  if (k === S.user.uid) return alert('Себя банить нельзя');
+  if (u.owner === true) return alert('Овнера банить нельзя');
+  if (u.role === 'admin' && S.user.owner !== true) return alert('Админа может забанить только овнер');
+  const on = !u.banned;
+  sure((on ? 'Забанить ' : 'Разбанить ') + u.nick + '?').then(ok => {
+    if (!ok) return;
+    const up = {['users/' + k + '/banned']: on ? true : null};
+    if (on) up['sessions/' + k] = null;
+    db.ref().update(up).then(() => { logAct(on ? 'ban' : 'unban', k, u.nick); toast(on ? 'Забанен' : 'Разбанен'); }).catch(fail);
+  });
+}
+function muteUser(k, u) {
+  if (isMuted(u)) { db.ref('users/' + k + '/mutedUntil').remove().then(() => { logAct('unmute', k, u.nick); toast('Мут снят'); }).catch(fail); return; }
+  if (k === S.user.uid || u.owner === true) return alert('Этого пользователя мутить нельзя');
+  askText('Мут для ' + u.nick + ' (минут):', '60').then(v => {
+    if (v === null) return;
+    const m = parseInt(v, 10);
+    if (isNaN(m) || m < 1 || m > 525600) return alert('Нужно число минут от 1 до 525600');
+    db.ref('users/' + k + '/mutedUntil').set(Date.now() + m * 60000).then(() => { logAct('mute', k, u.nick, m + ' мин'); toast('Мут выдан'); }).catch(fail);
+  });
+}
 const abtn = (text, cls, fn) => el('button', {class:'btn small ' + cls, type:'button', text: text, onclick: fn});
 
 async function removeUse(k, x) {
@@ -1811,10 +2257,10 @@ function adminUsers() {
       iOwner ? abtn(u.role || 'user', '', () => {
         askText('Роль: user / moderator / admin', u.role || 'user').then(r => {
           const v = (r || '').trim().toLowerCase();
-          if (['user', 'moderator', 'admin'].includes(v)) setBoth(k, 'role', v).catch(fail);
+          if (['user', 'moderator', 'admin'].includes(v)) setBoth(k, 'role', v).then(() => logAct('role', k, u.nick, v)).catch(fail);
         });
       }) : el('span', {text: u.role || 'user'}),
-      abtn(u.premium ? 'Снять' : 'Выдать', u.premium ? '' : 'primary', () => setBoth(k, 'premium', !u.premium).catch(fail)),
+      abtn(u.premium ? 'Снять' : 'Выдать', u.premium ? '' : 'primary', () => setBoth(k, 'premium', !u.premium).then(() => logAct('premium', k, u.nick, u.premium ? 'снята' : 'выдана')).catch(fail)),
 
       el('div', {class:'phone-cell'}, [
         el('span', {class:'val', text: phoneOf(u) || '—', style:'color:' + (phoneOf(u) ? '#fff' : '#555')}),
@@ -1847,18 +2293,23 @@ function adminUsers() {
         abtn('Юзы', 'primary', () => usesModal(k))
       ]),
 
+      el('div', {style:'display:flex;gap:6px;flex-wrap:wrap'}, [
+        abtn(u.banned ? 'Разбан' : 'Бан', u.banned ? 'primary' : 'danger', () => banUser(k, u)),
+        abtn(isMuted(u) ? 'Снять мут' : 'Мут', '', () => muteUser(k, u))
+      ]),
+
       iOwner
         ? abtn(isOwn ? 'Снять' : 'Выдать', isOwn ? 'danger' : 'primary', () => {
             if (isOwn && k === S.user.uid) return alert('Себя лишить овнера нельзя');
-            setBoth(k, 'owner', !isOwn).catch(fail);
+            setBoth(k, 'owner', !isOwn).then(() => logAct('owner', k, u.nick, isOwn ? 'снят' : 'выдан')).catch(fail);
           })
         : el('span', {text: isOwn ? 'Да' : 'Нет'}),
       el('span', {style:'display:flex;gap:6px'}, [
-        abtn('Выкинуть', '', () => { sure('Завершить все сессии ' + u.nick + '?').then(ok => { if (ok) del('sessions/' + k).catch(fail); }); }),
+        abtn('Выкинуть', '', () => { sure('Завершить все сессии ' + u.nick + '?').then(ok => { if (ok) del('sessions/' + k).then(() => logAct('kick', k, u.nick)).catch(fail); }); }),
         iOwner ? abtn('Удалить', 'danger', () => {
           sure('Удалить запись пользователя ' + u.nick + '?').then(ok => ok && Promise.all(usesOf(u).map(x => db.ref('nicks/' + x).remove()))
             .then(() => db.ref().update({['users/' + k]: null, ['public/' + k]: null, ['media/' + k]: null}))
-            .then(() => db.ref('nicks/' + String(u.nick).toLowerCase()).remove())).catch(fail);
+            .then(() => db.ref('nicks/' + String(u.nick).toLowerCase()).remove()).then(() => logAct('delete_user', k, u.nick))).catch(fail);
         }) : null
       ])
     ];
@@ -1875,7 +2326,7 @@ function adminUsers() {
       toast('Вынесено песен: ' + ok);
     })
   ]) : null;
-  return el('div', null, [bar, adminTable(['Ник', 'Роль', 'Премиум', 'Номер', 'Подписчики', 'Юзы', 'Овнер', 'Действия'], rows)]);
+  return el('div', null, [bar, adminTable(['Ник', 'Роль', 'Премиум', 'Номер', 'Подписчики', 'Юзы', 'Бан / мут', 'Овнер', 'Действия'], rows)]);
 }
 
 function adminThreads() {
@@ -1887,8 +2338,9 @@ function adminThreadsTable() {
     nick(th.uid, th.author),
     el('span', {text: fmt(th.date)}),
     el('span', {style:'display:flex;gap:6px'}, [
-      abtn(th.pin ? 'Открепить' : 'Закрепить', '', () => db.ref('threads/' + th.id + '/pin').set(!th.pin).catch(fail)),
-      abtn('Удалить', 'danger', () => { sure('Удалить тему со всеми ответами?').then(ok => { if (ok) del('threads/' + th.id).then(() => toast('Тема удалена')).catch(fail); }); })
+      abtn(th.pin ? 'Открепить' : 'Закрепить', '', () => db.ref('threads/' + th.id + '/pin').set(!th.pin).then(() => logAct(th.pin ? 'unpin' : 'pin', th.uid, th.title)).catch(fail)),
+      abtn(th.locked ? 'Открыть' : 'Закрыть', '', () => db.ref('threads/' + th.id + '/locked').set(th.locked ? null : true).then(() => logAct(th.locked ? 'unlock' : 'lock', th.uid, th.title)).catch(fail)),
+      abtn('Удалить', 'danger', () => { sure('Удалить тему со всеми ответами?').then(ok => { if (ok) del('threads/' + th.id).then(() => { logAct('del_thread', th.uid, th.title); toast('Тема удалена'); }).catch(fail); }); })
     ])
   ]));
 }
@@ -1902,7 +2354,7 @@ function adminChats() {
   })]);
   const rows = Object.values(S.chats).map(c => [
     el('span', {text: c.name || '—'}), nick(c.uid, c.author), el('span', {text: fmt(c.date)}),
-    abtn('Удалить', 'danger', () => { sure('Удалить чат со всеми сообщениями?').then(ok => { if (ok) del('chats/' + c.id).catch(fail); }); })
+    abtn('Удалить', 'danger', () => { sure('Удалить чат со всеми сообщениями?').then(ok => { if (ok) del('chats/' + c.id).then(() => { if (S.user && c.uid !== S.user.uid) logAct('del_chat', c.uid, c.name); }).catch(fail); }); })
   ]);
   return el('div', null, [add, adminTable(['Чат', 'Автор', 'Дата', 'Действия'], rows)]);
 }
@@ -1913,7 +2365,7 @@ function adminReports() {
   const rows = items.map(([id, r]) => {
     const typeName = r.type === 'thread' ? 'Тема' : r.type === 'chat' ? 'Чат' : r.type === 'dm' ? 'ЛС' : (r.type || '—');
     const go = el('span', {style:'display:flex;gap:6px;flex-wrap:wrap'}, [
-      abtn('Открыть', '', () => {
+      r.type === 'dm' ? null : abtn('Открыть', '', () => {
         if (r.type === 'thread') { S.view = 'thread'; S.open = r.targetId; S.jump = r.msgKey || null; }
         else if (r.type === 'chat') { S.view = 'chat'; S.chatId = r.targetId; S.jump = r.msgKey || null; }
         else if (r.type === 'dm') { S.view = 'dm'; S.dmWith = r.targetUid; S.jump = r.msgKey || null; }
@@ -1939,16 +2391,28 @@ function adminReports() {
   return el('div', null, [el('h3', {text:'Жалобы (' + items.length + ')', style:'color:#fff;margin-bottom:10px'}), adminTable(['Тип', 'Кто → на кого', 'Сообщение / причина', 'Действия'], rows)]);
 }
 
+function adminLog() {
+  const NAMES = {ban:'Бан', unban:'Разбан', mute:'Мут', unmute:'Снятие мута', role:'Смена роли', premium:'Привилегия', owner:'Овнер', kick:'Завершение сессий',
+    delete_user:'Удаление пользователя', lock:'Закрытие темы', unlock:'Открытие темы', pin:'Закрепление', unpin:'Открепление', del_thread:'Удаление темы', del_chat:'Удаление чата', del_msg:'Удаление сообщения'};
+  const items = Object.entries(S.modlog || {}).sort((a, b) => (b[1].date || 0) - (a[1].date || 0));
+  return adminTable(['Когда', 'Кто', 'Действие', 'Над кем / чем'], items.map(([id, r]) => [
+    el('span', {text: fmt(r.date) + ' ' + tm(r.date)}),
+    el('span', {text: r.byNick || '—'}),
+    el('span', {text: (NAMES[r.act] || r.act || '—') + (r.info ? ' · ' + r.info : '')}),
+    el('span', {text: r.targetNick || '—'})
+  ]));
+}
+
 function adminView() {
   if (!isAdmin()) return [el('div', {text:'Нет доступа', style:'padding:30px;text-align:center;color:#888'})];
   const top = isTop(S.user);
-  const names = top ? {users:'Пользователи', threads:'Темы', chats:'Чаты', reports:'Жалобы'} : {threads:'Темы', chats:'Чаты', reports:'Жалобы'};
+  const names = top ? {users:'Пользователи', threads:'Темы', chats:'Чаты', reports:'Жалобы', log:'Лог'} : {threads:'Темы', chats:'Чаты', reports:'Жалобы', log:'Лог'};
   let tab = S.adminTab || 'users';
   if (!names[tab]) tab = 'threads';
   return [
     el('h2', {text:'Админ-панель', style:'color:#fff'}),
     el('div', {class:'admin-tabs'}, Object.keys(names).map(k => el('button', {class: tab === k ? 'active' : '', text: names[k], onclick: () => { S.adminTab = k; draw(); }}))),
-    tab === 'threads' ? adminThreads() : tab === 'chats' ? adminChats() : tab === 'reports' ? adminReports() : adminUsers()
+    tab === 'threads' ? adminThreads() : tab === 'chats' ? adminChats() : tab === 'reports' ? adminReports() : tab === 'log' ? adminLog() : adminUsers()
   ];
 }
 
@@ -1986,8 +2450,14 @@ function profileView() {
       }});
 
   const actions = el('div', {style:'display:flex;gap:8px;flex-wrap:wrap'}, isMe
-    ? [btn, el('button', {class:'btn', type:'button', text:'Сессии', onclick: () => { S.view = 'sessions'; S.edit = false; draw(); }})]
-    : [el('button', {class:'btn', type:'button', text:'✉ Написать', onclick: () => openDM(u.uid || uid)}), btn]);
+    ? [btn, el('button', {class:'btn', type:'button', text:'Сессии', onclick: () => { S.view = 'sessions'; S.edit = false; draw(); }}),
+       el('button', {class:'btn', type:'button', text:'★ Закладки', onclick: () => { S.view = 'bookmarks'; S.edit = false; draw(); }})]
+    : [el('button', {class:'btn', type:'button', text:'✉ Написать', onclick: () => openDM(u.uid || uid)}), btn,
+       el('button', {class:'btn danger', type:'button', text: (S.blocks && S.blocks[u.uid]) ? 'Разблокировать' : 'Заблокировать', onclick: () => {
+         if (!S.user) { S.view = 'auth'; draw(); return; }
+         const r = db.ref('blocks/' + S.user.uid + '/' + u.uid);
+         ((S.blocks && S.blocks[u.uid]) ? r.remove() : r.set(true)).catch(fail);
+       }})]);
 
   const out = [
     el('div', {class:'profile-container'}, [banner, el('div', {class:'profile-main'}, [av, el('div', {class:'profile-details'}, [
@@ -2159,7 +2629,10 @@ function chatView() {
     const old = win.scrollTop;
     const near = stick || win.scrollHeight - win.scrollTop - win.clientHeight < 80;
     win.innerHTML = '';
+    const hidC = Object.values(cc.messages || {}).filter(x => S.user && x.uid !== S.user.uid && S.blocks[x.uid]).length;
+    if (hidC) win.append(el('div', {class:'muted', style:'font-size:12px;text-align:center', text:'Скрыто сообщений от заблокированных: ' + hidC}));
     Object.entries(cc.messages || {}).map(([key, m]) => ({...m, key})).sort((a, b) => a.date - b.date).forEach(m => {
+      if (S.user && m.uid !== S.user.uid && S.blocks[m.uid]) return;
       const mine = S.user && m.uid === S.user.uid;
       win.append(el('div', {class:'chatmsg' + (mine ? ' self' : ''), 'data-k': m.key}, [
         avatar(m.uid, 32),
@@ -2167,10 +2640,10 @@ function chatView() {
           el('div', {class:'top'}, [nick(m.uid, m.author), el('span', {text: fmt(m.date) + (m.edited ? ' · изменено' : '')}),
             S.user ? replyBtn('c' + cc.id, m.key, m) : null,
             mine ? editBtn(m.key, m) : null,
-            (mine || isAdmin()) ? el('button', {class:'btn small danger', text:'✕', onclick: () => { sure('Удалить сообщение?').then(ok => { if (ok) del('chats/' + cc.id + '/messages/' + m.key).catch(fail); }); }}) : null]),
-          m.forwarded ? el('div', {class:'fwd-mark', text:'↪ Переслано от ' + (m.forwarded.fromNick || 'User')}) : null,
+            (mine || isAdmin()) ? el('button', {class:'btn small danger', text:'✕', onclick: () => { sure('Удалить сообщение?').then(ok => { if (ok) del('chats/' + cc.id + '/messages/' + m.key).then(() => { if (!mine) logAct('del_msg', m.uid, (getUser(m.uid) || {}).nick || m.author, snip(m, 60)); }).catch(fail); }); }}) : null]),
+          m.forwarded ? el('div', {class:'fwd-mark', text:'↪ Переслано от ' + fwdName(m.forwarded)}) : null,
           quoteEl(cc.messages, m.reply),
-          S.editing === m.key ? editBox('chats/' + cc.id + '/messages/' + m.key, m, 2000) : (m.text ? el('div', {class:'txt', text: m.text}) : null),
+          S.editing === m.key ? editBox('chats/' + cc.id + '/messages/' + m.key, m, 2000) : (m.text ? el('div', {class:'txt'}, [rich(m.text)]) : null),
           picEl(m.media),
           okAud(m.voice) ? el('audio', {controls:'', preload:'none', src: m.voice}) : null,
           reactBar('chats/' + cc.id + '/messages/' + m.key, m),
@@ -2201,6 +2674,7 @@ function chatView() {
       if (rp) msg.reply = {key: rp.key};
       await db.ref().update({['chats/' + c.id + '/messages/' + r.key]: msg, [LIM()]: TS});
       if (rp) notify(rp.uid, {view:'chat', id: c.id, key: r.key, text: text || (vo ? 'Голосовое' : 'Фото')});
+      mentionNotify(text, {view:'chat', id: c.id, key: r.key}, rp && rp.uid);
     }, {voice: true}));
   } else out.push(el('div', {class:'muted', text:'Войдите, чтобы писать'}));
   return out;
@@ -2221,7 +2695,7 @@ function chatListView() {
       el('td', {style:'text-align:right;width:1%'}, [
         canDel ? el('button', {class:'btn small danger', text:'✕', title:'Удалить чат', onclick: e => {
           e.stopPropagation();
-          sure('Удалить чат «' + c.name + '» со всеми сообщениями?').then(ok => { if (ok) del('chats/' + c.id).catch(fail); });
+          sure('Удалить чат «' + c.name + '» со всеми сообщениями?').then(ok => { if (ok) del('chats/' + c.id).then(() => { if (S.user && c.uid !== S.user.uid) logAct('del_chat', c.uid, c.name); }).catch(fail); });
         }}) : null
       ])
     ]));
@@ -2263,6 +2737,7 @@ function chatListView() {
 function openDM(uid) {
   if (!S.user) { S.view = 'auth'; draw(); return; }
   if (!uid || uid === S.user.uid) return;
+  if (S.blocks && S.blocks[uid]) { alert('Вы заблокировали этого пользователя. Разблокируйте его в профиле.'); return; }
   S.view = 'dm'; S.dmWith = uid; draw();
 }
 let dmSub = null;
@@ -2272,12 +2747,13 @@ function dmUnsub() {
 }
 function dmUnread(p) {
   const x = S.dmIndex[p];
-  return !!(S.user && x && x.from !== S.user.uid && (x.date || 0) > (S.dmRead[p] || 0));
+  return !!(S.user && x && !(S.blocks && S.blocks[p]) && x.from !== S.user.uid && (x.date || 0) > (S.dmRead[p] || 0));
 }
 function dmMarkRead(p) {
   if (S.user && dmUnread(p)) db.ref('dmRead/' + S.user.uid + '/' + p).set(TS).catch(() => {});
 }
 async function sendDM(other, text, pic, replyKey, voice) {
+  if (S.blocks && S.blocks[other]) throw new Error('Вы заблокировали этого пользователя');
   const me = S.user.uid, key = dmKey(me, other);
   const msg = {uid: me, text: text || '', date: TS};
   if (pic) msg.media = pic;
@@ -2331,9 +2807,9 @@ function dmView() {
               mine ? el('button', {class:'btn small danger', text:'✕', onclick: () => { sure('Удалить сообщение?').then(ok => { if (ok) del('dms/' + key + '/messages/' + m.key).catch(fail); }); }}) : null
             ])
           ]),
-          m.forwarded ? el('div', {class:'fwd-mark', text:'↪ Переслано от ' + (m.forwarded.fromNick || 'User')}) : null,
+          m.forwarded ? el('div', {class:'fwd-mark', text:'↪ Переслано от ' + fwdName(m.forwarded)}) : null,
           quoteEl(S.dmMsgs, m.reply),
-          m.text ? el('div', {class:'txt', text: m.text}) : null,
+          m.text ? el('div', {class:'txt'}, [rich(m.text)]) : null,
           picEl(m.media),
           okAud(m.voice) ? el('audio', {controls:'', preload:'none', src: m.voice}) : null,
           reactBar('dms/' + key + '/messages/' + m.key, m),
@@ -2367,7 +2843,7 @@ function dmView() {
 
 function dmListView() {
   const me = S.user.uid;
-  const peers = Object.entries(S.dmIndex).sort((a, b) => (b[1].date || 0) - (a[1].date || 0));
+  const peers = Object.entries(S.dmIndex).filter(([p]) => !(S.blocks && S.blocks[p])).sort((a, b) => (b[1].date || 0) - (a[1].date || 0));
   const err = el('div', {class:'err'});
   const inp = el('input', {type:'text', maxlength:'15', placeholder:'Ник человека'});
   const go = () => {
@@ -2418,7 +2894,7 @@ function notifsView() {
   if (!items.length) out.push(el('div', {class:'muted', text:'Пока ничего нет'}));
   items.forEach(([id, n]) => out.push(el('div', {class:'row-item unread', style:'cursor:pointer', onclick: () => goNotif(id, n)}, [
     el('div', {style:'min-width:0'}, [
-      el('div', {style:'color:#fff', text: ((getUser(n.from) || {}).nick || n.fromNick || 'User') + ' ответил(а) вам'}),
+      el('div', {style:'color:#fff', text: ((getUser(n.from) || {}).nick || n.fromNick || 'User') + (n.type === 'mention' ? ' упомянул(а) вас' : ' ответил(а) вам')}),
       el('div', {class:'sub', text: n.text || ''})
     ]),
     el('span', {class:'sub', text: fmt(n.date) + ' ' + tm(n.date)})
@@ -2595,7 +3071,7 @@ function drawWho() {
         drawWho();
       }}),
       nick(S.user.uid, S.user.nick),
-      el('button', {text: t('out'), onclick: () => { CAP60({gate: false}).then(ok => { if (ok) doSignOut(); }); }})
+      el('button', {text: t('out'), onclick: () => doSignOut()})
     );
   } else if (!S.ready && localStorage.getItem('lun')) {
     w.append(el('span', {class:'muted', text: localStorage.getItem('lun')}));
@@ -2619,7 +3095,7 @@ function draw() {
   S.editing = null;
   const app = document.getElementById('app');
   app.innerHTML = '';
-  if (!S.user && ['dm', 'dmList', 'notifs', 'sessions'].includes(S.view)) S.view = 'auth';
+  if (!S.user && ['dm', 'dmList', 'notifs', 'sessions', 'bookmarks'].includes(S.view)) S.view = 'auth';
   if (S.view !== 'dm') dmUnsub();
   if (['chatList', 'chat', 'dm'].includes(S.view) || (S.view === 'admin' && S.adminTab === 'chats')) ensureChats();
   drawWho();
@@ -2643,6 +3119,7 @@ function draw() {
     case 'dmList': nodes = dmListView(); break;
     case 'notifs': nodes = notifsView(); break;
     case 'sessions': nodes = sessionsView(); break;
+    case 'bookmarks': nodes = bookmarksView(); break;
     default: nodes = listView();
   }
   nodes.forEach(n => { if (n) app.append(n); });
@@ -2698,6 +3175,9 @@ function rebuildUsers() {
     S.user.followers = mine.followers;
     S.user.uses = mine.uses;
     S.user.owner = mine.owner === true;
+    S.user.banned = mine.banned === true;
+    S.user.mutedUntil = mine.mutedUntil || 0;
+    if (S.user.banned && !S.banShown) { S.banShown = true; alert('Аккаунт заблокирован'); doSignOut(); }
   }
   if (S.modalRefresh) S.modalRefresh();
   refresh();
@@ -2828,7 +3308,7 @@ const subs = [];
 function sub(ref, cb) { ref.on('value', cb, e => console.warn(ref.toString(), e.message)); subs.push([ref, cb]); }
 function unbindUser() {
   subs.splice(0).forEach(([r, cb]) => r.off('value', cb));
-  S.dmIndex = {}; S.dmRead = {}; S.notifs = {}; S.sessions = {}; S.reports = {};
+  S.dmIndex = {}; S.dmRead = {}; S.notifs = {}; S.sessions = {}; S.reports = {}; S.bm = {}; S.blocks = {}; S.modlog = {};
   if (Object.keys(S.priv).length) { S.priv = {}; rebuildUsers(); }
   dmUnsub();
 }
@@ -2872,6 +3352,9 @@ function bindUser(uid) {
     if (S.view === 'sessions') draw();
   });
   sub(db.ref('reports'), s => { S.reports = s.val() || {}; if (S.view === 'admin' && S.adminTab === 'reports') draw(); });
+  sub(db.ref('bookmarks/' + uid), s => { S.bm = s.val() || {}; if (S.view === 'bookmarks') draw(); });
+  sub(db.ref('blocks/' + uid), s => { S.blocks = s.val() || {}; updateBadges(); refresh(); });
+  if (isStaff(S.user)) sub(db.ref('modlog').orderByChild('date').limitToLast(200), s => { S.modlog = s.val() || {}; if (S.view === 'admin' && S.adminTab === 'log') draw(); });
 }
 
 // ---------- кто залогинен ----------
@@ -2907,6 +3390,8 @@ async function loadUser(u) {
       me.phone = rec.phone;
       me.followers = rec.followers;
       me.uses = rec.uses;
+      me.banned = rec.banned === true;
+      me.mutedUntil = rec.mutedUntil || 0;
     }
 
     if (rec && rec.uid === u.uid) {
@@ -2933,6 +3418,13 @@ async function loadUser(u) {
 
 async function boot(u) {
   await loadUser(u);
+  if (u && S.user && S.user.banned) {
+    S.user = null;
+    alert('Аккаунт заблокирован');
+    await auth.signOut().catch(() => {});
+    S.ready = true; draw();
+    return;
+  }
   if (u && S.user) {
     const ok = await startSession(u);
     if (!ok) {
@@ -2953,7 +3445,7 @@ async function boot(u) {
 (function () {
   let [v, i] = location.hash.slice(1).split('/');
   if (i && !/^[A-Za-z0-9_-]{1,80}$/.test(i)) i = '';
-  if (['thread', 'chat', 'chatList', 'profile', 'members', 'admin', 'priv', 'dm', 'dmList', 'notifs', 'sessions'].includes(v)) {
+  if (['thread', 'chat', 'chatList', 'profile', 'members', 'admin', 'priv', 'dm', 'dmList', 'notifs', 'sessions', 'bookmarks'].includes(v)) {
     S.view = v;
     if (v === 'thread') S.open = i;
     if (v === 'chat') S.chatId = i;
